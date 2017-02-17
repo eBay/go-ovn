@@ -22,6 +22,7 @@ On the node which has the OVN environment:
 
     go get github.com/stretchr/testify/assert
     go test -c
+    ./libovndb-test
 
 ##Change Log
 
