@@ -44,7 +44,7 @@ func TestACLs(t *testing.T) {
 
 	acls := ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
-		acls[0].Action == "drop" && acls[0].Priority == 1001, "test[%s]", "add acl")
+		acls[0].Action == "drop" && acls[0].Priority == 1001, "test[%s] %s", "add acl", acls[0])
 
 	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, false), "test[%s]", "add same acl twice, should only one added.")
 

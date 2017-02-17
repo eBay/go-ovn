@@ -129,8 +129,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 											goto unmatched
 										}
 									case "priority":
-										//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-										if odbi.cache[ACLS][va.GoUUID].Fields["priority"].(float64) != value {
+										if odbi.cache[ACLS][va.GoUUID].Fields["priority"] != value {
 											goto unmatched
 										}
 									}
@@ -159,8 +158,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 									goto out
 								}
 							case "priority":
-								//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-								if odbi.cache[ACLS][va.GoUUID].Fields["priority"].(float64) != value {
+								if odbi.cache[ACLS][va.GoUUID].Fields["priority"] != value {
 									goto out
 								}
 							}
@@ -277,8 +275,7 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	aclrow["action"] = action
 	aclrow["direction"] = direct
 	aclrow["match"] = match
-	//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-	aclrow["priority"] = float64(priority)
+	aclrow["priority"] = priority
 	if odbi.getACLUUIDByRow(lsw, ACLS, aclrow) != "" {
 		glog.V(OVNLOGLEVEL).Info("The acl existed, and will get nil command")
 		return nil
@@ -326,8 +323,7 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCom
 	if priority != 0 {
 		pricondition := libovsdb.NewCondition("priority", "==", priority)
 		wherecondition = append(wherecondition, pricondition)
-		//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-		aclrow["priority"] = float64(priority)
+		aclrow["priority"] = priority
 	}
 
 	aclUUID := odbi.getACLUUIDByRow(lsw, ACLS, aclrow)
@@ -482,6 +478,17 @@ func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 	return nil
 }
 
+func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
+	for field, value := range row.Fields {
+		if v, ok := value.(float64); ok {
+			n := int(v)
+			if float64(n) == v {
+				row.Fields[field] = n
+			}
+		}
+	}
+}
+
 func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 	glog.V(OVNLOGLEVEL).Info("New nofity arrived")
 	odbi.cachemutex.Lock()
@@ -491,6 +498,10 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 			odbi.cache[table] = make(map[string]libovsdb.Row)
 		}
 		for uuid, row := range tableUpdate.Rows {
+			// TODO: this is a workaround for the problem of
+			// missing json number conversion in libovsdb
+			odbi.float64_to_int(row.New)
+
 			empty := libovsdb.Row{}
 			if !reflect.DeepEqual(row.New, empty) {
 				odbi.cache[table][uuid] = row.New
@@ -594,8 +605,7 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 									Action:    odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
 									Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
 									Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-									//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-									Priority:  int(odbi.cache[ACLS][va.GoUUID].Fields["priority"].(float64)),
+									Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
 								}
 								acllist = append(acllist, ta)
 							}
@@ -603,13 +613,13 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 					}
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
+						fmt.Println("GetACLsBySwitch %s", odbi.cache[ACLS][va.GoUUID].Fields)
 						ta := &ACL{
 							UUID: va.GoUUID,
 							Action:    odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
 							Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
 							Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-							//Todo: Priority workaround: should know why it is float64, tracked at NTWK-2549
-							Priority:  int(odbi.cache[ACLS][va.GoUUID].Fields["priority"].(float64)),
+							Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
 						}
 						acllist = append(acllist, ta)
 					}
