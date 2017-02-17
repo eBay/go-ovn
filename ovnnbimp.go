@@ -613,7 +613,6 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 					}
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
-						fmt.Println("GetACLsBySwitch %s", odbi.cache[ACLS][va.GoUUID].Fields)
 						ta := &ACL{
 							UUID: va.GoUUID,
 							Action:    odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
