@@ -95,6 +95,10 @@ func (odb *OVNDB) ASDel(name string) *OvnCommand {
 	return odb.imp.ASDel(name)
 }
 
+func (odb *OVNDB) ASUpdate(name string, addrs []string) *OvnCommand {
+	return odb.imp.ASUpdate(name, addrs)
+}
+
 func (odb *OVNDB) LSSetOpt(lsp string, options map[string]string) *OvnCommand {
 	return odb.imp.LSSetOpt(lsp, options)
 }
@@ -113,4 +117,8 @@ func (odb *OVNDB) GetACLsBySwitch(lsw string) []*ACL {
 
 func (odb *OVNDB) GetAddressSets() []*AddressSet {
 	return odb.imp.GetAddressSets()
+}
+
+func (odb *OVNDB) GetASByName(name string) *AddressSet {
+	return odb.imp.GetASByName(name)
 }

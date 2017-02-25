@@ -33,7 +33,9 @@ type OVNDBApi interface {
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids *map[string]string, logflag bool) *OvnCommand
 	// Delete acl
 	ACLDel(lsw, direct, match string, priority int) *OvnCommand
-	//add addresset
+	// Update address set
+	ASUpdate(name string, addrs []string) *OvnCommand
+	// Add addressset
 	ASAdd(name string, addrs []string) *OvnCommand
 	// Delete addressset
 	ASDel(name string) *OvnCommand
@@ -48,6 +50,7 @@ type OVNDBApi interface {
 	GetACLsBySwitch(lsw string) []*ACL
 
 	GetAddressSets() []*AddressSet
+	GetASByName(name string) *AddressSet
 }
 
 // Notifier

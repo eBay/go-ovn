@@ -94,18 +94,57 @@ func findAS(name string) bool {
 	return false
 }
 
+func addressSetCmp(asname string, targetvalue []string) bool {
+	as := ovndbapi.GetAddressSets()
+	for _, a := range as {
+		if a.Name == asname {
+			if len(a.Addresses) == len(targetvalue) {
+				addressSetMap := map[string]bool{}
+				for _, i := range(a.Addresses) {
+					addressSetMap[i] = true
+				}
+				for _, t := range(targetvalue) {
+					if _, ok:= addressSetMap[t]; !ok {
+						return false
+					}
+				}
+				return true
+			} else {
+				return false
+			}
+		}
+	}
+	return false
+}
+
+
 func TestAddressSet(t *testing.T) {
+	addressList := []string{"127.0.0.1"}
 	var c []*OvnCommand = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS1", []string{"127.0.0.1", "127.0.0.2", "127.0.0.3"}))
+	c = append(c, ovndbapi.ASAdd("AS1", addressList))
 	ovndbapi.Execute(c...)
 	as := ovndbapi.GetAddressSets()
-	assert.Equal(t, true, findAS("AS1"), "test[%s] and value[%v]", "address set added.", as[0].Addresses)
+	assert.Equal(t, true, addressSetCmp("AS1", addressList), "test[%s] and value[%v]", "address set 1 added.", as[0].Addresses)
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS2", []string{"127.0.0.1", "127.0.0.2", "127.0.0.3"}))
+	c = append(c, ovndbapi.ASAdd("AS2", addressList))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
-	assert.Equal(t, true, findAS("AS2"), "test[%s] and value[%v]", "address set added.", as[0].Addresses)
+	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set 2 added.", as[1].Addresses)
+
+	addressList = []string{"127.0.0.4", "127.0.0.5", "127.0.0.6"}
+	c = make([]*OvnCommand, 0)
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList))
+	ovndbapi.Execute(c...)
+	as = ovndbapi.GetAddressSets()
+	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set added with different list.", as[0].Addresses)
+
+	addressList = []string{"127.0.0.4", "127.0.0.5"}
+	c = make([]*OvnCommand, 0)
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList))
+	ovndbapi.Execute(c...)
+	as = ovndbapi.GetAddressSets()
+	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set updated.", as[0].Addresses)
 
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.ASDel("AS1"))

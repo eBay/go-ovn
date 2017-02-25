@@ -46,7 +46,7 @@ func (odbi *ovnDBImp) lswListImp() *OvnCommand {
 }
 
 func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
-	namedUUID := "gopher_lsw_add" + strconv.Itoa(rand.Int())
+	namedUUID := "lsw_add" + strconv.Itoa(rand.Int())
 	//row to insert
 	lswitch := make(OVNRow)
 	lswitch["name"] = lsw
@@ -55,8 +55,6 @@ func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
 		glog.V(OVNLOGLEVEL).Info("The logic switch existed, and will get nil command")
 		return nil
 	}
-
-	// simple insert operation
 	insertOp := libovsdb.Operation{
 		Op:       insert,
 		Table:    LSWITCH,
@@ -69,7 +67,6 @@ func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
 
 func (odbi *ovnDBImp) lswDelImp(lsw string) *OvnCommand {
 	condition := libovsdb.NewCondition("name", "==", lsw)
-	// simple insert operation
 	delOp := libovsdb.Operation{
 		Op:    del,
 		Table: LSWITCH,
@@ -185,7 +182,7 @@ func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) string {
 }
 
 func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
-	namedUUID := "gopher_lsp_add" + strconv.Itoa(rand.Int())
+	namedUUID := "lsp_add" + strconv.Itoa(rand.Int())
 	lsprow := make(OVNRow)
 	lsprow["name"] = lsp
 
@@ -194,7 +191,6 @@ func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
 		return nil
 	}
 
-	// simple insert operation
 	insertOp := libovsdb.Operation{
 		Op:       insert,
 		Table:    LPORT,
@@ -207,7 +203,6 @@ func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
 	mutation := libovsdb.NewMutation("ports", insert, mutateSet)
 	condition := libovsdb.NewCondition("name", "==", lsw)
 
-	// simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        mutate,
 		Table:     LSWITCH,
@@ -269,7 +264,7 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 		glog.Fatalf("External id is not supprted in acl setting now")
 	}
 
-	namedUUID := "gopher_acl_add" + strconv.Itoa(rand.Int())
+	namedUUID := "acl_add" + strconv.Itoa(rand.Int())
 	aclrow := make(OVNRow)
 	aclrow["action"] = action
 	aclrow["direction"] = direct
@@ -280,7 +275,6 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 		return nil
 	}
 	aclrow["log"] = logflag
-	// simple insert operation
 	insertOp := libovsdb.Operation{
 		Op:       insert,
 		Table:    ACLS,
@@ -319,7 +313,9 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCom
 		wherecondition = append(wherecondition, matchcondition)
 		aclrow["match"] = match
 	}
-	if priority != 0 {
+	//in ovn pirority is greater than/equal 0,
+	//if input the pirority < 0, lots of acls will be deleted if matches direct and match condition judgement.
+	if priority >= 0 {
 		pricondition := libovsdb.NewCondition("priority", "==", priority)
 		wherecondition = append(wherecondition, pricondition)
 		aclrow["priority"] = priority
@@ -353,44 +349,49 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCom
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
-func (odbi *ovnDBImp) ASAdd(name string, addrs []string) *OvnCommand {
-	namedUUID := "gopher_as_add" + strconv.Itoa(rand.Int())
-	adrow := make(OVNRow)
-	adrow["name"] = name
+func (odbi *ovnDBImp) ASUpdate(name string, addrs []string) *OvnCommand {
+	asrow := make(OVNRow)
+	asrow["name"] = name
 	addresses, _ := libovsdb.NewOvsSet(addrs)
-	adrow["addresses"] = addresses
-
-	// simple insert operation
+	asrow["addresses"] = addresses
+	condition := libovsdb.NewCondition("name", "==", name)
 	Op := libovsdb.Operation{
-		Op:       insert,
+		Op:       update,
 		Table:    Address_Set,
-		Row:      adrow,
-		UUIDName: namedUUID,
-	}
-
-	adnrow := make(OVNRow)
-	adnrow["name"] = name
-
-	if odbi.getRowUUID(Address_Set, adnrow) != "" {
-		mutations := []interface{}{}
-		mutation := libovsdb.NewMutation("addresses", "delete", " ")
-		mutations = append(mutations, mutation)
-		for _, ad := range addrs {
-			mutation := libovsdb.NewMutation("addresses", "insert", ad)
-			mutations = append(mutations, mutation)
-		}
-		condition := libovsdb.NewCondition("name", "==", name)
-
-		// simple mutate operation
-		Op = libovsdb.Operation{
-			Op:        mutate,
-			Table:     Address_Set,
-			Mutations: mutations,
-			Where:     []interface{}{condition},
-		}
+		Row:      asrow,
+		Where:    []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{Op}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+func (odbi *ovnDBImp) ASAdd(name string, addrs []string) *OvnCommand {
+	asrow := make(OVNRow)
+	asrow["name"] = name
+	//TODO: https://jirap.corp.ebay.com/browse/NTWK-2615
+	//should support the -is-exist flag here.
+	if odbi.getRowUUID(Address_Set, asrow) != "" {
+		return nil
+	}
+	addresses, _ := libovsdb.NewOvsSet(addrs)
+	asrow["addresses"] = addresses
+	Op := libovsdb.Operation{
+		Op:       insert,
+		Table:    Address_Set,
+		Row:      asrow,
+	}
+	operations := []libovsdb.Operation{Op}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+func (odbi *ovnDBImp) GetASByName(name string) *AddressSet {
+	addresssets := odbi.GetAddressSets()
+	for _, s := range addresssets {
+		if s.Name == name {
+			return s
+		}
+	}
+	return nil
 }
 
 func (odbi *ovnDBImp) ASDel(name string) *OvnCommand {
@@ -637,15 +638,22 @@ func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
 			Name: drows.Fields["name"].(string),
 		}
 		addresses := []string{}
-		//TODO: is it possible return interface type directly instead of GoSet
-		//TODO: Tracked at NTWK-2524
-		if goset, ok := drows.Fields["addresses"].(libovsdb.OvsSet); ok {
-			for _, i := range goset.GoSet {
-				addresses = append(addresses, i.(string))
+		as := drows.Fields["addresses"]
+		switch as.(type) {
+		case libovsdb.OvsSet:
+			//TODO: is it possible return interface type directly instead of GoSet
+			//TODO: Tracked at NTWK-2524
+			if goset, ok := drows.Fields["addresses"].(libovsdb.OvsSet); ok {
+				for _, i := range goset.GoSet {
+					addresses = append(addresses, i.(string))
+				}
+			}
+		case string:
+			if v, ok := drows.Fields["addresses"].(string); ok {
+				addresses = append(addresses, v)
 			}
 		}
 		ta.Addresses = addresses
-
 		adlist = append(adlist, ta)
 	}
 	return adlist
