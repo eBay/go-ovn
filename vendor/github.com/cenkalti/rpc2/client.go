@@ -7,7 +7,6 @@ import (
 	"log"
 	"reflect"
 	"sync"
-	"fmt"
 )
 
 // Client represents an RPC Client.

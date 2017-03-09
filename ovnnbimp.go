@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/socketplane/libovsdb"
-	"time"
 )
 
 func init() {
@@ -472,9 +471,6 @@ func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 	        index++
 	    }
 	}*/
-	//wait for cache updating. it's not efficient.
-	//Todo: track at https://jirap.corp.ebay.com/browse/NTWK-2550
-	time.Sleep(1 * time.Second)
 	return nil
 }
 
