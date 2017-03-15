@@ -125,7 +125,11 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 											goto unmatched
 										}
 									case "priority":
-										if odbi.cache[ACLS][va.GoUUID].Fields["priority"] != value {
+										if odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int) != value {
+											goto unmatched
+										}
+									case "log":
+										if odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool) != value {
 											goto unmatched
 										}
 									}
@@ -154,7 +158,11 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 									goto out
 								}
 							case "priority":
-								if odbi.cache[ACLS][va.GoUUID].Fields["priority"] != value {
+								if odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int) != value {
+									goto out
+								}
+							case "log":
+								if odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool) != value {
 									goto out
 								}
 							}
@@ -266,14 +274,15 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 
 	namedUUID := "acl_add" + strconv.Itoa(rand.Int())
 	aclrow := make(OVNRow)
-	aclrow["action"] = action
 	aclrow["direction"] = direct
 	aclrow["match"] = match
 	aclrow["priority"] = priority
+
 	if odbi.getACLUUIDByRow(lsw, ACLS, aclrow) != "" {
 		glog.V(OVNLOGLEVEL).Info("The acl existed, and will get nil command")
 		return nil
 	}
+	aclrow["action"] = action
 	aclrow["log"] = logflag
 	insertOp := libovsdb.Operation{
 		Op:       insert,
@@ -603,6 +612,7 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 									Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
 									Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
 									Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
+									Log:       odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
 								}
 								acllist = append(acllist, ta)
 							}
@@ -616,6 +626,7 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 							Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
 							Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
 							Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
+							Log:       odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
 						}
 						acllist = append(acllist, ta)
 					}

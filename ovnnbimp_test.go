@@ -29,7 +29,7 @@ func TestACLs(t *testing.T) {
 	c = append(c, ovndbapi.LSPAdd(LSW, LSP))
 
 	c = append(c, ovndbapi.LSPSetAddress(LSP, ADDR))
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, false))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true))
 	ovndbapi.Execute(c...)
 
 	lsps := ovndbapi.GetLogicPortsBySwitch(LSW)
@@ -44,9 +44,10 @@ func TestACLs(t *testing.T) {
 
 	acls := ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
-		acls[0].Action == "drop" && acls[0].Priority == 1001, "test[%s] %s", "add acl", acls[0])
+		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
-	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, false), "test[%s]", "add same acl twice, should only one added.")
+	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true),
+		"test[%s]", "add same acl twice, should only one added.")
 
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, nil, false))

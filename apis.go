@@ -82,6 +82,7 @@ type ACL struct {
 	Direction string
 	Match     string
 	Priority  int
+	Log       bool
 }
 
 type AddressSet struct {
