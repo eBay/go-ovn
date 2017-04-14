@@ -1,5 +1,5 @@
 [gerrit]
-host=openstratus-gerrit-3993.phx-os1.stratus.dev.ebay.com
+host=gerrit-cicd-3524.slc01.dev.ebayc3.com
 port=29418
 project=C3/libovndb.git
 defaultbranch=master
