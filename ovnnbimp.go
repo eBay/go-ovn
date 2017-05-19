@@ -267,16 +267,20 @@ func (odbi *ovnDBImp) lspSetAddressImp(lsp string, addr ...string) *OvnCommand {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
-func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids *map[string]string, logflag bool) *OvnCommand {
-	if external_ids != nil {
-		glog.Fatalf("External id is not supprted in acl setting now")
-	}
-
+func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand {
 	namedUUID := "acl_add" + strconv.Itoa(rand.Int())
 	aclrow := make(OVNRow)
 	aclrow["direction"] = direct
 	aclrow["match"] = match
 	aclrow["priority"] = priority
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			glog.Fatalf("External id is not correct in acl")
+			return nil
+		}
+		aclrow["external_ids"] = oMap
+	}
 
 	if odbi.getACLUUIDByRow(lsw, ACLS, aclrow) != "" {
 		glog.V(OVNLOGLEVEL).Info("The acl existed, and will get nil command")
@@ -607,12 +611,13 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 						for _, a := range as.GoSet {
 							if va, ok := a.(libovsdb.UUID); ok {
 								ta := &ACL{
-									UUID: va.GoUUID,
-									Action:    odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
-									Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
-									Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-									Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
-									Log:       odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
+									UUID:       va.GoUUID,
+									Action:     odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
+									Direction:  odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
+									Match:      odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
+									Priority:   odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
+									Log:        odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
+									ExternalID: odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 								}
 								acllist = append(acllist, ta)
 							}
@@ -621,12 +626,13 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
 						ta := &ACL{
-							UUID: va.GoUUID,
-							Action:    odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
-							Direction: odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
-							Match:     odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-							Priority:  odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
-							Log:       odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
+							UUID:       va.GoUUID,
+							Action:     odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
+							Direction:  odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
+							Match:      odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
+							Priority:   odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
+							Log:        odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
+							ExternalID: odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 						}
 						acllist = append(acllist, ta)
 					}

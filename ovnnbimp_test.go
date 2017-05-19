@@ -50,7 +50,7 @@ func TestACLs(t *testing.T) {
 		"test[%s]", "add same acl twice, should only one added.")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, nil, false))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")

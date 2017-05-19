@@ -79,8 +79,8 @@ func (odb *OVNDB) LSPSetAddress(lsp string, addresses ...string) *OvnCommand {
 	return odb.imp.lspSetAddressImp(lsp, addresses...)
 }
 
-func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids *map[string]string, logflag bool) *OvnCommand {
-	return odb.imp.aclAddImp(lsw, direct, match, action, priority, nil, logflag)
+func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand {
+	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag)
 }
 
 func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int) *OvnCommand {

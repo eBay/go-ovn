@@ -83,6 +83,7 @@ type ACL struct {
 	Match     string
 	Priority  int
 	Log       bool
+	ExternalID map[interface{}]interface{}
 }
 
 type AddressSet struct {
