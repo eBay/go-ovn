@@ -30,7 +30,7 @@ type OVNDBApi interface {
 	// Set addressset per lport
 	LSPSetAddress(lsp string, addresses ...string) *OvnCommand
 	// Add ACL
-	ACLAdd(lsw, direct, match, action string, priority int, external_ids *map[string]string, logflag bool) *OvnCommand
+	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand
 	// Delete acl
 	ACLDel(lsw, direct, match string, priority int) *OvnCommand
 	// Update address set
