@@ -1,14 +1,15 @@
 package libovndb
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	SOCKET = "/var/run/openvswitch/ovnnb_db.sock"
-
+	OVS_RUNDIR = "/var/run/openvswitch"
+	OVNNB_SOCKET = "ovnnb_db.sock"
 	LSW   = "TEST_LSW"
 	LSP   = "TEST_LSP"
 	LSP_SECOND   = "TEST_LSP_SECOND "
@@ -20,7 +21,12 @@ const (
 var ovndbapi OVNDBApi
 
 func init() {
-	ovndbapi = GetInstance(SOCKET, UNIX, "", 0)
+	var ovs_rundir = os.Getenv("OVS_RUNDIR")
+	if ovs_rundir == "" {
+		ovs_rundir = OVS_RUNDIR
+	}
+	var socket = ovs_rundir + "/" + OVNNB_SOCKET
+	ovndbapi = GetInstance(socket, UNIX, "", 0)
 }
 
 func TestACLs(t *testing.T) {
