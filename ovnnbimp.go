@@ -247,23 +247,32 @@ func (odbi *ovnDBImp) lspDelImp(lsp string) *OvnCommand {
 }
 
 func (odbi *ovnDBImp) lspSetAddressImp(lsp string, addr ...string) *OvnCommand {
-	var addresses []string
-	for _, a := range addr {
-		addresses = append(addresses, a)
-	}
-
-	mutateSet, _ := libovsdb.NewOvsSet(addresses)
-	mutation := libovsdb.NewMutation("addresses", insert, mutateSet)
+	row := make(OVNRow)
+	addresses, _ := libovsdb.NewOvsSet(addr)
+	row["addresses"] = addresses
 	condition := libovsdb.NewCondition("name", "==", lsp)
-
-	// simple mutate operation
-	mutateOp := libovsdb.Operation{
-		Op:        mutate,
-		Table:     LPORT,
-		Mutations: []interface{}{mutation},
-		Where:     []interface{}{condition},
+	Op := libovsdb.Operation{
+		Op:       update,
+		Table:    LPORT,
+		Row:      row,
+		Where:    []interface{}{condition},
 	}
-	operations := []libovsdb.Operation{mutateOp}
+	operations := []libovsdb.Operation{Op}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+func (odbi *ovnDBImp) lspSetPortSecurityImp(lsp string, security ...string) *OvnCommand {
+	row := make(OVNRow)
+	port_security, _ := libovsdb.NewOvsSet(security)
+	row["port_security"] = port_security
+	condition := libovsdb.NewCondition("name", "==", lsp)
+	Op := libovsdb.Operation{
+		Op:       update,
+		Table:    LPORT,
+		Row:      row,
+		Where:    []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{Op}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
@@ -533,6 +542,32 @@ func (odbi *ovnDBImp) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 	return ret
 }
 
+func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
+	lp := &LogcalPort{
+		UUID: uuid,
+		Name: odbi.cache[LPORT][uuid].Fields["name"].(string),
+	}
+	addr := odbi.cache[LPORT][uuid].Fields["addresses"]
+	switch addr.(type) {
+	case string:
+		lp.Addresses = []string{addr.(string)}
+	case libovsdb.OvsSet:
+		lp.Addresses = odbi.ConvertGoSetToStringArray(addr.(libovsdb.OvsSet))
+	default:
+		glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport address.")
+	}
+	portsecurity := odbi.cache[LPORT][uuid].Fields["port_security"]
+	switch portsecurity.(type) {
+	case string:
+		lp.PortSecurity = []string{portsecurity.(string)}
+	case libovsdb.OvsSet:
+		lp.PortSecurity = odbi.ConvertGoSetToStringArray(portsecurity.(libovsdb.OvsSet))
+	default:
+		glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport port security.")
+	}
+	return lp
+}
+
 // Get all lport by lswitch
 func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 	var lplist = []*LogcalPort{}
@@ -547,19 +582,7 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 					if ps, ok := ports.(libovsdb.OvsSet); ok {
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
-								tp := &LogcalPort{
-									UUID: vp.GoUUID,
-									Name: odbi.cache[LPORT][vp.GoUUID].Fields["name"].(string),
-								}
-								addr := odbi.cache[LPORT][vp.GoUUID].Fields["addresses"]
-								switch addr.(type) {
-								case string:
-									tp.Addresses = []string{addr.(string)}
-								case libovsdb.OvsSet:
-									tp.Addresses = odbi.ConvertGoSetToStringArray(addr.(libovsdb.OvsSet))
-								default:
-									glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport address.")
-								}
+								tp := odbi.RowToLogicalPort(vp.GoUUID)
 								lplist = append(lplist, tp)
 							}
 						}
@@ -568,19 +591,7 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
-						tp := &LogcalPort{
-							UUID: vp.GoUUID,
-							Name:      odbi.cache[LPORT][vp.GoUUID].Fields["name"].(string),
-						}
-						addr := odbi.cache[LPORT][vp.GoUUID].Fields["addresses"]
-						switch addr.(type) {
-						case string:
-							tp.Addresses = []string{addr.(string)}
-						case libovsdb.OvsSet:
-							tp.Addresses = odbi.ConvertGoSetToStringArray(addr.(libovsdb.OvsSet))
-						default:
-							glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport address.")
-						}
+						tp := odbi.RowToLogicalPort(vp.GoUUID)
 						lplist = append(lplist, tp)
 					} else {
 						glog.V(OVNLOGLEVEL).Info("Type libovsdb.UUID casting failed.")
@@ -593,6 +604,19 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 		}
 	}
 	return lplist
+}
+
+func (odbi *ovnDBImp) RowToACL(uuid string) *ACL {
+	acl := &ACL{
+		UUID:       uuid,
+		Action:     odbi.cache[ACLS][uuid].Fields["action"].(string),
+		Direction:  odbi.cache[ACLS][uuid].Fields["direction"].(string),
+		Match:      odbi.cache[ACLS][uuid].Fields["match"].(string),
+		Priority:   odbi.cache[ACLS][uuid].Fields["priority"].(int),
+		Log:        odbi.cache[ACLS][uuid].Fields["log"].(bool),
+		ExternalID: odbi.cache[ACLS][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+	}
+	return acl
 }
 
 // Get all acl by lswitch
@@ -610,30 +634,14 @@ func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) []*ACL {
 					if as, ok := acls.(libovsdb.OvsSet); ok {
 						for _, a := range as.GoSet {
 							if va, ok := a.(libovsdb.UUID); ok {
-								ta := &ACL{
-									UUID:       va.GoUUID,
-									Action:     odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
-									Direction:  odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
-									Match:      odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-									Priority:   odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
-									Log:        odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
-									ExternalID: odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
-								}
+								ta := odbi.RowToACL(va.GoUUID)
 								acllist = append(acllist, ta)
 							}
 						}
 					}
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
-						ta := &ACL{
-							UUID:       va.GoUUID,
-							Action:     odbi.cache[ACLS][va.GoUUID].Fields["action"].(string),
-							Direction:  odbi.cache[ACLS][va.GoUUID].Fields["direction"].(string),
-							Match:      odbi.cache[ACLS][va.GoUUID].Fields["match"].(string),
-							Priority:   odbi.cache[ACLS][va.GoUUID].Fields["priority"].(int),
-							Log:        odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool),
-							ExternalID: odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
-						}
+						ta := odbi.RowToACL(va.GoUUID)
 						acllist = append(acllist, ta)
 					}
 				}

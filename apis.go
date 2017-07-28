@@ -29,6 +29,8 @@ type OVNDBApi interface {
 	LSPDel(lsp string) *OvnCommand
 	// Set addressset per lport
 	LSPSetAddress(lsp string, addresses ...string) *OvnCommand
+	// Set port security per lport
+	LSPSetPortSecurity(lsp string, security ...string) *OvnCommand
 	// Add ACL
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand
 	// Delete acl
@@ -74,6 +76,7 @@ type LogcalPort struct {
 	UUID	  string
 	Name      string
 	Addresses []string
+	PortSecurity []string
 }
 
 type ACL struct {

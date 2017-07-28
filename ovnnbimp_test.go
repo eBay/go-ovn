@@ -35,12 +35,14 @@ func TestACLs(t *testing.T) {
 	c = append(c, ovndbapi.LSPAdd(LSW, LSP))
 
 	c = append(c, ovndbapi.LSPSetAddress(LSP, ADDR))
+	c = append(c, ovndbapi.LSPSetPortSecurity(LSP, ADDR))
 	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true))
 	ovndbapi.Execute(c...)
 
 	lsps := ovndbapi.GetLogicPortsBySwitch(LSW)
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Addresses[0] == ADDR, "test[%s]", "setted port address")
+	assert.Equal(t, true, len(lsps) == 1 && lsps[0].PortSecurity[0] == ADDR, "test[%s]", "setted port port security")
 
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.LSPAdd(LSW, LSP_SECOND))
