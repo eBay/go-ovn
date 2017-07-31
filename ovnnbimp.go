@@ -19,7 +19,7 @@ func init() {
 
 type OVNRow map[string]interface{}
 
-func newNBCtlImp(client *ovnDBClient) *ovnDBImp {
+func newNBCtlImp(client *ovnDBClient, callback OVNSignal) *ovnDBImp {
 	nbimp := ovnDBImp{client: client}
 	nbimp.cache = make(map[string]map[string]libovsdb.Row)
 	initial, err := nbimp.client.dbclient.MonitorAll(NBDB, "")
@@ -30,6 +30,7 @@ func newNBCtlImp(client *ovnDBClient) *ovnDBImp {
 	nbimp.populateCache(*initial)
 	notifier := ovnNotifier{&nbimp}
 	nbimp.client.dbclient.Register(notifier)
+	nbimp.callback = callback
 	return &nbimp
 }
 
@@ -524,7 +525,27 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 			empty := libovsdb.Row{}
 			if !reflect.DeepEqual(row.New, empty) {
 				odbi.cache[table][uuid] = row.New
+				if odbi.callback != nil {
+					switch table {
+					case LPORT:
+						lp := odbi.RowToLogicalPort(uuid)
+						odbi.callback.OnLogicalPortCreate(lp)
+					case ACLS:
+						acl := odbi.RowToACL(uuid)
+						odbi.callback.OnACLCreate(acl)
+					}
+				}
 			} else {
+				if odbi.callback != nil {
+					switch table {
+					case LPORT:
+						lp := odbi.RowToLogicalPort(uuid)
+						odbi.callback.OnLogicalPortDelete(lp)
+					case ACLS:
+						acl := odbi.RowToACL(uuid)
+						odbi.callback.OnACLDelete(acl)
+					}
+				}
 				delete(odbi.cache[table], uuid)
 			}
 		}
@@ -683,3 +704,4 @@ func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
 	}
 	return adlist
 }
+

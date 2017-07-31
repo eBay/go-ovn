@@ -53,6 +53,16 @@ type OVNDBApi interface {
 
 	GetAddressSets() []*AddressSet
 	GetASByName(name string) *AddressSet
+
+	SetCallBack(callback OVNSignal)
+}
+
+type OVNSignal interface {
+	OnLogicalPortCreate(lp *LogcalPort)
+	OnLogicalPortDelete(lp *LogcalPort)
+
+	OnACLCreate(acl *ACL)
+	OnACLDelete(acl *ACL)
 }
 
 // Notifier

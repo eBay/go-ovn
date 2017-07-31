@@ -36,19 +36,19 @@ func newOvnDbClient(socketfile string, protocol string, server string, port int)
 	return nil, errors.New("OVN DB initial failed: (unsupported protocol)")
 }
 
-func newNBCtlBySocket(socketfile string) (*OVNDB, error) {
+func newNBCtlBySocket(socketfile string, callback OVNSignal) (*OVNDB, error) {
 	odb, err := newOvnDbClient(socketfile, UNIX, "", 0)
 	if err == nil {
-		return &OVNDB{newNBCtlImp(odb)}, nil
+		return &OVNDB{newNBCtlImp(odb, callback)}, nil
 	} else {
 		return nil, err
 	}
 }
 
-func newNBCtlByServer(server string, port int) (*OVNDB, error) {
+func newNBCtlByServer(server string, port int, callback OVNSignal) (*OVNDB, error) {
 	odb, err := newOvnDbClient("", TCP, server, port)
 	if err != nil {
-		return &OVNDB{newNBCtlImp(odb)}, nil
+		return &OVNDB{newNBCtlImp(odb, callback)}, nil
 	} else {
 		return nil, err
 	}
@@ -125,4 +125,8 @@ func (odb *OVNDB) GetAddressSets() []*AddressSet {
 
 func (odb *OVNDB) GetASByName(name string) *AddressSet {
 	return odb.imp.GetASByName(name)
+}
+
+func (odb *OVNDB) SetCallBack(callback OVNSignal) {
+	odb.imp.callback = callback
 }

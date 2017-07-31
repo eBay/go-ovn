@@ -26,7 +26,7 @@ func init() {
 		ovs_rundir = OVS_RUNDIR
 	}
 	var socket = ovs_rundir + "/" + OVNNB_SOCKET
-	ovndbapi = GetInstance(socket, UNIX, "", 0)
+	ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
 }
 
 func TestACLs(t *testing.T) {

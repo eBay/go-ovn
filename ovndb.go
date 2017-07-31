@@ -51,6 +51,7 @@ type ovnDBImp struct {
 	cache      map[string]map[string]libovsdb.Row
 	cachemutex sync.Mutex
 	tranmutex  sync.Mutex
+	callback   OVNSignal
 }
 
 type OVNDB struct {
@@ -60,14 +61,14 @@ type OVNDB struct {
 var once sync.Once
 var ovnDBApi OVNDBApi
 
-func GetInstance(socketfile string, protocol string, server string, port int) OVNDBApi {
+func GetInstance(socketfile string, protocol string, server string, port int, callback OVNSignal) OVNDBApi {
 	once.Do(func() {
 		var dbapi *OVNDB
 		var err error
 		if protocol == UNIX {
-			dbapi, err = newNBCtlBySocket(socketfile)
+			dbapi, err = newNBCtlBySocket(socketfile, callback)
 		} else if protocol == TCP {
-			dbapi, err = newNBCtlByServer(server, port)
+			dbapi, err = newNBCtlByServer(server, port, callback)
 		} else {
 			err = errors.New(fmt.Sprintf("The protocol [%s] is not supported", protocol))
 		}
@@ -79,4 +80,11 @@ func GetInstance(socketfile string, protocol string, server string, port int) OV
 		ovnDBApi = dbapi
 	})
 	return ovnDBApi
+}
+
+
+func SetCallBack(callback OVNSignal) {
+	if ovnDBApi != nil {
+		ovnDBApi.SetCallBack(callback)
+	}
 }
