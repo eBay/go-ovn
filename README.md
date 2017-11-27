@@ -1,39 +1,35 @@
 libovndb
 ========
 
-An OVNDB Library written in Go
+A Go library for OVN DB access using native OVSDB protocol.
+It is based on the [OVSDB Library](https://github.com/socketplane/libovsdb.git)
 
-## What is OVNDB?
+## What is OVN?
 
-OVSDB is Protocol for managing the configuration of OVN.
+OVN (Open Virtual Network), is a SDN solution built on top of OVS (Open vSwitch).
+The interface of OVN is its north-bound DB which is an OVSDB database.
+
+## What is OVSDB?
+
+OVSDB is a protocol for managing the configuration of OVS.
 It's defined in [RFC 7047](http://tools.ietf.org/html/rfc7047)
-OVNDB library developed based on [OVSDB Library](https://github.com/socketplane/libovsdb.git)
 
-## Running example
+## Why native OVSDB protocol?
 
-On the node which has the OVN environment:
+There are projects accessing OVN based on the ovn-nbctl CLI. There are two major
+issues with those approaches, which can be addressed by this library.
 
-    go get github.com/golang/glog/
-    go get github.com/socketplane/libovsdb
-    go build -o ovndb-test ./examples/main.go
-    ./ovndb-test
+- Performance problem. Every command would trigger a separate OVSDB connection setup/teardown,
+  initial OVSDB client cache population, etc., which would impact performance significantly. This library uses OVSDB
+  protocol directly so that those overhead happens only once for all OVSDB operations.
 
-## e2e test case
+- Caching problem. When there is a change in desired state, which requires updates in OVN, we need
+  to figure out first what's the current state in OVN, which requires either maintaining a client cache or executing a "list" command everytime.
+  This library maintains an internal cache and ensures it is always up to date with the remote DB with the help of native OVSDB support.
 
-    go get github.com/stretchr/testify/assert
-    go test -c
-    ./libovndb-test
+- String parsing problem. CLI based implementation needs extra convertion from the string output to Go internal data types, while it is not necessary
+  with this library since OVSDB JSON RPC takes care of it.
 
-##Change Log
+## TODO
 
-v1.0:
-Support lsp/lsw/addresset/acl creating/deleting
-Cache supported will sync with ovndb automatically.
-
-
-## Todo
-
-Build dependency from makefile
-Build example in makefile
-Should have docker image with OVN to run the example
-Run example supports in makefile
+- Support transaction for multiple operations.
