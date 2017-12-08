@@ -1,4 +1,4 @@
-libovndb
+GO OVN
 ========
 
 A Go library for OVN DB access using native OVSDB protocol.

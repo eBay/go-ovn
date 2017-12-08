@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package libovndb
+package goovn
 
 import (
 	"os"

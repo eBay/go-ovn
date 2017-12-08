@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	apis "github.com/ebayinc/libovndb"
+	apis "github.com/ebay/go-ovn/goovn"
 )
 
 var ovndbapi apis.OVNDBApi
