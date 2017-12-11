@@ -18,24 +18,35 @@ package main
 
 import (
 	"fmt"
-	"time"
 
-	apis "github.com/ebay/go-ovn/goovn"
+	"github.com/ebay/go-ovn/goovn"
+	"os"
 )
 
-var ovndbapi apis.OVNDBApi
+const (
+	OVS_RUNDIR = "/var/run/openvswitch"
+	OVNNB_SOCKET = "ovnnb_db.sock"
+)
+
+var ovndbapi goovn.OVNDBApi
 
 func init() {
-	ovndbapi = apis.GetInstance("/var/run/openvswitch/ovnnb_db.sock", apis.UNIX, "", 0)
+	var ovs_rundir = os.Getenv("OVS_RUNDIR")
+	if ovs_rundir == "" {
+		ovs_rundir = OVS_RUNDIR
+	}
+	var socket = ovs_rundir + "/" + OVNNB_SOCKET
+	ovndbapi = goovn.GetInstance(socket, goovn.UNIX, "", 0, nil)
 }
 
 func LSWAdd() {
-	ocmd := ovndbapi.LSWAdd("sentineltest")
+	ocmd := ovndbapi.LSWAdd("ls1")
 	ovndbapi.Execute(ocmd)
+	fmt.Printf("return: %v", ocmd.Results)
 }
 
 func LSPAdd() {
-	ocmd := ovndbapi.LSPAdd("sentineltest", "test")
+	ocmd := ovndbapi.LSPAdd("ls1", "test")
 	ovndbapi.Execute(ocmd)
 }
 
@@ -50,17 +61,17 @@ func LSPDel() {
 }
 
 func LSWDel() {
-	ocmd := ovndbapi.LSWDel("sentineltest")
+	ocmd := ovndbapi.LSWDel("ls1")
 	ovndbapi.Execute(ocmd)
 }
 
 func ACLAdd() {
-	ocmd := ovndbapi.ACLAdd("sentineltest", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", "drop", 1001, nil, false)
+	ocmd := ovndbapi.ACLAdd("ls1", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", "drop", 1001, nil, false)
 	ovndbapi.Execute(ocmd)
 }
 
 func ACLDel() {
-	ocmd := ovndbapi.ACLDel("sentineltest", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", 1001)
+	ocmd := ovndbapi.ACLDel("ls1", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", 1001)
 	ovndbapi.Execute(ocmd)
 }
 
@@ -71,11 +82,6 @@ func LISTLS() {
 	fmt.Printf("return: %v", ocmd.Results)
 }
 
-func ADAS() {
-	ocmd := ovndbapi.ASAdd("test", []string{" "})
-	ovndbapi.Execute(ocmd)
-	fmt.Printf("return: %v", ocmd.Results)
-}
 
 func main() {
 
@@ -84,10 +90,7 @@ func main() {
 	LSPSetAddress()
 	ACLAdd()
 	LISTLS()
-	ADAS()
-	time.Sleep(10 * time.Second)
 	ACLDel()
-	time.Sleep(10 * time.Second)
 	LSPDel()
 	LSWDel()
 
