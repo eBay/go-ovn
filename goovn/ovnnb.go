@@ -23,7 +23,7 @@ import (
 	"github.com/socketplane/libovsdb"
 )
 
-func newOvnDbClient(socketfile string, protocol string, server string, port int) (*ovnDBClient, error) {
+func newNBClient(socketfile string, protocol string, server string, port int) (*ovnDBClient, error) {
 	client := &ovnDBClient{
 		socket:   socketfile,
 		server:   server,
@@ -52,19 +52,19 @@ func newOvnDbClient(socketfile string, protocol string, server string, port int)
 	return nil, errors.New("OVN DB initial failed: (unsupported protocol)")
 }
 
-func newNBCtlBySocket(socketfile string, callback OVNSignal) (*OVNDB, error) {
-	odb, err := newOvnDbClient(socketfile, UNIX, "", 0)
+func newNBBySocket(socketfile string, callback OVNSignal) (*OVNDB, error) {
+	odb, err := newNBClient(socketfile, UNIX, "", 0)
 	if err == nil {
-		return &OVNDB{newNBCtlImp(odb, callback)}, nil
+		return &OVNDB{newNBImp(odb, callback)}, nil
 	} else {
 		return nil, err
 	}
 }
 
-func newNBCtlByServer(server string, port int, callback OVNSignal) (*OVNDB, error) {
-	odb, err := newOvnDbClient("", TCP, server, port)
+func newNBByServer(server string, port int, callback OVNSignal) (*OVNDB, error) {
+	odb, err := newNBClient("", TCP, server, port)
 	if err != nil {
-		return &OVNDB{newNBCtlImp(odb, callback)}, nil
+		return &OVNDB{newNBImp(odb, callback)}, nil
 	} else {
 		return nil, err
 	}
