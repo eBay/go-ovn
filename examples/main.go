@@ -39,59 +39,22 @@ func init() {
 	ovndbapi = goovn.GetInstance(socket, goovn.UNIX, "", 0, nil)
 }
 
-func LSWAdd() {
+func main() {
 	ocmd := ovndbapi.LSWAdd("ls1")
 	ovndbapi.Execute(ocmd)
-	fmt.Printf("return: %v", ocmd.Results)
-}
-
-func LSPAdd() {
-	ocmd := ovndbapi.LSPAdd("ls1", "test")
+	ocmd = ovndbapi.LSPAdd("ls1", "test")
 	ovndbapi.Execute(ocmd)
-}
-
-func LSPSetAddress() {
-	ocmd := ovndbapi.LSPSetAddress("test", "mac ip")
+	ocmd = ovndbapi.LSPSetAddress("test", "12:34:56:78:90 10.10.10.1")
 	ovndbapi.Execute(ocmd)
-}
 
-func LSPDel() {
-	ocmd := ovndbapi.LSPDel("test")
+	lports := ovndbapi.GetLogicPortsBySwitch("ls1")
+	for _, lp := range(lports) {
+		fmt.Printf("%v\n", *lp)
+	}
+
+	ocmd = ovndbapi.LSPDel("test")
 	ovndbapi.Execute(ocmd)
-}
-
-func LSWDel() {
-	ocmd := ovndbapi.LSWDel("ls1")
+	ocmd = ovndbapi.LSWDel("ls1")
 	ovndbapi.Execute(ocmd)
-}
-
-func ACLAdd() {
-	ocmd := ovndbapi.ACLAdd("ls1", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", "drop", 1001, nil, false)
-	ovndbapi.Execute(ocmd)
-}
-
-func ACLDel() {
-	ocmd := ovndbapi.ACLDel("ls1", "to-lport", "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61", 1001)
-	ovndbapi.Execute(ocmd)
-}
-
-
-func LISTLS() {
-	ocmd := ovndbapi.LSWList()
-	ovndbapi.Execute(ocmd)
-	fmt.Printf("return: %v", ocmd.Results)
-}
-
-
-func main() {
-
-	LSWAdd()
-	LSPAdd()
-	LSPSetAddress()
-	ACLAdd()
-	LISTLS()
-	ACLDel()
-	LSPDel()
-	LSWDel()
 
 }
