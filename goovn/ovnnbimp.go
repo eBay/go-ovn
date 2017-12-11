@@ -35,7 +35,7 @@ func init() {
 
 type OVNRow map[string]interface{}
 
-func newNBCtlImp(client *ovnDBClient, callback OVNSignal) *ovnDBImp {
+func newNBImp(client *ovnDBClient, callback OVNSignal) *ovnDBImp {
 	nbimp := ovnDBImp{client: client}
 	nbimp.cache = make(map[string]map[string]libovsdb.Row)
 	initial, err := nbimp.client.dbclient.MonitorAll(NBDB, "")
@@ -371,9 +371,7 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCom
 		Table: ACLS,
 		Where: wherecondition,
 	}
-/*
-	mutateUUID := []libovsdb.UUID{{aclUUID}}
-	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)*/
+
 	mutation := libovsdb.NewMutation("acls", del, libovsdb.UUID{aclUUID})
 	condition := libovsdb.NewCondition("name", "==", lsw)
 
@@ -407,7 +405,6 @@ func (odbi *ovnDBImp) ASUpdate(name string, addrs []string) *OvnCommand {
 func (odbi *ovnDBImp) ASAdd(name string, addrs []string) *OvnCommand {
 	asrow := make(OVNRow)
 	asrow["name"] = name
-	//TODO: https://jirap.corp.ebay.com/browse/NTWK-2615
 	//should support the -is-exist flag here.
 	if odbi.getRowUUID(Address_Set, asrow) != "" {
 		return nil
@@ -499,18 +496,7 @@ func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 	glog.V(OVNLOGLEVEL).Infof("OVN replys: %v", reply)
 	if err != nil {
 		return err
-	} /*else {
-	    j := 0
-	    index := 0
-	    for i, _ := range reply {
-	        if index >= len(cmds[j].Operations) {
-	            index = 0
-	            j++
-	        }
-	        cmds[j].Results[index] = reply[i].Rows
-	        index++
-	    }
-	}*/
+	}
 	return nil
 }
 

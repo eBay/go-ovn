@@ -82,9 +82,9 @@ func GetInstance(socketfile string, protocol string, server string, port int, ca
 		var dbapi *OVNDB
 		var err error
 		if protocol == UNIX {
-			dbapi, err = newNBCtlBySocket(socketfile, callback)
+			dbapi, err = newNBBySocket(socketfile, callback)
 		} else if protocol == TCP {
-			dbapi, err = newNBCtlByServer(server, port, callback)
+			dbapi, err = newNBByServer(server, port, callback)
 		} else {
 			err = errors.New(fmt.Sprintf("The protocol [%s] is not supported", protocol))
 		}
