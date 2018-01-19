@@ -1,5 +1,0 @@
-[gerrit]
-host=gerrit-cicd-3524.slc01.dev.ebayc3.com
-port=29418
-project=C3/libovndb.git
-defaultbranch=master
