@@ -58,6 +58,7 @@ func ConnectUsingProtocol(protocol string, target string) (*OvsdbClient, error) 
 	}
 
 	c := rpc2.NewClientWithCodec(jsonrpc.NewJSONCodec(conn))
+	c.SetBlocking(true)
 	c.Handle("echo", echo)
 	c.Handle("update", update)
 	go c.Run()
