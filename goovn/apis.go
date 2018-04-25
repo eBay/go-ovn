@@ -50,7 +50,7 @@ type OVNDBApi interface {
 	// Add ACL
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand
 	// Delete acl
-	ACLDel(lsw, direct, match string, priority int) *OvnCommand
+	ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand
 	// Update address set
 	ASUpdate(name string, addrs []string) *OvnCommand
 	// Add addressset

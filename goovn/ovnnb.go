@@ -103,8 +103,8 @@ func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, extern
 	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag)
 }
 
-func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int) *OvnCommand {
-	return odb.imp.aclDelImp(lsw, direct, match, priority)
+func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand {
+	return odb.imp.aclDelImp(lsw, direct, match, priority, external_ids)
 }
 
 func (odb *OVNDB) ASAdd(name string, addrs []string) *OvnCommand {

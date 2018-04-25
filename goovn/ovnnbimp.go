@@ -115,6 +115,23 @@ func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
 	return ""
 }
 
+//test if map s contains t
+//This function is not both s and t are nil at same time
+func (odbi *ovnDBImp) oMapContians(s, t map[interface{}]interface{}) bool {
+	if s == nil || t == nil {
+		return false
+	}
+
+	for tk, tv := range t {
+		if sv, ok :=s[tk]; !ok {
+			return false
+		} else if tv != sv {
+			return false
+		}
+	}
+	return true
+}
+
 func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
@@ -149,8 +166,11 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 										if odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool) != value {
 											goto unmatched
 										}
+									case "external_ids":
+										if value != nil && !odbi.oMapContians(odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
+											goto unmatched
+										}
 									}
-
 								}
 								return va.GoUUID
 							}
@@ -180,6 +200,10 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 								}
 							case "log":
 								if odbi.cache[ACLS][va.GoUUID].Fields["log"].(bool) != value {
+									goto out
+								}
+							case "external_ids":
+								if value != nil && !odbi.oMapContians(odbi.cache[ACLS][va.GoUUID].Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
 									goto out
 								}
 							}
@@ -299,10 +323,11 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	aclrow["direction"] = direct
 	aclrow["match"] = match
 	aclrow["priority"] = priority
+
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
-			glog.Fatalf("External id is not correct in acl")
+			glog.Fatalf("Add ACL: External id is not correct in acl")
 			return nil
 		}
 		aclrow["external_ids"] = oMap
@@ -338,26 +363,29 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 }
 
 
-func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCommand {
+func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand {
 	aclrow := make(OVNRow)
 
 	wherecondition := []interface{}{}
 	if direct != "" {
-		directcondition := libovsdb.NewCondition("direction", "==", direct)
-		wherecondition = append(wherecondition, directcondition)
 		aclrow["direction"] = direct
 	}
 	if match != "" {
-		matchcondition := libovsdb.NewCondition("match", "==", match)
-		wherecondition = append(wherecondition, matchcondition)
 		aclrow["match"] = match
 	}
 	//in ovn pirority is greater than/equal 0,
 	//if input the pirority < 0, lots of acls will be deleted if matches direct and match condition judgement.
 	if priority >= 0 {
-		pricondition := libovsdb.NewCondition("priority", "==", priority)
-		wherecondition = append(wherecondition, pricondition)
 		aclrow["priority"] = priority
+	}
+
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			glog.Fatalf("Add ACL: External id is not correct in acl")
+			return nil
+		}
+		aclrow["external_ids"] = oMap
 	}
 
 	aclUUID := odbi.getACLUUIDByRow(lsw, ACLS, aclrow)
@@ -366,6 +394,8 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int) *OvnCom
 		return nil
 	}
 
+	uuidcondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{aclUUID})
+	wherecondition = append(wherecondition, uuidcondition)
 	delOp := libovsdb.Operation{
 		Op:    del,
 		Table: ACLS,
@@ -690,7 +720,6 @@ func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
 		switch as.(type) {
 		case libovsdb.OvsSet:
 			//TODO: is it possible return interface type directly instead of GoSet
-			//TODO: Tracked at NTWK-2524
 			if goset, ok := drows.Fields["addresses"].(libovsdb.OvsSet); ok {
 				for _, i := range goset.GoSet {
 					addresses = append(addresses, i.(string))

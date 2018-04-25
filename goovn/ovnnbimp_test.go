@@ -80,16 +80,28 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false))
+	ovndbapi.Execute(c...)
+	acls = ovndbapi.GetACLsBySwitch(LSW)
+	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
+
+	c = make([]*OvnCommand, 0)
+	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001,  map[string]string{}))
+	ovndbapi.Execute(c...)
+	acls = ovndbapi.GetACLsBySwitch(LSW)
+	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
+
+	c = make([]*OvnCommand, 0)
+	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"}))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001))
+	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"}))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
-	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
+	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
 
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.LSPDel(LSP))
