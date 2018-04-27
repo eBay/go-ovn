@@ -416,11 +416,19 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
-func (odbi *ovnDBImp) ASUpdate(name string, addrs []string) *OvnCommand {
+func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand {
 	asrow := make(OVNRow)
 	asrow["name"] = name
 	addresses, _ := libovsdb.NewOvsSet(addrs)
 	asrow["addresses"] = addresses
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			glog.Fatalf("Add AS: External id is not correct in address set")
+			return nil
+		}
+		asrow["external_ids"] = oMap
+	}
 	condition := libovsdb.NewCondition("name", "==", name)
 	Op := libovsdb.Operation{
 		Op:       update,
@@ -432,12 +440,20 @@ func (odbi *ovnDBImp) ASUpdate(name string, addrs []string) *OvnCommand {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
-func (odbi *ovnDBImp) ASAdd(name string, addrs []string) *OvnCommand {
+func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand {
 	asrow := make(OVNRow)
 	asrow["name"] = name
 	//should support the -is-exist flag here.
 	if odbi.getRowUUID(Address_Set, asrow) != "" {
 		return nil
+	}
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			glog.Fatalf("Add AS: External id is not correct in address set")
+			return nil
+		}
+		asrow["external_ids"] = oMap
 	}
 	addresses, _ := libovsdb.NewOvsSet(addrs)
 	asrow["addresses"] = addresses
@@ -714,6 +730,7 @@ func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
 		ta := &AddressSet{
 			UUID: uuid,
 			Name: drows.Fields["name"].(string),
+			ExternalID: drows.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 		}
 		addresses := []string{}
 		as := drows.Fields["addresses"]

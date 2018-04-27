@@ -107,16 +107,16 @@ func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int, external_ids m
 	return odb.imp.aclDelImp(lsw, direct, match, priority, external_ids)
 }
 
-func (odb *OVNDB) ASAdd(name string, addrs []string) *OvnCommand {
-	return odb.imp.ASAdd(name, addrs)
+func (odb *OVNDB) ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand {
+	return odb.imp.ASAdd(name, addrs, external_ids)
 }
 
 func (odb *OVNDB) ASDel(name string) *OvnCommand {
 	return odb.imp.ASDel(name)
 }
 
-func (odb *OVNDB) ASUpdate(name string, addrs []string) *OvnCommand {
-	return odb.imp.ASUpdate(name, addrs)
+func (odb *OVNDB) ASUpdate(name string, addrs []string,  external_ids map[string]string) *OvnCommand {
+	return odb.imp.ASUpdate(name, addrs,  external_ids)
 }
 
 func (odb *OVNDB) LSSetOpt(lsp string, options map[string]string) *OvnCommand {

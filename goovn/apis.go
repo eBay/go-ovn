@@ -52,9 +52,9 @@ type OVNDBApi interface {
 	// Delete acl
 	ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand
 	// Update address set
-	ASUpdate(name string, addrs []string) *OvnCommand
+	ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand
 	// Add addressset
-	ASAdd(name string, addrs []string) *OvnCommand
+	ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand
 	// Delete addressset
 	ASDel(name string) *OvnCommand
 	// Set options in lswtich
@@ -119,4 +119,5 @@ type AddressSet struct {
 	UUID	  string
 	Name      string
 	Addresses []string
+	ExternalID map[interface{}]interface{}
 }
