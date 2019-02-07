@@ -90,7 +90,6 @@ func (odb *OVNDB) LSPDel(lsp string) *OvnCommand {
 	return odb.imp.lspDelImp(lsp)
 }
 
-
 func (odb *OVNDB) LSPSetAddress(lsp string, addresses ...string) *OvnCommand {
 	return odb.imp.lspSetAddressImp(lsp, addresses...)
 }
@@ -99,8 +98,8 @@ func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) *OvnCommand
 	return odb.imp.lspSetPortSecurityImp(lsp, security...)
 }
 
-func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand {
-	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag)
+func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) *OvnCommand {
+	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag, meter)
 }
 
 func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand {
@@ -115,8 +114,8 @@ func (odb *OVNDB) ASDel(name string) *OvnCommand {
 	return odb.imp.ASDel(name)
 }
 
-func (odb *OVNDB) ASUpdate(name string, addrs []string,  external_ids map[string]string) *OvnCommand {
-	return odb.imp.ASUpdate(name, addrs,  external_ids)
+func (odb *OVNDB) ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand {
+	return odb.imp.ASUpdate(name, addrs, external_ids)
 }
 
 func (odb *OVNDB) LSSetOpt(lsp string, options map[string]string) *OvnCommand {

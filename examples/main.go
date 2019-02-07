@@ -24,12 +24,11 @@ import (
 )
 
 const (
-	OVS_RUNDIR = "/var/run/openvswitch"
+	OVS_RUNDIR   = "/var/run/openvswitch"
 	OVNNB_SOCKET = "ovnnb_db.sock"
-	MATCH = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
+	MATCH        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 
 	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
-
 )
 
 var ovndbapi goovn.OVNDBApi
@@ -56,14 +55,13 @@ func main() {
 		fmt.Printf("%v\n", *lp)
 	}
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true, "")
 	ovndbapi.Execute(ocmd)
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
-
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
 	acls := ovndbapi.GetACLsBySwitch("ls1")
@@ -72,7 +70,7 @@ func main() {
 	}
 	fmt.Println()
 
-	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001,  map[string]string{})
+	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001, map[string]string{})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
 	for _, acl := range(acls) {
