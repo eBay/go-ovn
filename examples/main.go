@@ -56,14 +56,14 @@ func main() {
 		fmt.Printf("%v\n", *lp)
 	}
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true, "")
 	ovndbapi.Execute(ocmd)
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false)
+	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
 	acls := ovndbapi.GetACLsBySwitch("ls1")
