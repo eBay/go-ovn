@@ -317,7 +317,7 @@ func (odbi *ovnDBImp) lspSetPortSecurityImp(lsp string, security ...string) *Ovn
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
-func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand {
+func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) *OvnCommand {
 	namedUUID := "acl_add" + strconv.Itoa(rand.Int())
 	aclrow := make(OVNRow)
 	aclrow["direction"] = direct
@@ -339,6 +339,9 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	}
 	aclrow["action"] = action
 	aclrow["log"] = logflag
+	if logflag {
+		aclrow["meter"] = meter
+	}
 	insertOp := libovsdb.Operation{
 		Op:       insert,
 		Table:    ACLS,

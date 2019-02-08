@@ -99,8 +99,8 @@ func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) *OvnCommand
 	return odb.imp.lspSetPortSecurityImp(lsp, security...)
 }
 
-func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool) *OvnCommand {
-	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag)
+func (odb *OVNDB) ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) *OvnCommand {
+	return odb.imp.aclAddImp(lsw, direct, match, action, priority, external_ids, logflag, meter)
 }
 
 func (odb *OVNDB) ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand {

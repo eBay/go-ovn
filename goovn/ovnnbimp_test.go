@@ -52,7 +52,7 @@ func TestACLs(t *testing.T) {
 
 	c = append(c, ovndbapi.LSPSetAddress(LSP, ADDR))
 	c = append(c, ovndbapi.LSPSetPortSecurity(LSP, ADDR))
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, ""))
 	ovndbapi.Execute(c...)
 
 	lsps := ovndbapi.GetLogicPortsBySwitch(LSW)
@@ -70,17 +70,17 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
 		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
-	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true),
+	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, ""),
 		"test[%s]", "add same acl twice, should only one added.")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, ""))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false))
+	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, ""))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
@@ -158,27 +158,27 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 func TestAddressSet(t *testing.T) {
 	addressList := []string{"127.0.0.1"}
 	var c []*OvnCommand = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS1", addressList))
+	c = append(c, ovndbapi.ASAdd("AS1", addressList, map[string]string{}))
 	ovndbapi.Execute(c...)
 	as := ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS1", addressList), "test[%s] and value[%v]", "address set 1 added.", as[0].Addresses)
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS2", addressList))
+	c = append(c, ovndbapi.ASAdd("AS2", addressList, map[string]string{}))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set 2 added.", as[1].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5", "127.0.0.6"}
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList))
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList, map[string]string{}))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set added with different list.", as[0].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5"}
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList))
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList, map[string]string{}))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set updated.", as[0].Addresses)
