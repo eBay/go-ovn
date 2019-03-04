@@ -127,6 +127,10 @@ func (odb *OVNDB) Execute(cmds ...*OvnCommand) error {
 	return odb.imp.Execute(cmds...)
 }
 
+func (odb *OVNDB) GetLogicSwitches() []*LogicalSwitch {
+	return odb.imp.GetLogicSwitches()
+}
+
 func (odb *OVNDB) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 	return odb.imp.GetLogicPortsBySwitch(lsw)
 }

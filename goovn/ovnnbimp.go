@@ -655,6 +655,17 @@ func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
 	return lp
 }
 
+// Get all logical switches
+func (odbi *ovnDBImp) GetLogicSwitches() []*LogicalSwitch {
+	var lslist = []*LogicalSwitch{}
+	odbi.cachemutex.Lock()
+	defer odbi.cachemutex.Unlock()
+	for uuid, _ := range odbi.cache[LSWITCH] {
+		lslist = append(lslist, odbi.RowToLogicalSwitch(uuid))
+	}
+	return lslist
+}
+
 // Get all lport by lswitch
 func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 	var lplist = []*LogcalPort{}
