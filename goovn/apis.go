@@ -74,6 +74,9 @@ type OVNDBApi interface {
 }
 
 type OVNSignal interface {
+	OnLogicalSwitchCreate(ls *LogicalSwitch)
+	OnLogicalSwitchDelete(ls *LogicalSwitch)
+
 	OnLogicalPortCreate(lp *LogcalPort)
 	OnLogicalPortDelete(lp *LogcalPort)
 
@@ -97,6 +100,12 @@ func (ocmd *OvnCommand) Execute() error {
 const (
 	OVNLOGLEVEL = 4
 )
+
+type LogicalSwitch struct {
+	UUID       string
+	Name       string
+	ExternalID map[interface{}]interface{}
+}
 
 type LogcalPort struct {
 	UUID	  string

@@ -578,6 +578,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 				odbi.cache[table][uuid] = row.New
 				if odbi.callback != nil {
 					switch table {
+					case LSWITCH:
+						ls := odbi.RowToLogicalSwitch(uuid)
+						odbi.callback.OnLogicalSwitchCreate(ls)
 					case LPORT:
 						lp := odbi.RowToLogicalPort(uuid)
 						odbi.callback.OnLogicalPortCreate(lp)
@@ -589,6 +592,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 			} else {
 				if odbi.callback != nil {
 					switch table {
+					case LSWITCH:
+						ls := odbi.RowToLogicalSwitch(uuid)
+						odbi.callback.OnLogicalSwitchDelete(ls)
 					case LPORT:
 						lp := odbi.RowToLogicalPort(uuid)
 						odbi.callback.OnLogicalPortDelete(lp)
@@ -612,6 +618,15 @@ func (odbi *ovnDBImp) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 		}
 	}
 	return ret
+}
+
+func (odbi *ovnDBImp) RowToLogicalSwitch(uuid string) *LogicalSwitch {
+	ls := &LogicalSwitch{
+		UUID:       uuid,
+		Name:       odbi.cache[LSWITCH][uuid].Fields["name"].(string),
+		ExternalID: odbi.cache[LSWITCH][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+	}
+	return ls
 }
 
 func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
