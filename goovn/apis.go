@@ -57,6 +57,13 @@ type OVNDBApi interface {
 	ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand
 	// Delete addressset
 	ASDel(name string) *OvnCommand
+	// Add LB
+	LBAdd(name string, vipPort string, protocol string, addrs []string) *OvnCommand
+	// Delete LB with given name
+	LBDel(name string) *OvnCommand
+	// Update existing LB
+	LBUpdate(name string, vipPort string, protocol string, addrs []string) *OvnCommand
+
 	// Set options in lswtich
 	LSSetOpt(lsp string, options map[string]string) *OvnCommand
 	// Exec command, support mul-commands in one transaction.
@@ -71,6 +78,8 @@ type OVNDBApi interface {
 
 	GetAddressSets() []*AddressSet
 	GetASByName(name string) *AddressSet
+	// Get LB with given name
+	GetLB(name string) []*LoadBalancer
 
 	SetCallBack(callback OVNSignal)
 }
@@ -108,6 +117,15 @@ type LogicalSwitch struct {
 	Name       string
 	ExternalID map[interface{}]interface{}
 }
+
+type LoadBalancer struct {
+	UUID	  string
+	Name      string
+	vips      map[interface{}]interface{}
+	protocol  string
+	ExternalID map[interface{}]interface{}
+}
+
 
 type LogcalPort struct {
 	UUID         string

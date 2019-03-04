@@ -62,6 +62,96 @@ func (odbi *ovnDBImp) lswListImp() *OvnCommand {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
 }
 
+
+func (odbi *ovnDBImp) lbUpdateImpl(name string, vipPort string, protocol string, addrs []string) *OvnCommand {
+
+	//row to update
+	lb := make(OVNRow)
+
+	// prepare vips map
+	vipMap := make(map[string]string)
+	members := strings.Join(addrs, ",")
+	vipMap[vipPort] = members
+
+	oMap, err := libovsdb.NewOvsMap(vipMap)
+	if err != nil {
+		glog.Fatalf("Update LB:%v vip map is not correct: %v", name, err)
+		return nil
+	}
+	lb["vips"] = oMap
+	lb["protocol"] = protocol
+
+	condition := libovsdb.NewCondition("name", "==", name)
+
+	insertOp := libovsdb.Operation{
+		Op:       update,
+		Table:    LB,
+		Row:      lb,
+		Where:    []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{insertOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+
+func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, addrs []string) *OvnCommand {
+	namedUUID := "lb_add" + strconv.Itoa(rand.Int())
+	//row to insert
+	lb := make(OVNRow)
+	lb["name"] = name
+
+	if odbi.getRowUUID(LB, lb) != "" {
+		glog.V(OVNLOGLEVEL).Info("The load balancer existed, and will get nil command")
+		return nil
+	}
+	// prepare vips map
+	vipMap := make(map[string]string)
+	members := strings.Join(addrs, ",")
+	vipMap[vipPort] = members
+
+	oMap, err := libovsdb.NewOvsMap(vipMap)
+	if err != nil {
+		glog.Fatalf("Add LB: vip map  is not correct")
+		return nil
+	}
+	lb["vips"] = oMap
+	lb["protocol"] = protocol
+
+	insertOp := libovsdb.Operation{
+		Op:       insert,
+		Table:    LB,
+		Row:      lb,
+		UUIDName: namedUUID,
+	}
+
+	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)
+	mutation := libovsdb.NewMutation("load_balancer", insert, mutateSet)
+	// TODO: Add filter for LS name
+	condition := libovsdb.NewCondition("name", "!=", "")
+
+	mutateOp := libovsdb.Operation{
+		Op:        mutate,
+		Table:     LSWITCH,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{insertOp, mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+func (odbi *ovnDBImp) lbDelImp(name string) *OvnCommand {
+	condition := libovsdb.NewCondition("name", "==", name)
+	delOp := libovsdb.Operation{
+		Op:    del,
+		Table: LB,
+		Where: []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{delOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+}
+
+
 func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
 	namedUUID := "lsw_add" + strconv.Itoa(rand.Int())
 	//row to insert
@@ -702,6 +792,31 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 	}
 	return lplist
 }
+
+func (odbi *ovnDBImp) GetLB(name string) []*LoadBalancer {
+	var lbList []*LoadBalancer
+	odbi.cachemutex.Lock()
+	defer odbi.cachemutex.Unlock()
+
+	for uuid, drows := range odbi.cache[LB] {
+		if lbName, ok := drows.Fields["name"].(string); ok && lbName == name {
+			lb := odbi.RowToLB(uuid)
+			lbList = append(lbList, lb)
+		}
+	}
+	return lbList
+}
+
+func (odbi *ovnDBImp) RowToLB(uuid string) *LoadBalancer {
+	 return &LoadBalancer{
+		 UUID:       uuid,
+		 protocol:   odbi.cache[LB][uuid].Fields["protocol"].(string),
+		 Name:       odbi.cache[LB][uuid].Fields["name"].(string),
+		 vips:       odbi.cache[LB][uuid].Fields["vips"].(libovsdb.OvsMap).GoMap,
+		 ExternalID: odbi.cache[LB][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+	 }
+}
+
 
 func (odbi *ovnDBImp) RowToACL(uuid string) *ACL {
 	acl := &ACL{

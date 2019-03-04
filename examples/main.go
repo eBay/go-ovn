@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-
 	"os"
 
 	"github.com/ebay/go-ovn/goovn"
@@ -34,6 +33,7 @@ const (
 
 var ovndbapi goovn.OVNDBApi
 
+
 func init() {
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
@@ -44,6 +44,7 @@ func init() {
 }
 
 func main() {
+
 	ocmd := ovndbapi.LSWAdd("ls1")
 	ovndbapi.Execute(ocmd)
 	ocmd = ovndbapi.LSPAdd("ls1", "test")
