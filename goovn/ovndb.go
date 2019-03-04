@@ -40,7 +40,7 @@ const (
 const (
 	LSWITCH     string = "Logical_Switch"
 	LPORT       string = "Logical_Switch_Port"
-	ACLS         string = "ACL"
+	ACLS        string = "ACL"
 	Address_Set string = "Address_Set"
 )
 
@@ -97,7 +97,6 @@ func GetInstance(socketfile string, protocol string, server string, port int, ca
 	})
 	return ovnDBApi
 }
-
 
 func SetCallBack(callback OVNSignal) {
 	if ovnDBApi != nil {

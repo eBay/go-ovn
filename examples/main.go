@@ -19,17 +19,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/ebay/go-ovn/goovn"
 	"os"
+
+	"github.com/ebay/go-ovn/goovn"
 )
 
 const (
-	OVS_RUNDIR = "/var/run/openvswitch"
+	OVS_RUNDIR   = "/var/run/openvswitch"
 	OVNNB_SOCKET = "ovnnb_db.sock"
-	MATCH = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
+	MATCH        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 
 	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
-
 )
 
 var ovndbapi goovn.OVNDBApi
@@ -52,7 +52,7 @@ func main() {
 	ovndbapi.Execute(ocmd)
 
 	lports := ovndbapi.GetLogicPortsBySwitch("ls1")
-	for _, lp := range(lports) {
+	for _, lp := range lports {
 		fmt.Printf("%v\n", *lp)
 	}
 
@@ -62,20 +62,19 @@ func main() {
 	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
-
 	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
 	acls := ovndbapi.GetACLsBySwitch("ls1")
-	for _, acl := range(acls) {
+	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	fmt.Println()
 
-	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001,  map[string]string{})
+	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001, map[string]string{})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
-	for _, acl := range(acls) {
+	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 
@@ -83,14 +82,14 @@ func main() {
 	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
-	for _, acl := range(acls) {
+	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	fmt.Println()
 	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
-	for _, acl := range(acls) {
+	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	ocmd = ovndbapi.LSPDel("test")
