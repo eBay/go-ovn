@@ -62,6 +62,8 @@ type OVNDBApi interface {
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
+	// Get all logical switches
+	GetLogicSwitches() []*LogicalSwitch
 	// Get all lport by lswitch
 	GetLogicPortsBySwitch(lsw string) []*LogcalPort
 	// Get all acl by lswitch
@@ -74,6 +76,9 @@ type OVNDBApi interface {
 }
 
 type OVNSignal interface {
+	OnLogicalSwitchCreate(ls *LogicalSwitch)
+	OnLogicalSwitchDelete(ls *LogicalSwitch)
+
 	OnLogicalPortCreate(lp *LogcalPort)
 	OnLogicalPortDelete(lp *LogcalPort)
 
@@ -97,6 +102,12 @@ func (ocmd *OvnCommand) Execute() error {
 const (
 	OVNLOGLEVEL = 4
 )
+
+type LogicalSwitch struct {
+	UUID       string
+	Name       string
+	ExternalID map[interface{}]interface{}
+}
 
 type LogcalPort struct {
 	UUID         string
