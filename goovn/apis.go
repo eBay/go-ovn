@@ -99,25 +99,25 @@ const (
 )
 
 type LogcalPort struct {
-	UUID	  string
-	Name      string
-	Addresses []string
+	UUID         string
+	Name         string
+	Addresses    []string
 	PortSecurity []string
 }
 
 type ACL struct {
-	UUID	  string
-	Action    string
-	Direction string
-	Match     string
-	Priority  int
-	Log       bool
+	UUID       string
+	Action     string
+	Direction  string
+	Match      string
+	Priority   int
+	Log        bool
 	ExternalID map[interface{}]interface{}
 }
 
 type AddressSet struct {
-	UUID	  string
-	Name      string
-	Addresses []string
+	UUID       string
+	Name       string
+	Addresses  []string
 	ExternalID map[interface{}]interface{}
 }

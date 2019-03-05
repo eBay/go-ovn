@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"errors"
+
 	"github.com/golang/glog"
 
 	"github.com/socketplane/libovsdb"
@@ -90,7 +91,6 @@ func (odb *OVNDB) LSPDel(lsp string) *OvnCommand {
 	return odb.imp.lspDelImp(lsp)
 }
 
-
 func (odb *OVNDB) LSPSetAddress(lsp string, addresses ...string) *OvnCommand {
 	return odb.imp.lspSetAddressImp(lsp, addresses...)
 }
@@ -115,8 +115,8 @@ func (odb *OVNDB) ASDel(name string) *OvnCommand {
 	return odb.imp.ASDel(name)
 }
 
-func (odb *OVNDB) ASUpdate(name string, addrs []string,  external_ids map[string]string) *OvnCommand {
-	return odb.imp.ASUpdate(name, addrs,  external_ids)
+func (odb *OVNDB) ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand {
+	return odb.imp.ASUpdate(name, addrs, external_ids)
 }
 
 func (odb *OVNDB) LSSetOpt(lsp string, options map[string]string) *OvnCommand {

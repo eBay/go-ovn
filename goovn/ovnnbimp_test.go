@@ -24,13 +24,13 @@ import (
 )
 
 const (
-	OVS_RUNDIR = "/var/run/openvswitch"
+	OVS_RUNDIR   = "/var/run/openvswitch"
 	OVNNB_SOCKET = "ovnnb_db.sock"
-	LSW   = "TEST_LSW"
-	LSP   = "TEST_LSP"
+	LSW          = "TEST_LSW"
+	LSP          = "TEST_LSP"
 	LSP_SECOND   = "TEST_LSP_SECOND "
-	ADDR  = "36:46:56:76:86:96 127.0.0.1"
-	MATCH = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
+	ADDR         = "36:46:56:76:86:96 127.0.0.1"
+	MATCH        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
 )
 
@@ -86,7 +86,7 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001,  map[string]string{}))
+	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{}))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
@@ -137,11 +137,11 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 		if a.Name == asname {
 			if len(a.Addresses) == len(targetvalue) {
 				addressSetMap := map[string]bool{}
-				for _, i := range(a.Addresses) {
+				for _, i := range a.Addresses {
 					addressSetMap[i] = true
 				}
-				for _, t := range(targetvalue) {
-					if _, ok:= addressSetMap[t]; !ok {
+				for _, t := range targetvalue {
+					if _, ok := addressSetMap[t]; !ok {
 						return false
 					}
 				}
@@ -153,7 +153,6 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 	}
 	return false
 }
-
 
 func TestAddressSet(t *testing.T) {
 	addressList := []string{"127.0.0.1"}
