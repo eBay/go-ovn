@@ -18,6 +18,8 @@ package goovn
 
 import (
 	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +27,7 @@ import (
 
 const (
 	OVS_RUNDIR   = "/var/run/openvswitch"
-	OVNNB_SOCKET = "ovnnb_db.sock"
+	OVNNB_SOCKET = "nb1.ovsdb"
 	LSW          = "TEST_LSW"
 	LSP          = "TEST_LSP"
 	LSP_SECOND   = "TEST_LSP_SECOND "
@@ -41,8 +43,24 @@ func init() {
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
 	}
-	var socket = ovs_rundir + "/" + OVNNB_SOCKET
-	ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
+	var ovn_nb_db = os.Getenv("OVN_NB_DB")
+	if ovn_nb_db == "" {
+		var socket = ovs_rundir + "/" + OVNNB_SOCKET
+		ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
+		return
+	}
+	var strs = strings.Split(ovn_nb_db, ":")
+	if len(strs) < 2 || len(strs) > 3 {
+		panic("Unexpected format of $OVN_NB_DB")
+		os.Exit(1)
+	}
+	if len(strs) == 2 {
+		var socket = ovs_rundir + "/" + strs[1]
+		ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
+		return
+	}
+	var port, _ = strconv.Atoi(strs[2])
+	ovndbapi = GetInstance("", strs[0], strs[1], port, nil)
 }
 
 func TestACLs(t *testing.T) {
