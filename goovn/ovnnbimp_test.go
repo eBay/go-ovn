@@ -119,7 +119,7 @@ func TestACLs(t *testing.T) {
 	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"}))
 	ovndbapi.Execute(c...)
 	acls = ovndbapi.GetACLsBySwitch(LSW)
-	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
+	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
 
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.LSPDel(LSP))
@@ -136,7 +136,6 @@ func TestACLs(t *testing.T) {
 	c = make([]*OvnCommand, 0)
 	c = append(c, ovndbapi.LSWDel(LSW))
 	ovndbapi.Execute(c...)
-
 }
 
 func findAS(name string) bool {
@@ -175,27 +174,32 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 func TestAddressSet(t *testing.T) {
 	addressList := []string{"127.0.0.1"}
 	var c []*OvnCommand = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS1", addressList, map[string]string{}))
+	/*
+	// can not call like:
+	// ovndbapi.ASAdd("AS1", addressList, map[string][]{})
+	// it will not be successful when input empty map.
+	 */
+	c = append(c, ovndbapi.ASAdd("AS1", addressList, nil))
 	ovndbapi.Execute(c...)
 	as := ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS1", addressList), "test[%s] and value[%v]", "address set 1 added.", as[0].Addresses)
 
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS2", addressList, map[string]string{}))
+	c = append(c, ovndbapi.ASAdd("AS2", addressList, nil))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set 2 added.", as[1].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5", "127.0.0.6"}
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList, map[string]string{}))
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList, nil))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set added with different list.", as[0].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5"}
 	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList, map[string]string{}))
+	c = append(c, ovndbapi.ASUpdate("AS2", addressList, nil))
 	ovndbapi.Execute(c...)
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set updated.", as[0].Addresses)
