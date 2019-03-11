@@ -17,6 +17,7 @@
 package goovn
 
 import (
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -38,7 +39,10 @@ const (
 
 var ovndbapi OVNDBApi
 
-func init() {
+func TestMain(m *testing.M) {
+	var api OVNDBApi
+	var err error
+
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
@@ -46,96 +50,209 @@ func init() {
 	var ovn_nb_db = os.Getenv("OVN_NB_DB")
 	if ovn_nb_db == "" {
 		var socket = ovs_rundir + "/" + OVNNB_SOCKET
-		ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
-		return
+		api, err = GetInstance(socket, UNIX, "", 0, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		strs := strings.Split(ovn_nb_db, ":")
+		if len(strs) < 2 || len(strs) > 3 {
+			log.Fatal("Unexpected format of $OVN_NB_DB")
+		}
+		if len(strs) == 2 {
+			var socket = ovs_rundir + "/" + strs[1]
+			api, err = GetInstance(socket, UNIX, "", 0, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			port, _ := strconv.Atoi(strs[2])
+			api, err = GetInstance("", strs[0], strs[1], port, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
-	var strs = strings.Split(ovn_nb_db, ":")
-	if len(strs) < 2 || len(strs) > 3 {
-		panic("Unexpected format of $OVN_NB_DB")
-		os.Exit(1)
-	}
-	if len(strs) == 2 {
-		var socket = ovs_rundir + "/" + strs[1]
-		ovndbapi = GetInstance(socket, UNIX, "", 0, nil)
-		return
-	}
-	var port, _ = strconv.Atoi(strs[2])
-	ovndbapi = GetInstance("", strs[0], strs[1], port, nil)
+	ovndbapi = api
+	os.Exit(m.Run())
 }
 
 func TestACLs(t *testing.T) {
-	var c []*OvnCommand = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.LSWAdd(LSW))
-	c = append(c, ovndbapi.LSPAdd(LSW, LSP))
+	var cmds []*OvnCommand
+	var cmd *OvnCommand
+	var err error
 
-	c = append(c, ovndbapi.LSPSetAddress(LSP, ADDR))
-	c = append(c, ovndbapi.LSPSetPortSecurity(LSP, ADDR))
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, ""))
-	ovndbapi.Execute(c...)
+	cmds = make([]*OvnCommand, 0)
+	cmd, err = ovndbapi.LSWAdd(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
 
-	lsps := ovndbapi.GetLogicPortsBySwitch(LSW)
+	cmd, err = ovndbapi.LSPAdd(LSW, LSP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
+
+	cmd, err = ovndbapi.LSPSetAddress(LSP, ADDR)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
+
+	cmd, err = ovndbapi.LSPSetPortSecurity(LSP, ADDR)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
+
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
+
+	err = ovndbapi.Execute(cmds...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lsps, err := ovndbapi.GetLogicPortsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Addresses[0] == ADDR, "test[%s]", "setted port address")
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].PortSecurity[0] == ADDR, "test[%s]", "setted port port security")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.LSPAdd(LSW, LSP_SECOND))
-	ovndbapi.Execute(c...)
-	lsps = ovndbapi.GetLogicPortsBySwitch(LSW)
+	cmds = make([]*OvnCommand, 0)
+	cmd, err = ovndbapi.LSPAdd(LSW, LSP_SECOND)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = ovndbapi.Execute(cmds...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, true, len(lsps) == 2, "test[%s]: %+v", "added 2 ports", lsps)
 
 	acls := ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
 		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
-	assert.Equal(t, true, nil == ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, ""),
-		"test[%s]", "add same acl twice, should only one added.")
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, ""))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, ""))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{}))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"}))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"}))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	acls = ovndbapi.GetACLsBySwitch(LSW)
 	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.LSPDel(LSP))
-	ovndbapi.Execute(c...)
-	lsps = ovndbapi.GetLogicPortsBySwitch(LSW)
+	cmd, err = ovndbapi.LSPDel(LSP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, true, len(lsps) == 1, "test[%s]", "one port remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.LSPDel(LSP_SECOND))
-	ovndbapi.Execute(c...)
-	lsps = ovndbapi.GetLogicPortsBySwitch(LSW)
+	cmd, err = ovndbapi.LSPDel(LSP_SECOND)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, true, len(lsps) == 0, "test[%s]", "one port remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.LSWDel(LSW))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.LSWDel(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 }
 
 func findAS(name string) bool {
@@ -173,45 +290,80 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 
 func TestAddressSet(t *testing.T) {
 	addressList := []string{"127.0.0.1"}
-	var c []*OvnCommand = make([]*OvnCommand, 0)
+	var cmd *OvnCommand
+	var err error
+
 	/*
-	// can not call like:
-	// ovndbapi.ASAdd("AS1", addressList, map[string][]{})
-	// it will not be successful when input empty map.
-	 */
-	c = append(c, ovndbapi.ASAdd("AS1", addressList, nil))
-	ovndbapi.Execute(c...)
+		// can not call like:
+		// ovndbapi.ASAdd("AS1", addressList, map[string][]{})
+		// it will not be successful when input empty map.
+	*/
+	cmd, err = ovndbapi.ASAdd("AS1", addressList, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	as := ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS1", addressList), "test[%s] and value[%v]", "address set 1 added.", as[0].Addresses)
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASAdd("AS2", addressList, nil))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ASAdd("AS2", addressList, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set 2 added.", as[1].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5", "127.0.0.6"}
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList, nil))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ASUpdate("AS2", addressList, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set added with different list.", as[0].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5"}
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASUpdate("AS2", addressList, nil))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ASUpdate("AS2", addressList, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 	as = ovndbapi.GetAddressSets()
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set updated.", as[0].Addresses)
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASDel("AS1"))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ASDel("AS1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, false, findAS("AS1"), "test AS remove")
 
-	c = make([]*OvnCommand, 0)
-	c = append(c, ovndbapi.ASDel("AS2"))
-	ovndbapi.Execute(c...)
+	cmd, err = ovndbapi.ASDel("AS2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, false, findAS("AS2"), "test AS remove")
 }
 
