@@ -41,6 +41,7 @@ const (
 	LSWITCH     string = "Logical_Switch"
 	LPORT       string = "Logical_Switch_Port"
 	ACLS        string = "ACL"
+	LB          string = "Load_Balancer"
 	Address_Set string = "Address_Set"
 )
 
@@ -88,7 +89,6 @@ func GetInstance(socketfile string, protocol string, server string, port int, ca
 		} else {
 			err = errors.New(fmt.Sprintf("The protocol [%s] is not supported", protocol))
 		}
-
 		if err != nil {
 			panic(fmt.Sprint("Library goovn initilizing failed", err))
 			os.Exit(1)
