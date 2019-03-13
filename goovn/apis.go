@@ -34,45 +34,44 @@ type Execution interface {
 // North bound api set
 type OVNDBApi interface {
 	// Create a logical switch named SWITCH
-	LSWAdd(lsw string) *OvnCommand
+	LSWAdd(lsw string) (*OvnCommand, error)
 	//delete SWITCH and all its ports
-	LSWDel(lsw string) *OvnCommand
+	LSWDel(lsw string) (*OvnCommand, error)
 	// Print the names of all logical switches
-	LSWList() *OvnCommand
+	LSWList() (*OvnCommand, error)
 	// Add logical port PORT on SWITCH
-	LSPAdd(lsw, lsp string) *OvnCommand
+	LSPAdd(lsw, lsp string) (*OvnCommand, error)
 	// Delete PORT from its attached switch
-	LSPDel(lsp string) *OvnCommand
+	LSPDel(lsp string) (*OvnCommand, error)
 	// Set addressset per lport
-	LSPSetAddress(lsp string, addresses ...string) *OvnCommand
+	LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
 	// Set port security per lport
-	LSPSetPortSecurity(lsp string, security ...string) *OvnCommand
+	LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
 	// Add ACL
-	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) *OvnCommand
+	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
 	// Delete acl
-	ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand
+	ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
 	// Update address set
-	ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand
+	ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
 	// Add addressset
-	ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand
+	ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete addressset
-	ASDel(name string) *OvnCommand
+	ASDel(name string) (*OvnCommand, error)
 	// Add LB
-	LBAdd(name string, vipPort string, protocol string, addrs []string) *OvnCommand
+	LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Delete LB with given name
-	LBDel(name string) *OvnCommand
+	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
-	LBUpdate(name string, vipPort string, protocol string, addrs []string) *OvnCommand
-
+	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Set options in lswtich
-	LSSetOpt(lsp string, options map[string]string) *OvnCommand
+	LSSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
 	// Get all logical switches
 	GetLogicSwitches() []*LogicalSwitch
 	// Get all lport by lswitch
-	GetLogicPortsBySwitch(lsw string) []*LogcalPort
+	GetLogicPortsBySwitch(lsw string) ([]*LogicalPort, error)
 	// Get all acl by lswitch
 	GetACLsBySwitch(lsw string) []*ACL
 
@@ -88,8 +87,8 @@ type OVNSignal interface {
 	OnLogicalSwitchCreate(ls *LogicalSwitch)
 	OnLogicalSwitchDelete(ls *LogicalSwitch)
 
-	OnLogicalPortCreate(lp *LogcalPort)
-	OnLogicalPortDelete(lp *LogcalPort)
+	OnLogicalPortCreate(lp *LogicalPort)
+	OnLogicalPortDelete(lp *LogicalPort)
 
 	OnACLCreate(acl *ACL)
 	OnACLDelete(acl *ACL)
@@ -108,10 +107,6 @@ func (ocmd *OvnCommand) Execute() error {
 	return ocmd.Exe.Execute()
 }
 
-const (
-	OVNLOGLEVEL = 4
-)
-
 type LogicalSwitch struct {
 	UUID       string
 	Name       string
@@ -119,15 +114,14 @@ type LogicalSwitch struct {
 }
 
 type LoadBalancer struct {
-	UUID	  string
-	Name      string
-	vips      map[interface{}]interface{}
-	protocol  string
+	UUID       string
+	Name       string
+	vips       map[interface{}]interface{}
+	protocol   string
 	ExternalID map[interface{}]interface{}
 }
 
-
-type LogcalPort struct {
+type LogicalPort struct {
 	UUID         string
 	Name         string
 	Addresses    []string

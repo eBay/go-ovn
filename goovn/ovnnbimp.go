@@ -19,38 +19,36 @@ package goovn
 import (
 	"errors"
 	"fmt"
-	"math/rand"
-	"os"
 	"reflect"
-	"strconv"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/socketplane/libovsdb"
 )
 
-func init() {
-	rand.Seed(MAX_TRANSACTION)
-}
+var (
+	ErrorNotFound = errors.New("object not found")
+	ErrorExist    = errors.New("object exist")
+)
 
 type OVNRow map[string]interface{}
 
-func newNBImp(client *ovnDBClient, callback OVNSignal) *ovnDBImp {
-	nbimp := ovnDBImp{client: client}
-	nbimp.cache = make(map[string]map[string]libovsdb.Row)
+func newNBImp(client *ovnDBClient, callback OVNSignal) (*ovnDBImp, error) {
+	nbimp := &ovnDBImp{
+		client: client,
+		cache:  make(map[string]map[string]libovsdb.Row),
+	}
 	initial, err := nbimp.client.dbclient.MonitorAll(NBDB, "")
 	if err != nil {
-		glog.Fatalf("OVN DB monitor failed: %v", err)
-		os.Exit(1)
+		return nil, err
 	}
 	nbimp.populateCache(*initial)
-	notifier := ovnNotifier{&nbimp}
+	notifier := ovnNotifier{nbimp}
 	nbimp.client.dbclient.Register(notifier)
 	nbimp.callback = callback
-	return &nbimp
+	return nbimp, nil
 }
 
-func (odbi *ovnDBImp) lswListImp() *OvnCommand {
+func (odbi *ovnDBImp) lswListImp() (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "!=", "")
 	listOp := libovsdb.Operation{
 		Op:    list,
@@ -59,12 +57,10 @@ func (odbi *ovnDBImp) lswListImp() *OvnCommand {
 	}
 
 	operations := []libovsdb.Operation{listOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-
-func (odbi *ovnDBImp) lbUpdateImpl(name string, vipPort string, protocol string, addrs []string) *OvnCommand {
-
+func (odbi *ovnDBImp) lbUpdateImpl(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
 	//row to update
 	lb := make(OVNRow)
 
@@ -75,35 +71,37 @@ func (odbi *ovnDBImp) lbUpdateImpl(name string, vipPort string, protocol string,
 
 	oMap, err := libovsdb.NewOvsMap(vipMap)
 	if err != nil {
-		glog.Fatalf("Update LB:%v vip map is not correct: %v", name, err)
-		return nil
+		return nil, err
 	}
+
 	lb["vips"] = oMap
 	lb["protocol"] = protocol
 
 	condition := libovsdb.NewCondition("name", "==", name)
 
 	insertOp := libovsdb.Operation{
-		Op:       update,
-		Table:    LB,
-		Row:      lb,
-		Where:    []interface{}{condition},
+		Op:    update,
+		Table: LB,
+		Row:   lb,
+		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{insertOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-
-func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, addrs []string) *OvnCommand {
-	namedUUID := "lb_add" + strconv.Itoa(rand.Int())
+func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
+	namedUUID, err := newUUID()
+	if err != nil {
+		return nil, err
+	}
 	//row to insert
 	lb := make(OVNRow)
 	lb["name"] = name
 
-	if odbi.getRowUUID(LB, lb) != "" {
-		glog.V(OVNLOGLEVEL).Info("The load balancer existed, and will get nil command")
-		return nil
+	if uuid := odbi.getRowUUID(LB, lb); len(uuid) > 0 {
+		return nil, ErrorExist
 	}
+
 	// prepare vips map
 	vipMap := make(map[string]string)
 	members := strings.Join(addrs, ",")
@@ -111,8 +109,7 @@ func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, ad
 
 	oMap, err := libovsdb.NewOvsMap(vipMap)
 	if err != nil {
-		glog.Fatalf("Add LB: vip map  is not correct")
-		return nil
+		return nil, err
 	}
 	lb["vips"] = oMap
 	lb["protocol"] = protocol
@@ -125,7 +122,11 @@ func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, ad
 	}
 
 	mutateUUID := []libovsdb.UUID{{namedUUID}}
-	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+
 	mutation := libovsdb.NewMutation("load_balancer", insert, mutateSet)
 	// TODO: Add filter for LS name
 	condition := libovsdb.NewCondition("name", "!=", "")
@@ -137,10 +138,10 @@ func (odbi *ovnDBImp) lbAddImpl(name string, vipPort string, protocol string, ad
 		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{insertOp, mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lbDelImp(name string) *OvnCommand {
+func (odbi *ovnDBImp) lbDelImp(name string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", name)
 	delOp := libovsdb.Operation{
 		Op:    del,
@@ -148,20 +149,23 @@ func (odbi *ovnDBImp) lbDelImp(name string) *OvnCommand {
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{delOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+func (odbi *ovnDBImp) lswAddImp(lsw string) (*OvnCommand, error) {
+	namedUUID, err := newUUID()
+	if err != nil {
+		return nil, err
+	}
 
-func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
-	namedUUID := "lsw_add" + strconv.Itoa(rand.Int())
 	//row to insert
 	lswitch := make(OVNRow)
 	lswitch["name"] = lsw
 
-	if odbi.getRowUUID(LSWITCH, lswitch) != "" {
-		glog.V(OVNLOGLEVEL).Info("The logic switch existed, and will get nil command")
-		return nil
+	if uuid := odbi.getRowUUID(LSWITCH, lswitch); len(uuid) > 0 {
+		return nil, ErrorExist
 	}
+
 	insertOp := libovsdb.Operation{
 		Op:       insert,
 		Table:    LSWITCH,
@@ -169,10 +173,10 @@ func (odbi *ovnDBImp) lswAddImp(lsw string) *OvnCommand {
 		UUIDName: namedUUID,
 	}
 	operations := []libovsdb.Operation{insertOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lswDelImp(lsw string) *OvnCommand {
+func (odbi *ovnDBImp) lswDelImp(lsw string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", lsw)
 	delOp := libovsdb.Operation{
 		Op:    del,
@@ -180,7 +184,7 @@ func (odbi *ovnDBImp) lswDelImp(lsw string) *OvnCommand {
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{delOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
 func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
@@ -222,7 +226,7 @@ func (odbi *ovnDBImp) oMapContians(s, t map[interface{}]interface{}) bool {
 	return true
 }
 
-func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
+func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	for _, drows := range odbi.cache[LSWITCH] {
@@ -262,11 +266,11 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 										}
 									}
 								}
-								return va.GoUUID
+								return va.GoUUID, nil
 							}
 						unmatched:
 						}
-						return ""
+						return "", ErrorNotFound
 					}
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
@@ -298,36 +302,38 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) string {
 								}
 							}
 						}
-						return va.GoUUID
+						return va.GoUUID, nil
 					out:
 					}
 				}
 			}
 		}
 	}
-	return ""
+	return "", ErrorNotFound
 }
 
-func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) string {
+func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string, error) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	for id, drows := range odbi.cache[table] {
 		v := fmt.Sprintf("%s", drows.Fields[field])
 		if strings.Contains(v, uuid) {
-			return id
+			return id, nil
 		}
 	}
-	return ""
+	return "", ErrorNotFound
 }
 
-func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
-	namedUUID := "lsp_add" + strconv.Itoa(rand.Int())
+func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
+	namedUUID, err := newUUID()
+	if err != nil {
+		return nil, err
+	}
 	lsprow := make(OVNRow)
 	lsprow["name"] = lsp
 
-	if odbi.getRowUUID(LPORT, lsprow) != "" {
-		glog.V(OVNLOGLEVEL).Info("The logic port existed, and will get nil command")
-		return nil
+	if uuid := odbi.getRowUUID(LPORT, lsprow); len(uuid) > 0 {
+		return nil, ErrorExist
 	}
 
 	insertOp := libovsdb.Operation{
@@ -338,7 +344,11 @@ func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
 	}
 
 	mutateUUID := []libovsdb.UUID{{namedUUID}}
-	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+
 	mutation := libovsdb.NewMutation("ports", insert, mutateSet)
 	condition := libovsdb.NewCondition("name", "==", lsw)
 
@@ -349,13 +359,18 @@ func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) *OvnCommand {
 		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{insertOp, mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lspDelImp(lsp string) *OvnCommand {
+func (odbi *ovnDBImp) lspDelImp(lsp string) (*OvnCommand, error) {
 	lsprow := make(OVNRow)
 	lsprow["name"] = lsp
+
 	lspUUID := odbi.getRowUUID(LPORT, lsprow)
+	if len(lspUUID) == 0 {
+		return nil, ErrorNotFound
+	}
+
 	mutateUUID := []libovsdb.UUID{{lspUUID}}
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	delOp := libovsdb.Operation{
@@ -363,9 +378,17 @@ func (odbi *ovnDBImp) lspDelImp(lsp string) *OvnCommand {
 		Table: LPORT,
 		Where: []interface{}{condition},
 	}
-	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
 	mutation := libovsdb.NewMutation("ports", del, mutateSet)
-	mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{odbi.getRowUUIDContainsUUID(LSWITCH, "ports", lspUUID)})
+	ucondition, err := odbi.getRowUUIDContainsUUID(LSWITCH, "ports", lspUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{ucondition})
 	// simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        mutate,
@@ -374,12 +397,15 @@ func (odbi *ovnDBImp) lspDelImp(lsp string) *OvnCommand {
 		Where:     []interface{}{mucondition},
 	}
 	operations := []libovsdb.Operation{delOp, mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lspSetAddressImp(lsp string, addr ...string) *OvnCommand {
+func (odbi *ovnDBImp) lspSetAddressImp(lsp string, addr ...string) (*OvnCommand, error) {
 	row := make(OVNRow)
-	addresses, _ := libovsdb.NewOvsSet(addr)
+	addresses, err := libovsdb.NewOvsSet(addr)
+	if err != nil {
+		return nil, err
+	}
 	row["addresses"] = addresses
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	Op := libovsdb.Operation{
@@ -389,12 +415,15 @@ func (odbi *ovnDBImp) lspSetAddressImp(lsp string, addr ...string) *OvnCommand {
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{Op}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lspSetPortSecurityImp(lsp string, security ...string) *OvnCommand {
+func (odbi *ovnDBImp) lspSetPortSecurityImp(lsp string, security ...string) (*OvnCommand, error) {
 	row := make(OVNRow)
-	port_security, _ := libovsdb.NewOvsSet(security)
+	port_security, err := libovsdb.NewOvsSet(security)
+	if err != nil {
+		return nil, err
+	}
 	row["port_security"] = port_security
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	Op := libovsdb.Operation{
@@ -404,11 +433,14 @@ func (odbi *ovnDBImp) lspSetPortSecurityImp(lsp string, security ...string) *Ovn
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{Op}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) *OvnCommand {
-	namedUUID := "acl_add" + strconv.Itoa(rand.Int())
+func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
+	namedUUID, err := newUUID()
+	if err != nil {
+		return nil, err
+	}
 	aclrow := make(OVNRow)
 	aclrow["direction"] = direct
 	aclrow["match"] = match
@@ -417,15 +449,13 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
-			glog.Fatalf("Add ACL: External id is not correct in acl")
-			return nil
+			return nil, err
 		}
 		aclrow["external_ids"] = oMap
 	}
 
-	if odbi.getACLUUIDByRow(lsw, ACLS, aclrow) != "" {
-		glog.V(OVNLOGLEVEL).Info("The acl existed, and will get nil command")
-		return nil
+	if _, err = odbi.getACLUUIDByRow(lsw, ACLS, aclrow); err != nil {
+		return nil, err
 	}
 	aclrow["action"] = action
 	aclrow["log"] = logflag
@@ -440,7 +470,10 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	}
 
 	mutateUUID := []libovsdb.UUID{{namedUUID}}
-	mutateSet, _ := libovsdb.NewOvsSet(mutateUUID)
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
 	mutation := libovsdb.NewMutation("acls", insert, mutateSet)
 	condition := libovsdb.NewCondition("name", "==", lsw)
 
@@ -452,10 +485,10 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{insertOp, mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) *OvnCommand {
+func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
 	aclrow := make(OVNRow)
 
 	wherecondition := []interface{}{}
@@ -474,16 +507,14 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
-			glog.Fatalf("Add ACL: External id is not correct in acl")
-			return nil
+			return nil, err
 		}
 		aclrow["external_ids"] = oMap
 	}
 
-	aclUUID := odbi.getACLUUIDByRow(lsw, ACLS, aclrow)
-	if aclUUID == "" {
-		glog.V(OVNLOGLEVEL).Info("The deleting acl not found in cache, and will get nil command")
-		return nil
+	aclUUID, err := odbi.getACLUUIDByRow(lsw, ACLS, aclrow)
+	if err != nil {
+		return nil, err
 	}
 
 	uuidcondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{aclUUID})
@@ -505,19 +536,22 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{mutateOp, delOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[string]string) *OvnCommand {
+func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
 	asrow := make(OVNRow)
 	asrow["name"] = name
-	addresses, _ := libovsdb.NewOvsSet(addrs)
+	addresses, err := libovsdb.NewOvsSet(addrs)
+	if err != nil {
+		return nil, err
+	}
+
 	asrow["addresses"] = addresses
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
-			glog.Fatalf("Add AS: External id is not correct in address set")
-			return nil
+			return nil, err
 		}
 		asrow["external_ids"] = oMap
 	}
@@ -529,25 +563,29 @@ func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[str
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{Op}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string]string) *OvnCommand {
+func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
 	asrow := make(OVNRow)
 	asrow["name"] = name
 	//should support the -is-exist flag here.
-	if odbi.getRowUUID(Address_Set, asrow) != "" {
-		return nil
+
+	if uuid := odbi.getRowUUID(Address_Set, asrow); len(uuid) > 0 {
+		return nil, ErrorExist
 	}
+
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
-			glog.Fatalf("Add AS: External id is not correct in address set")
-			return nil
+			return nil, err
 		}
 		asrow["external_ids"] = oMap
 	}
-	addresses, _ := libovsdb.NewOvsSet(addrs)
+	addresses, err := libovsdb.NewOvsSet(addrs)
+	if err != nil {
+		return nil, err
+	}
 	asrow["addresses"] = addresses
 	Op := libovsdb.Operation{
 		Op:    insert,
@@ -555,7 +593,7 @@ func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string
 		Row:   asrow,
 	}
 	operations := []libovsdb.Operation{Op}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
 func (odbi *ovnDBImp) GetASByName(name string) *AddressSet {
@@ -568,7 +606,7 @@ func (odbi *ovnDBImp) GetASByName(name string) *AddressSet {
 	return nil
 }
 
-func (odbi *ovnDBImp) ASDel(name string) *OvnCommand {
+func (odbi *ovnDBImp) ASDel(name string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", name)
 	delOp := libovsdb.Operation{
 		Op:    del,
@@ -576,10 +614,10 @@ func (odbi *ovnDBImp) ASDel(name string) *OvnCommand {
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{delOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) LSSetOpt(lsp string, options map[string]string) *OvnCommand {
+func (odbi *ovnDBImp) LSSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
 	mutatemap, _ := libovsdb.NewOvsMap(options)
 	mutation := libovsdb.NewMutation("options", insert, mutatemap)
 	condition := libovsdb.NewCondition("name", "==", lsp)
@@ -592,7 +630,7 @@ func (odbi *ovnDBImp) LSSetOpt(lsp string, options map[string]string) *OvnComman
 		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
 func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
@@ -606,22 +644,18 @@ func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationR
 	}
 
 	if len(reply) < len(ops) {
-		glog.V(OVNLOGLEVEL).Info("Number of Replies should be atleast equal to number of operations")
 		for i, o := range reply {
 			if o.Error != "" && i < len(ops) {
-				glog.V(OVNLOGLEVEL).Info("Transaction Failed due to an error :", o.Error, " details:", o.Details, " in ", ops[i])
 				return nil, errors.New(fmt.Sprint("Transaction Failed due to an error :", o.Error, " details:", o.Details, " in ", ops[i]))
 			}
 		}
 		return reply, errors.New(fmt.Sprint("Number of Replies should be atleast equal to number of operations"))
 	}
-	glog.V(OVNLOGLEVEL).Info("transaction reply : ", reply)
 	return reply, nil
 }
 
 func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 	if cmds == nil {
-		glog.V(OVNLOGLEVEL).Infof("Inputting command is nil, will skip transaction.")
 		return nil
 	}
 	var ops []libovsdb.Operation
@@ -630,8 +664,7 @@ func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 			ops = append(ops, cmd.Operations...)
 		}
 	}
-	reply, err := odbi.transact(ops...)
-	glog.V(OVNLOGLEVEL).Infof("OVN replys: %v", reply)
+	_, err := odbi.transact(ops...)
 	if err != nil {
 		return err
 	}
@@ -650,7 +683,6 @@ func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
 }
 
 func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
-	glog.V(OVNLOGLEVEL).Info("New nofity arrived")
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	for table, tableUpdate := range updates.Updates {
@@ -718,8 +750,8 @@ func (odbi *ovnDBImp) RowToLogicalSwitch(uuid string) *LogicalSwitch {
 	return ls
 }
 
-func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
-	lp := &LogcalPort{
+func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogicalPort {
+	lp := &LogicalPort{
 		UUID: uuid,
 		Name: odbi.cache[LPORT][uuid].Fields["name"].(string),
 	}
@@ -730,7 +762,7 @@ func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
 	case libovsdb.OvsSet:
 		lp.Addresses = odbi.ConvertGoSetToStringArray(addr.(libovsdb.OvsSet))
 	default:
-		glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport address.")
+		//	glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport address.")
 	}
 	portsecurity := odbi.cache[LPORT][uuid].Fields["port_security"]
 	switch portsecurity.(type) {
@@ -739,7 +771,7 @@ func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogcalPort {
 	case libovsdb.OvsSet:
 		lp.PortSecurity = odbi.ConvertGoSetToStringArray(portsecurity.(libovsdb.OvsSet))
 	default:
-		glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport port security.")
+		//glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport port security.")
 	}
 	return lp
 }
@@ -756,8 +788,8 @@ func (odbi *ovnDBImp) GetLogicSwitches() []*LogicalSwitch {
 }
 
 // Get all lport by lswitch
-func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
-	var lplist = []*LogcalPort{}
+func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) ([]*LogicalPort, error) {
+	var lplist = []*LogicalPort{}
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	for _, drows := range odbi.cache[LSWITCH] {
@@ -774,23 +806,23 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) []*LogcalPort {
 							}
 						}
 					} else {
-						glog.V(OVNLOGLEVEL).Info("Type libovsdb.OvsSet casting failed.")
+						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
 						tp := odbi.RowToLogicalPort(vp.GoUUID)
 						lplist = append(lplist, tp)
 					} else {
-						glog.V(OVNLOGLEVEL).Info("Type libovsdb.UUID casting failed.")
+						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
 				default:
-					glog.V(OVNLOGLEVEL).Info("Unsupport type found in ovsdb rows.")
+					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
 			break
 		}
 	}
-	return lplist
+	return lplist, nil
 }
 
 func (odbi *ovnDBImp) GetLB(name string) []*LoadBalancer {
@@ -808,15 +840,14 @@ func (odbi *ovnDBImp) GetLB(name string) []*LoadBalancer {
 }
 
 func (odbi *ovnDBImp) RowToLB(uuid string) *LoadBalancer {
-	 return &LoadBalancer{
-		 UUID:       uuid,
-		 protocol:   odbi.cache[LB][uuid].Fields["protocol"].(string),
-		 Name:       odbi.cache[LB][uuid].Fields["name"].(string),
-		 vips:       odbi.cache[LB][uuid].Fields["vips"].(libovsdb.OvsMap).GoMap,
-		 ExternalID: odbi.cache[LB][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
-	 }
+	return &LoadBalancer{
+		UUID:       uuid,
+		protocol:   odbi.cache[LB][uuid].Fields["protocol"].(string),
+		Name:       odbi.cache[LB][uuid].Fields["name"].(string),
+		vips:       odbi.cache[LB][uuid].Fields["vips"].(libovsdb.OvsMap).GoMap,
+		ExternalID: odbi.cache[LB][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+	}
 }
-
 
 func (odbi *ovnDBImp) RowToACL(uuid string) *ACL {
 	acl := &ACL{

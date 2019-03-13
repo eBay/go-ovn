@@ -17,9 +17,7 @@
 package goovn
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/socketplane/libovsdb"
@@ -78,28 +76,31 @@ type OVNDB struct {
 var once sync.Once
 var ovnDBApi OVNDBApi
 
-func GetInstance(socketfile string, protocol string, server string, port int, callback OVNSignal) OVNDBApi {
+func GetInstance(socketfile string, proto string, server string, port int, callback OVNSignal) (OVNDBApi, error) {
+	var err error
+
 	once.Do(func() {
 		var dbapi *OVNDB
-		var err error
-		if protocol == UNIX {
+
+		switch proto {
+		case UNIX:
 			dbapi, err = newNBBySocket(socketfile, callback)
-		} else if protocol == TCP {
+		case TCP:
 			dbapi, err = newNBByServer(server, port, callback)
-		} else {
-			err = errors.New(fmt.Sprintf("The protocol [%s] is not supported", protocol))
+		default:
+			err = fmt.Errorf("the protocol [%s] is not supported", proto)
 		}
 		if err != nil {
-			panic(fmt.Sprint("Library goovn initilizing failed", err))
-			os.Exit(1)
+			return
 		}
 		ovnDBApi = dbapi
 	})
-	return ovnDBApi
+
+	return ovnDBApi, err
 }
 
-func SetCallBack(callback OVNSignal) {
-	if ovnDBApi != nil {
-		ovnDBApi.SetCallBack(callback)
+func SetCallBack(c OVNDBApi, callback OVNSignal) {
+	if c != nil {
+		c.SetCallBack(callback)
 	}
 }
