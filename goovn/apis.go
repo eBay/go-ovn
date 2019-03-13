@@ -63,8 +63,25 @@ type OVNDBApi interface {
 	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+	// Set dhcp4_options uuid on lsp
+	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
+	// Get dhcp4_options from lsp
+	LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error)
+	// Set dhcp6_options uuid on lsp
+	LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error)
+	// Get dhcp6_options from lsp
+	LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
+
 	// Set options in LSP
 	LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
+
+	// Add dhcp options for cidr and provided external_ids
+	AddDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Set dhcp options for specific cidr and provided external_ids
+	SetDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Del dhcp options via provided external_ids
+	DelDHCPOptions(uuid string) (*OvnCommand, error)
+
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
@@ -79,6 +96,8 @@ type OVNDBApi interface {
 	GetASByName(name string) *AddressSet
 	// Get LB with given name
 	GetLB(name string) []*LoadBalancer
+	// Get dhcp options
+	GetDHCPOptions() []*DHCPOptions
 
 	SetCallBack(callback OVNSignal)
 }
@@ -92,6 +111,9 @@ type OVNSignal interface {
 
 	OnACLCreate(acl *ACL)
 	OnACLDelete(acl *ACL)
+
+	OnDHCPOptionsCreate(dhcp *DHCPOptions)
+	OnDHCPOptionsDelete(dhcp *DHCPOptions)
 }
 
 // Notifier

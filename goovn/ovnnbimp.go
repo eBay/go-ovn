@@ -19,6 +19,7 @@ package goovn
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
@@ -149,6 +150,7 @@ func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
 }
 
 func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
+	empty := libovsdb.Row{}
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	for table, tableUpdate := range updates.Updates {
@@ -160,7 +162,6 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 			// missing json number conversion in libovsdb
 			odbi.float64_to_int(row.New)
 
-			empty := libovsdb.Row{}
 			if !reflect.DeepEqual(row.New, empty) {
 				odbi.cache[table][uuid] = row.New
 				if odbi.callback != nil {
@@ -174,6 +175,11 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableACL:
 						acl := odbi.RowToACL(uuid)
 						odbi.callback.OnACLCreate(acl)
+					case tableDHCPOptions:
+						log.Printf("row %#+v uuid %v\n", row, uuid)
+
+						dhcp := odbi.RowToDHCPOptions(uuid)
+						odbi.callback.OnDHCPOptionsCreate(dhcp)
 					}
 				}
 			} else {
@@ -188,6 +194,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableACL:
 						acl := odbi.RowToACL(uuid)
 						odbi.callback.OnACLDelete(acl)
+					case tableDHCPOptions:
+						dhcp := odbi.RowToDHCPOptions(uuid)
+						odbi.callback.OnDHCPOptionsDelete(dhcp)
 					}
 				}
 				delete(odbi.cache[table], uuid)
