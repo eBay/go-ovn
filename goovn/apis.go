@@ -63,15 +63,15 @@ type OVNDBApi interface {
 	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
-	// Set options in lswtich
-	LSSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
+	// Set options in LSP
+	LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
 	// Get all logical switches
 	GetLogicSwitches() []*LogicalSwitch
 	// Get all lport by lswitch
-	GetLogicPortsBySwitch(lsw string) ([]*LogicalPort, error)
+	GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error)
 	// Get all acl by lswitch
 	GetACLsBySwitch(lsw string) []*ACL
 
@@ -87,8 +87,8 @@ type OVNSignal interface {
 	OnLogicalSwitchCreate(ls *LogicalSwitch)
 	OnLogicalSwitchDelete(ls *LogicalSwitch)
 
-	OnLogicalPortCreate(lp *LogicalPort)
-	OnLogicalPortDelete(lp *LogicalPort)
+	OnLogicalPortCreate(lp *LogicalSwitchPort)
+	OnLogicalPortDelete(lp *LogicalSwitchPort)
 
 	OnACLCreate(acl *ACL)
 	OnACLDelete(acl *ACL)
@@ -105,42 +105,4 @@ type OVNNotifier interface {
 
 func (ocmd *OvnCommand) Execute() error {
 	return ocmd.Exe.Execute()
-}
-
-type LogicalSwitch struct {
-	UUID       string
-	Name       string
-	ExternalID map[interface{}]interface{}
-}
-
-type LoadBalancer struct {
-	UUID       string
-	Name       string
-	vips       map[interface{}]interface{}
-	protocol   string
-	ExternalID map[interface{}]interface{}
-}
-
-type LogicalPort struct {
-	UUID         string
-	Name         string
-	Addresses    []string
-	PortSecurity []string
-}
-
-type ACL struct {
-	UUID       string
-	Action     string
-	Direction  string
-	Match      string
-	Priority   int
-	Log        bool
-	ExternalID map[interface{}]interface{}
-}
-
-type AddressSet struct {
-	UUID       string
-	Name       string
-	Addresses  []string
-	ExternalID map[interface{}]interface{}
 }
