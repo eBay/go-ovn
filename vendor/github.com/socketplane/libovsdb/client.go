@@ -1,6 +1,8 @@
 package libovsdb
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,17 +42,23 @@ func newOvsdbClient(c *rpc2.Client) *OvsdbClient {
 
 // Would rather replace this connection map with an OvsdbClient Receiver scoped method
 // Unfortunately rpc2 package acts wierd with a receiver scoped method and needs some investigation.
-var connections map[*rpc2.Client]*OvsdbClient
-var connectionsMutex = &sync.RWMutex{}
+var (
+	connections      map[*rpc2.Client]*OvsdbClient
+	connectionsMutex = &sync.RWMutex{}
+)
 
-// DefaultAddress is the default IPV4 address that is used for a connection
-const DefaultAddress = "127.0.0.1"
+const (
+	// DefaultAddress is the default IPV4 address that is used for a connection
+	DefaultAddress = "127.0.0.1"
+	// DefaultPort is the default port used for a connection
+	DefaultPort     = 6640
+	TCP             = "tcp"
+	SSL             = "ssl"
+	SKIP_TLS_VERIFY = true
+)
 
-// DefaultPort is the default port used for a connection
-const DefaultPort = 6640
-
-// ConnectUsingProtocol creates an OVSDB connection and returns and OvsdbClient
-func ConnectUsingProtocol(protocol string, target string) (*OvsdbClient, error) {
+// ConnectUsingTCP creates an OVSDB connection using TCP and returns and OvsdbClient
+func ConnectUsingTCP(protocol string, target string) (*OvsdbClient, error) {
 	conn, err := net.Dial(protocol, target)
 
 	if err != nil {
@@ -58,7 +66,59 @@ func ConnectUsingProtocol(protocol string, target string) (*OvsdbClient, error) 
 	}
 
 	c := rpc2.NewClientWithCodec(jsonrpc.NewJSONCodec(conn))
-	c.SetBlocking(true)
+	c.Handle("echo", echo)
+	c.Handle("update", update)
+	go c.Run()
+	go handleDisconnectNotification(c)
+
+	ovs := newOvsdbClient(c)
+
+	// Process Async Notifications
+	dbs, err := ovs.ListDbs()
+	if err == nil {
+		for _, db := range dbs {
+			schema, err := ovs.GetSchema(db)
+			if err == nil {
+				ovs.Schema[db] = *schema
+			} else {
+				return nil, err
+			}
+		}
+	}
+	return ovs, nil
+}
+
+// ConnectUsingSSL creates an OVSDB connection using SSL and returns and OvsdbClient
+func ConnectUsingSSL(protocol string, target string) (*OvsdbClient, error) {
+	cert, err := tls.LoadX509KeyPair(os.Getenv("CLIENT_CERT_CA_CERT"),
+		os.Getenv("CLIENT_PRIVKEY"))
+	if err != nil {
+		log.Fatalf("client: loadkeys: %s", err)
+		return nil, err
+	}
+	if len(cert.Certificate) != 2 {
+		log.Fatal("client.crt should have 2 concatenated certificates: client + CA")
+		return nil, err
+	}
+	ca, err := x509.ParseCertificate(cert.Certificate[1])
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	certPool := x509.NewCertPool()
+	certPool.AddCert(ca)
+	config := tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		RootCAs:            certPool,
+		InsecureSkipVerify: SKIP_TLS_VERIFY,
+	}
+	conn, err := tls.Dial(TCP, target, &config)
+	if err != nil {
+		log.Fatalf("client: dial: %s", err)
+		return nil, err
+	}
+	log.Println("client: connected to: ", conn.RemoteAddr())
+	c := rpc2.NewClientWithCodec(jsonrpc.NewJSONCodec(conn))
 	c.Handle("echo", echo)
 	c.Handle("update", update)
 	go c.Run()
@@ -82,7 +142,7 @@ func ConnectUsingProtocol(protocol string, target string) (*OvsdbClient, error) 
 }
 
 // Connect creates an OVSDB connection and returns and OvsdbClient
-func Connect(ipAddr string, port int) (*OvsdbClient, error) {
+func Connect(ipAddr string, port int, protocol string) (*OvsdbClient, error) {
 	if ipAddr == "" {
 		ipAddr = DefaultAddress
 	}
@@ -92,7 +152,13 @@ func Connect(ipAddr string, port int) (*OvsdbClient, error) {
 	}
 
 	target := fmt.Sprintf("%s:%d", ipAddr, port)
-	return ConnectUsingProtocol("tcp", target)
+	if protocol == TCP {
+		return ConnectUsingTCP(protocol, target)
+	} else if protocol == SSL {
+		return ConnectUsingSSL(protocol, target)
+	} else {
+		return nil, errors.New("Supported protocols are TCP, and SSL")
+	}
 }
 
 // ConnectWithUnixSocket makes a OVSDB Connection via a Unix Socket
@@ -102,7 +168,7 @@ func ConnectWithUnixSocket(socketFile string) (*OvsdbClient, error) {
 		return nil, errors.New("Invalid socket file")
 	}
 
-	return ConnectUsingProtocol("unix", socketFile)
+	return ConnectUsingTCP(TCP, socketFile)
 }
 
 // Register registers the supplied NotificationHandler to recieve OVSDB Notifications

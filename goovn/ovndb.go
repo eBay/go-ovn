@@ -46,6 +46,7 @@ const (
 const (
 	UNIX string = "unix"
 	TCP  string = "tcp"
+	SSL  string = "ssl"
 )
 
 const (
@@ -86,7 +87,9 @@ func GetInstance(socketfile string, proto string, server string, port int, callb
 		case UNIX:
 			dbapi, err = newNBBySocket(socketfile, callback)
 		case TCP:
-			dbapi, err = newNBByServer(server, port, callback)
+			dbapi, err = newNBByServer(server, port, callback, TCP)
+		case SSL:
+			dbapi, err = newNBByServer(server, port, callback, SSL)
 		default:
 			err = fmt.Errorf("the protocol [%s] is not supported", proto)
 		}
