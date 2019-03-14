@@ -53,6 +53,7 @@ const (
 	// DefaultPort is the default port used for a connection
 	DefaultPort     = 6640
 	TCP             = "tcp"
+	UNIX            = "unix"
 	SSL             = "ssl"
 	SKIP_TLS_VERIFY = true
 )
@@ -66,6 +67,7 @@ func ConnectUsingTCP(protocol string, target string) (*OvsdbClient, error) {
 	}
 
 	c := rpc2.NewClientWithCodec(jsonrpc.NewJSONCodec(conn))
+	c.SetBlocking(true)
 	c.Handle("echo", echo)
 	c.Handle("update", update)
 	go c.Run()
@@ -119,6 +121,7 @@ func ConnectUsingSSL(protocol string, target string) (*OvsdbClient, error) {
 	}
 	log.Println("client: connected to: ", conn.RemoteAddr())
 	c := rpc2.NewClientWithCodec(jsonrpc.NewJSONCodec(conn))
+	c.SetBlocking(true)
 	c.Handle("echo", echo)
 	c.Handle("update", update)
 	go c.Run()
@@ -168,7 +171,7 @@ func ConnectWithUnixSocket(socketFile string) (*OvsdbClient, error) {
 		return nil, errors.New("Invalid socket file")
 	}
 
-	return ConnectUsingTCP(TCP, socketFile)
+	return ConnectUsingTCP(UNIX, socketFile)
 }
 
 // Register registers the supplied NotificationHandler to recieve OVSDB Notifications

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ebay/go-ovn/goovn"
+	goovn "github.com/ebay/go-ovn"
 )
 
 const (
@@ -32,7 +32,6 @@ const (
 )
 
 var ovndbapi goovn.OVNDBApi
-
 
 func init() {
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
