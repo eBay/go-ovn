@@ -117,11 +117,11 @@ func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) (*OvnComman
 }
 
 func (odb *OVNDB) LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
-	return odb.imp.lbAddImpl(name, vipPort, protocol, addrs)
+	return odb.imp.lbAddImp(name, vipPort, protocol, addrs)
 }
 
 func (odb *OVNDB) LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
-	return odb.imp.lbUpdateImpl(name, vipPort, protocol, addrs)
+	return odb.imp.lbUpdateImp(name, vipPort, protocol, addrs)
 }
 
 func (odb *OVNDB) LBDel(name string) (*OvnCommand, error) {
@@ -148,8 +148,8 @@ func (odb *OVNDB) ASUpdate(name string, addrs []string, external_ids map[string]
 	return odb.imp.ASUpdate(name, addrs, external_ids)
 }
 
-func (odb *OVNDB) LSSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
-	return odb.imp.LSSetOpt(lsp, options)
+func (odb *OVNDB) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
+	return odb.imp.LSPSetOpt(lsp, options)
 }
 
 func (odb *OVNDB) Execute(cmds ...*OvnCommand) error {
@@ -160,7 +160,7 @@ func (odb *OVNDB) GetLogicSwitches() []*LogicalSwitch {
 	return odb.imp.GetLogicSwitches()
 }
 
-func (odb *OVNDB) GetLogicPortsBySwitch(lsw string) ([]*LogicalPort, error) {
+func (odb *OVNDB) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
 	return odb.imp.GetLogicPortsBySwitch(lsw)
 }
 

@@ -24,11 +24,11 @@ import (
 )
 
 const (
-	insert string = "insert"
-	mutate string = "mutate"
-	del    string = "delete"
-	list   string = "select"
-	update string = "update"
+	opInsert string = "insert"
+	opMutate string = "mutate"
+	opDelete string = "delete"
+	opSelect string = "select"
+	opUpdate string = "update"
 )
 
 const (
@@ -36,22 +36,32 @@ const (
 )
 
 const (
-	LSWITCH     string = "Logical_Switch"
-	LPORT       string = "Logical_Switch_Port"
-	ACLS        string = "ACL"
-	LB          string = "Load_Balancer"
-	Address_Set string = "Address_Set"
+	tableNBGlobal                 string = "NB_Global"
+	tableLogicalSwitch            string = "Logical_Switch"
+	tableLogicalSwitchPort        string = "Logical_Switch_Port"
+	tableAddressSet               string = "Address_Set"
+	tablePortGroup                string = "Port_Group"
+	tableLoadBalancer             string = "Load_Balancer"
+	tableACL                      string = "ACL"
+	tableLogicalRouter            string = "Logical_Router"
+	tableQoS                      string = "QoS"
+	tableMeter                    string = "Meter"
+	tableMeterBand                string = "Meter_Band"
+	tableLogicalRouterPort        string = "Logical_Router_Port"
+	tableLogicalRouterStaticRoute string = "Logical_Router_Static_Route"
+	tableNAT                      string = "NAT"
+	tableDHCPOptions              string = "DHCP_Options"
+	tableConnection               string = "Connection"
+	tableDNS                      string = "DNS"
+	tableSSL                      string = "SSL"
+	tableGatewayChassis           string = "Gateway_Chassis"
 )
 
+// OVN supporter protocols
 const (
 	UNIX string = "unix"
 	TCP  string = "tcp"
 	SSL  string = "ssl"
-)
-
-const (
-	//random seed.
-	MAX_TRANSACTION = 1000
 )
 
 type ovnDBClient struct {
