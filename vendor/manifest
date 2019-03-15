@@ -2,6 +2,14 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/google/uuid",
+			"repository": "https://github.com/google/uuid",
+			"vcs": "git",
+			"revision": "0cd6bf5da1e1c83f8b45653022c74f71af0538a4",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/cenkalti/hub",
 			"repository": "https://github.com/cenkalti/hub",
 			"vcs": "git",

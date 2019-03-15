@@ -1,6 +1,8 @@
 package goovn
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 )
 
@@ -9,5 +11,5 @@ func newUUID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return id.String(), nil
+	return "row" + strings.Replace(id.String(), "-", "_", -1), nil
 }

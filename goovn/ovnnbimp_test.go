@@ -107,6 +107,14 @@ func TestACLs(t *testing.T) {
 	}
 	cmds = append(cmds, cmd)
 
+	// execute to create lsw and lsp
+	err = ovndbapi.Execute(cmds...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// nil cmds for next batch
+	cmds = make([]*OvnCommand, 0)
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
 	if err != nil {
 		t.Fatal(err)
@@ -118,6 +126,11 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	lsws := ovndbapi.GetLogicSwitches()
+	if len(lsws) != 1 {
+		t.Fatalf("ls not created %d", len(lsws))
+	}
+
 	lsps, err := ovndbapi.GetLogicPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
@@ -127,13 +140,12 @@ func TestACLs(t *testing.T) {
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Addresses[0] == ADDR, "test[%s]", "setted port address")
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].PortSecurity[0] == ADDR, "test[%s]", "setted port port security")
 
-	cmds = make([]*OvnCommand, 0)
 	cmd, err = ovndbapi.LSPAdd(LSW, LSP_SECOND)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = ovndbapi.Execute(cmds...)
+	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,6 +162,8 @@ func TestACLs(t *testing.T) {
 		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	err = ovndbapi.Execute(cmd)
+
 	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
 
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
@@ -367,18 +381,23 @@ func TestAddressSet(t *testing.T) {
 	assert.Equal(t, false, findAS("AS2"), "test AS remove")
 }
 
-
-func TestLoadBalancer(t *testing.T){
+func TestLoadBalancer(t *testing.T) {
 	t.Logf("Adding LB to OVN")
-	ocmd := ovndbapi.LBAdd("lb1", "192.168.0.19:80", "tcp", []string{"10.0.0.11:80","10.0.0.12:80"})
-	err := ovndbapi.Execute(ocmd)
+	ocmd, err := ovndbapi.LBAdd("lb1", "192.168.0.19:80", "tcp", []string{"10.0.0.11:80", "10.0.0.12:80"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
 	if err != nil {
 		t.Fatalf("Adding LB OVN failed with err %v", err)
 	}
 	t.Logf("Adding LB to OVN Done")
 
 	t.Logf("Updating LB to OVN")
-	ocmd = ovndbapi.LBUpdate("lb1", "192.168.0.10:80", "tcp", []string{"10.10.10.127:8080","10.10.10.120:8080"})
+	ocmd, err = ovndbapi.LBUpdate("lb1", "192.168.0.10:80", "tcp", []string{"10.10.10.127:8080", "10.10.10.120:8080"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
 		t.Fatalf("Updating LB OVN failed with err %v", err)
@@ -393,7 +412,10 @@ func TestLoadBalancer(t *testing.T){
 	t.Logf("Lb found:%+v", lb[0])
 
 	t.Logf("Deleting LB")
-	ocmd = ovndbapi.LBDel("lb1")
+	ocmd, err = ovndbapi.LBDel("lb1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
 		t.Fatalf("err executing command:%v", err)
