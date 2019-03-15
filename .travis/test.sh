@@ -1,7 +1,9 @@
+#!/bin/sh -ex
+
 rm -rf ovs
 git clone https://github.com/openvswitch/ovs.git
 cd ovs
-./boot.sh && ./configure
+./boot.sh && ./configure --enable-silent-rules
 make -j4
 
 srcdir=`pwd`
@@ -104,6 +106,6 @@ The backup database file is sandbox/${db}2.db
 
 ovn_start_db nb standalone 1 $srcdir/ovn/ovn-nb.ovsschema
 
-cd ../goovn; go test
+cd ../goovn; go test -v
 pkill ovsdb-server
-cd ..; rm -rf ovs
+cd ../; rm -rf ovs
