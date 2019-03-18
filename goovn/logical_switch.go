@@ -39,7 +39,7 @@ func (odbi *ovnDBImp) lswListImp() (*OvnCommand, error) {
 }
 
 func (odbi *ovnDBImp) lswAddImp(lsw string) (*OvnCommand, error) {
-	namedUUID, err := newUUID()
+	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}
