@@ -65,7 +65,7 @@ func newDHCPRow(cidr string, options map[string]string, external_ids map[string]
 }
 
 func (odbi *ovnDBImp) addDHCPOptionsImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
-	namedUUID, err := newUUID()
+	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}
