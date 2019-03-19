@@ -28,26 +28,26 @@ type AddressSet struct {
 }
 
 func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
-	asrow := make(OVNRow)
-	asrow["name"] = name
+	row := make(OVNRow)
+	row["name"] = name
 	addresses, err := libovsdb.NewOvsSet(addrs)
 	if err != nil {
 		return nil, err
 	}
 
-	asrow["addresses"] = addresses
+	row["addresses"] = addresses
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
 			return nil, err
 		}
-		asrow["external_ids"] = oMap
+		row["external_ids"] = oMap
 	}
 	condition := libovsdb.NewCondition("name", "==", name)
 	updateOp := libovsdb.Operation{
 		Op:    opUpdate,
 		Table: tableAddressSet,
-		Row:   asrow,
+		Row:   row,
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{updateOp}
@@ -55,11 +55,11 @@ func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[str
 }
 
 func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
-	asrow := make(OVNRow)
-	asrow["name"] = name
+	row := make(OVNRow)
+	row["name"] = name
 	//should support the -is-exist flag here.
 
-	if uuid := odbi.getRowUUID(tableAddressSet, asrow); len(uuid) > 0 {
+	if uuid := odbi.getRowUUID(tableAddressSet, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
 
@@ -68,17 +68,17 @@ func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string
 		if err != nil {
 			return nil, err
 		}
-		asrow["external_ids"] = oMap
+		row["external_ids"] = oMap
 	}
 	addresses, err := libovsdb.NewOvsSet(addrs)
 	if err != nil {
 		return nil, err
 	}
-	asrow["addresses"] = addresses
+	row["addresses"] = addresses
 	insertOp := libovsdb.Operation{
 		Op:    opInsert,
 		Table: tableAddressSet,
-		Row:   asrow,
+		Row:   row,
 	}
 	operations := []libovsdb.Operation{insertOp}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil

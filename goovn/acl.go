@@ -121,20 +121,20 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	if err != nil {
 		return nil, err
 	}
-	aclrow := make(OVNRow)
-	aclrow["direction"] = direct
-	aclrow["match"] = match
-	aclrow["priority"] = priority
+	row := make(OVNRow)
+	row["direction"] = direct
+	row["match"] = match
+	row["priority"] = priority
 
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
 			return nil, err
 		}
-		aclrow["external_ids"] = oMap
+		row["external_ids"] = oMap
 	}
 
-	_, err = odbi.getACLUUIDByRow(lsw, tableACL, aclrow)
+	_, err = odbi.getACLUUIDByRow(lsw, tableACL, row)
 	switch err {
 	case ErrorNotFound:
 		break
@@ -144,15 +144,15 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 		return nil, err
 	}
 
-	aclrow["action"] = action
-	aclrow["log"] = logflag
+	row["action"] = action
+	row["log"] = logflag
 	if logflag {
-		aclrow["meter"] = meter
+		row["meter"] = meter
 	}
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
 		Table:    tableACL,
-		Row:      aclrow,
+		Row:      row,
 		UUIDName: namedUUID,
 	}
 
@@ -176,19 +176,19 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 }
 
 func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
-	aclrow := make(OVNRow)
+	row := make(OVNRow)
 
 	wherecondition := []interface{}{}
 	if direct != "" {
-		aclrow["direction"] = direct
+		row["direction"] = direct
 	}
 	if match != "" {
-		aclrow["match"] = match
+		row["match"] = match
 	}
 	//in ovn pirority is greater than/equal 0,
 	//if input the pirority < 0, lots of acls will be deleted if matches direct and match condition judgement.
 	if priority >= 0 {
-		aclrow["priority"] = priority
+		row["priority"] = priority
 	}
 
 	if external_ids != nil {
@@ -196,10 +196,10 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 		if err != nil {
 			return nil, err
 		}
-		aclrow["external_ids"] = oMap
+		row["external_ids"] = oMap
 	}
 
-	aclUUID, err := odbi.getACLUUIDByRow(lsw, tableACL, aclrow)
+	aclUUID, err := odbi.getACLUUIDByRow(lsw, tableACL, row)
 	if err != nil {
 		return nil, err
 	}

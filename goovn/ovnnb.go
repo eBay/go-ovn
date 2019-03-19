@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"errors"
+
 	"github.com/socketplane/libovsdb"
 )
 
@@ -148,6 +149,22 @@ func (odb *OVNDB) ASUpdate(name string, addrs []string, external_ids map[string]
 	return odb.imp.ASUpdate(name, addrs, external_ids)
 }
 
+func (odb *OVNDB) LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error) {
+	return odb.imp.LSPSetDHCPv4Options(lsp, options)
+}
+
+func (odb *OVNDB) LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error) {
+	return odb.imp.LSPGetDHCPv4Options(lsp)
+}
+
+func (odb *OVNDB) LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error) {
+	return odb.imp.LSPSetDHCPv6Options(lsp, options)
+}
+
+func (odb *OVNDB) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
+	return odb.imp.LSPGetDHCPv6Options(lsp)
+}
+
 func (odb *OVNDB) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
 	return odb.imp.LSPSetOpt(lsp, options)
 }
@@ -178,6 +195,22 @@ func (odb *OVNDB) GetASByName(name string) *AddressSet {
 
 func (odb *OVNDB) GetLB(name string) []*LoadBalancer {
 	return odb.imp.GetLB(name)
+}
+
+func (odb *OVNDB) AddDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.addDHCPOptionsImp(cidr, options, external_ids)
+}
+
+func (odb *OVNDB) SetDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.setDHCPOptionsImp(cidr, options, external_ids)
+}
+
+func (odb *OVNDB) DelDHCPOptions(uuid string) (*OvnCommand, error) {
+	return odb.imp.delDHCPOptionsImp(uuid)
+}
+
+func (odb *OVNDB) GetDHCPOptions() []*DHCPOptions {
+	return odb.imp.getDHCPOptionsImp()
 }
 
 func (odb *OVNDB) SetCallBack(callback OVNSignal) {
