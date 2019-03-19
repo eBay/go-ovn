@@ -60,7 +60,7 @@ func (odbi *ovnDBImp) lbUpdateImp(name string, vipPort string, protocol string, 
 }
 
 func (odbi *ovnDBImp) lbAddImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
-	namedUUID, err := newUUID()
+	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}

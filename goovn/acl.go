@@ -117,7 +117,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, er
 }
 
 func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
-	namedUUID, err := newUUID()
+	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}

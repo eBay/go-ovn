@@ -18,7 +18,7 @@ func encodeHex(dst []byte, id uuid.UUID) {
 	hex.Encode(dst[24:], id[10:])
 }
 
-func newUUID() (string, error) {
+func newRowUUID() (string, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", err

@@ -35,7 +35,7 @@ type LogicalSwitchPort struct {
 }
 
 func (odbi *ovnDBImp) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
-	namedUUID, err := newUUID()
+	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}
