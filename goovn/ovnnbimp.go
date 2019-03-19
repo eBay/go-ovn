@@ -19,7 +19,6 @@ package goovn
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -176,8 +175,6 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 						acl := odbi.RowToACL(uuid)
 						odbi.callback.OnACLCreate(acl)
 					case tableDHCPOptions:
-						log.Printf("row %#+v uuid %v\n", row, uuid)
-
 						dhcp := odbi.RowToDHCPOptions(uuid)
 						odbi.callback.OnDHCPOptionsCreate(dhcp)
 					}
