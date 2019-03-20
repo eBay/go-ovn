@@ -117,6 +117,22 @@ func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) (*OvnComman
 	return odb.imp.lspSetPortSecurityImp(lsp, security...)
 }
 
+func (odb *OVNDB) LRAdd(name string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.lrAddImp(name, external_ids)
+}
+
+func (odb *OVNDB) LRDel(name string) (*OvnCommand, error) {
+	return odb.imp.lrDelImp(name)
+}
+
+func (odb *OVNDB) LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.lrpAddImp(lr, lrp, mac, network, peer, external_ids)
+}
+
+func (odb *OVNDB) LRPDel(lr string, lrp string) (*OvnCommand, error) {
+	return odb.imp.lrpDelImp(lr, lrp)
+}
+
 func (odb *OVNDB) LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
 	return odb.imp.lbAddImp(name, vipPort, protocol, addrs)
 }
@@ -181,6 +197,10 @@ func (odb *OVNDB) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error
 	return odb.imp.GetLogicPortsBySwitch(lsw)
 }
 
+func (odb *OVNDB) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error) {
+	return odb.imp.GetLogicalRouterPortsByRouter(lr)
+}
+
 func (odb *OVNDB) GetACLsBySwitch(lsw string) []*ACL {
 	return odb.imp.GetACLsBySwitch(lsw)
 }
@@ -191,6 +211,10 @@ func (odb *OVNDB) GetAddressSets() []*AddressSet {
 
 func (odb *OVNDB) GetASByName(name string) *AddressSet {
 	return odb.imp.GetASByName(name)
+}
+
+func (odb *OVNDB) GetLogicalRouters() []*LogicalRouter {
+	return odb.imp.GetLogicalRouters()
 }
 
 func (odb *OVNDB) GetLB(name string) []*LoadBalancer {
