@@ -57,14 +57,39 @@ type OVNDBApi interface {
 	ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete addressset
 	ASDel(name string) (*OvnCommand, error)
+	// Add LR with given name
+	LRAdd(name string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete LR with given name
+	LRDel(name string) (*OvnCommand, error)
+	// Add LRP with given name on given lr
+	LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete LRP with given name on given lr
+	LRPDel(lr string, lrp string) (*OvnCommand, error)
 	// Add LB
 	LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Delete LB with given name
 	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+	// Set dhcp4_options uuid on lsp
+	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
+	// Get dhcp4_options from lsp
+	LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error)
+	// Set dhcp6_options uuid on lsp
+	LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error)
+	// Get dhcp6_options from lsp
+	LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
+
 	// Set options in LSP
 	LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
+
+	// Add dhcp options for cidr and provided external_ids
+	AddDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Set dhcp options for specific cidr and provided external_ids
+	SetDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Del dhcp options via provided external_ids
+	DelDHCPOptions(uuid string) (*OvnCommand, error)
+
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
@@ -72,6 +97,9 @@ type OVNDBApi interface {
 	GetLogicSwitches() []*LogicalSwitch
 	// Get all lport by lswitch
 	GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error)
+	// Get all lrp by lr
+	GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error)
+
 	// Get all acl by lswitch
 	GetACLsBySwitch(lsw string) []*ACL
 
@@ -79,7 +107,10 @@ type OVNDBApi interface {
 	GetASByName(name string) *AddressSet
 	// Get LB with given name
 	GetLB(name string) []*LoadBalancer
-
+	// Get dhcp options
+	GetDHCPOptions() []*DHCPOptions
+	// Get LR with given name
+	GetLogicalRouters() []*LogicalRouter
 	SetCallBack(callback OVNSignal)
 }
 
@@ -90,8 +121,17 @@ type OVNSignal interface {
 	OnLogicalPortCreate(lp *LogicalSwitchPort)
 	OnLogicalPortDelete(lp *LogicalSwitchPort)
 
+	OnLogicalRouterCreate(lr *LogicalRouter)
+	OnLogicalRouterDelete(lr *LogicalRouter)
+
+	OnLogicalRouterPortCreate(lrp *LogicalRouterPort)
+	OnLogicalRouterPortDelete(lrp *LogicalRouterPort)
+
 	OnACLCreate(acl *ACL)
 	OnACLDelete(acl *ACL)
+
+	OnDHCPOptionsCreate(dhcp *DHCPOptions)
+	OnDHCPOptionsDelete(dhcp *DHCPOptions)
 }
 
 // Notifier

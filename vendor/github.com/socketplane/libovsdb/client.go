@@ -248,7 +248,6 @@ func update(client *rpc2.Client, params []interface{}, reply *interface{}) error
 		return errors.New("Invalid Update message")
 	}
 	var rowUpdates map[string]map[string]RowUpdate
-
 	b, err := json.Marshal(raw)
 	if err != nil {
 		return err
@@ -257,7 +256,6 @@ func update(client *rpc2.Client, params []interface{}, reply *interface{}) error
 	if err != nil {
 		return err
 	}
-
 	// Update the local DB cache with the tableUpdates
 	tableUpdates := getTableUpdatesFromRawUnmarshal(rowUpdates)
 	connectionsMutex.RLock()

@@ -29,6 +29,8 @@ import (
 const (
 	OVS_RUNDIR   = "/var/run/openvswitch"
 	OVNNB_SOCKET = "nb1.ovsdb"
+	LR           = "TEST_LR"
+	LRP          = "TEST_LRP"
 	LSW          = "TEST_LSW"
 	LSP          = "TEST_LSP"
 	LSP_SECOND   = "TEST_LSP_SECOND "
