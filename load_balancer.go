@@ -19,7 +19,7 @@ package goovn
 import (
 	"strings"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type LoadBalancer struct {

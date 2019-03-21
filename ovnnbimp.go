@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 var (

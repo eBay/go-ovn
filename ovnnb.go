@@ -19,7 +19,7 @@ package goovn
 import (
 	"errors"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 func newNBClient(socketfile string, proto string, server string, port int) (*ovnDBClient, error) {

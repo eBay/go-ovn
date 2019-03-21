@@ -19,7 +19,7 @@ package goovn
 import (
 	"fmt"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type LogicalRouterPort struct {

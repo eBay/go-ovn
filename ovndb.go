@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 const (

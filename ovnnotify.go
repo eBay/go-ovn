@@ -17,7 +17,7 @@
 package goovn
 
 import (
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type ovnNotifier struct {
