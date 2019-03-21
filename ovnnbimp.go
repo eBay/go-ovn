@@ -133,6 +133,22 @@ func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string,
 	return "", ErrorNotFound
 }
 
+func (odbi *ovnDBImp) getRowsMatchingUUID(table, field, uuid string) ([]string, error) {
+	odbi.cachemutex.Lock()
+	defer odbi.cachemutex.Unlock()
+	var uuids []string
+	for id, drows := range odbi.cache[table] {
+		v := fmt.Sprintf("%s", drows.Fields[field])
+		if strings.Contains(v, uuid) {
+			uuids = append(uuids, id)
+		}
+	}
+	if len(uuids) == 0 {
+		return uuids, ErrorNotFound
+	}
+	return uuids, nil
+}
+
 func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
 	// Only support one trans at same time now.
 	odbi.tranmutex.Lock()
