@@ -62,12 +62,20 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws := ovndbapi.GetLogicSwitches()
+	lsws, err := ovndbapi.GetLogicalSwitches()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(lsws) != 1 {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
-	dhcp_opts := ovndbapi.GetDHCPOptions()
+	dhcp_opts, err := ovndbapi.GetDHCPOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if len(dhcp_opts) != 1 {
 		t.Fatalf("dhcp options not created %v", dhcp_opts)
 	}
@@ -81,7 +89,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err := ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err := ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +110,10 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dhcp_opts = ovndbapi.GetDHCPOptions()
+	dhcp_opts, err = ovndbapi.GetDHCPOptions()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(dhcp_opts) != 0 {
 		t.Fatalf("dhcp options not deleted %#+v", dhcp_opts[0])
 	}
@@ -116,7 +127,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
