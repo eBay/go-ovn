@@ -112,10 +112,10 @@ func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationR
 	if len(reply) < len(ops) {
 		for i, o := range reply {
 			if o.Error != "" && i < len(ops) {
-				return nil, errors.New(fmt.Sprint("Transaction Failed due to an error :", o.Error, " details:", o.Details, " in ", ops[i]))
+				return nil, fmt.Errorf("Transaction Failed due to an error :", o.Error, " details:", o.Details, " in ", ops[i])
 			}
 		}
-		return reply, errors.New(fmt.Sprint("Number of Replies should be atleast equal to number of operations"))
+		return reply, fmt.Errorf("Number of Replies should be atleast equal to number of operations")
 	}
 	return reply, nil
 }
