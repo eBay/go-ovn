@@ -39,30 +39,30 @@ func init() {
 		ovs_rundir = OVS_RUNDIR
 	}
 	var socket = ovs_rundir + "/" + OVNNB_SOCKET
-	ovndbapi = goovn.GetInstance(socket, goovn.UNIX, "", 0, nil)
+	ovndbapi, _ = goovn.GetInstance(socket, goovn.UNIX, "", 0, nil)
 }
 
 func main() {
 
-	ocmd := ovndbapi.LSWAdd("ls1")
+	ocmd, _ := ovndbapi.LSWAdd("ls1")
 	ovndbapi.Execute(ocmd)
-	ocmd = ovndbapi.LSPAdd("ls1", "test")
+	ocmd , _ = ovndbapi.LSPAdd("ls1", "test")
 	ovndbapi.Execute(ocmd)
-	ocmd = ovndbapi.LSPSetAddress("test", "12:34:56:78:90 10.10.10.1")
+	ocmd, _ = ovndbapi.LSPSetAddress("test", "12:34:56:78:90 10.10.10.1")
 	ovndbapi.Execute(ocmd)
 
-	lports := ovndbapi.GetLogicPortsBySwitch("ls1")
+	lports, _ := ovndbapi.GetLogicPortsBySwitch("ls1")
 	for _, lp := range lports {
 		fmt.Printf("%v\n", *lp)
 	}
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true, "")
+	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", MATCH, "drop", 1001, nil, true, "")
 	ovndbapi.Execute(ocmd)
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
+	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
-	ocmd = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
+	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
 	acls := ovndbapi.GetACLsBySwitch("ls1")
@@ -71,7 +71,7 @@ func main() {
 	}
 	fmt.Println()
 
-	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001, map[string]string{})
+	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001, map[string]string{})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
 	for _, acl := range acls {
@@ -79,22 +79,22 @@ func main() {
 	}
 
 	fmt.Println()
-	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
+	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	fmt.Println()
-	ocmd = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
+	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
 	ovndbapi.Execute(ocmd)
 	acls = ovndbapi.GetACLsBySwitch("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
-	ocmd = ovndbapi.LSPDel("test")
+	ocmd, _ = ovndbapi.LSPDel("test")
 	ovndbapi.Execute(ocmd)
-	ocmd = ovndbapi.LSWDel("ls1")
+	ocmd, _ = ovndbapi.LSWDel("ls1")
 	ovndbapi.Execute(ocmd)
 
 }
