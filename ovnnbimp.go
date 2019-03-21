@@ -49,9 +49,15 @@ func newNBImp(client *ovnDBClient, callback OVNSignal) (*ovnDBImp, error) {
 }
 
 func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, drows := range odbi.cache[table] {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheTable, ok := odbi.cache[table]
+	if !ok {
+		return ""
+	}
+
+	for uuid, drows := range cacheTable {
 		found := false
 		for field, value := range row {
 			if v, ok := drows.Fields[field]; ok {
@@ -88,9 +94,15 @@ func (odbi *ovnDBImp) oMapContians(s, t map[interface{}]interface{}) bool {
 }
 
 func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string, error) {
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for id, drows := range odbi.cache[table] {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheTable, ok := odbi.cache[table]
+	if !ok {
+		return "", ErrorNotFound
+	}
+
+	for id, drows := range cacheTable {
 		v := fmt.Sprintf("%s", drows.Fields[field])
 		if strings.Contains(v, uuid) {
 			return id, nil
@@ -150,8 +162,10 @@ func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
 
 func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 	empty := libovsdb.Row{}
+
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
+
 	for table, tableUpdate := range updates.Updates {
 		if _, ok := odbi.cache[table]; !ok {
 			odbi.cache[table] = make(map[string]libovsdb.Row)
@@ -166,22 +180,22 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 				if odbi.callback != nil {
 					switch table {
 					case tableLogicalRouter:
-						lr := odbi.RowToLogicalRouter(uuid)
+						lr := odbi.rowToLogicalRouter(uuid)
 						odbi.callback.OnLogicalRouterCreate(lr)
 					case tableLogicalRouterPort:
-						lrp := odbi.RowToLogicalRouterPort(uuid)
+						lrp := odbi.rowToLogicalRouterPort(uuid)
 						odbi.callback.OnLogicalRouterPortCreate(lrp)
 					case tableLogicalSwitch:
-						ls := odbi.RowToLogicalSwitch(uuid)
+						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.callback.OnLogicalSwitchCreate(ls)
 					case tableLogicalSwitchPort:
-						lp := odbi.RowToLogicalPort(uuid)
+						lp := odbi.rowToLogicalPort(uuid)
 						odbi.callback.OnLogicalPortCreate(lp)
 					case tableACL:
-						acl := odbi.RowToACL(uuid)
+						acl := odbi.rowToACL(uuid)
 						odbi.callback.OnACLCreate(acl)
 					case tableDHCPOptions:
-						dhcp := odbi.RowToDHCPOptions(uuid)
+						dhcp := odbi.rowToDHCPOptions(uuid)
 						odbi.callback.OnDHCPOptionsCreate(dhcp)
 					}
 				}
@@ -189,22 +203,22 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 				if odbi.callback != nil {
 					switch table {
 					case tableLogicalRouter:
-						lr := odbi.RowToLogicalRouter(uuid)
+						lr := odbi.rowToLogicalRouter(uuid)
 						odbi.callback.OnLogicalRouterDelete(lr)
 					case tableLogicalRouterPort:
-						lrp := odbi.RowToLogicalRouterPort(uuid)
+						lrp := odbi.rowToLogicalRouterPort(uuid)
 						odbi.callback.OnLogicalRouterPortDelete(lrp)
 					case tableLogicalSwitch:
-						ls := odbi.RowToLogicalSwitch(uuid)
+						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.callback.OnLogicalSwitchDelete(ls)
 					case tableLogicalSwitchPort:
-						lp := odbi.RowToLogicalPort(uuid)
+						lp := odbi.rowToLogicalPort(uuid)
 						odbi.callback.OnLogicalPortDelete(lp)
 					case tableACL:
-						acl := odbi.RowToACL(uuid)
+						acl := odbi.rowToACL(uuid)
 						odbi.callback.OnACLDelete(acl)
 					case tableDHCPOptions:
-						dhcp := odbi.RowToDHCPOptions(uuid)
+						dhcp := odbi.rowToDHCPOptions(uuid)
 						odbi.callback.OnDHCPOptionsDelete(dhcp)
 					}
 				}

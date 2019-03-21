@@ -132,10 +132,17 @@ func (odbi *ovnDBImp) RowToPortGroup(uuid string) *PortGroup {
 }
 
 func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitchPort, error) {
-	var lplist = []*LogicalSwitchPort{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for _, drows := range odbi.cache[tablePortGroup] {
+	var listLSP []*LogicalSwitchPort
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cachePortGroup, ok := odbi.cache[tablePortGroup]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for _, drows := range cachePortGroup {
 		if pgname, ok := drows.Fields["name"].(string); ok && pgname == group {
 			ports := drows.Fields["ports"]
 			if ports != nil {
@@ -144,8 +151,8 @@ func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitch
 					if ps, ok := ports.(libovsdb.OvsSet); ok {
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
-								tp := odbi.RowToLogicalPort(vp.GoUUID)
-								lplist = append(lplist, tp)
+								tp := odbi.rowToLogicalPort(vp.GoUUID)
+								listLSP = append(listLSP, tp)
 							}
 						}
 					} else {
@@ -153,8 +160,8 @@ func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitch
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
-						tp := odbi.RowToLogicalPort(vp.GoUUID)
-						lplist = append(lplist, tp)
+						tp := odbi.rowToLogicalPort(vp.GoUUID)
+						listLSP = append(listLSP, tp)
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -165,5 +172,5 @@ func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitch
 			break
 		}
 	}
-	return lplist, nil
+	return listLSP, nil
 }

@@ -31,28 +31,26 @@ type LoadBalancer struct {
 }
 
 func (odbi *ovnDBImp) lbUpdateImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
-	//row to update
-	lb := make(OVNRow)
+	row := make(OVNRow)
 
 	// prepare vips map
 	vipMap := make(map[string]string)
-	members := strings.Join(addrs, ",")
-	vipMap[vipPort] = members
+	vipMap[vipPort] = strings.Join(addrs, ",")
 
 	oMap, err := libovsdb.NewOvsMap(vipMap)
 	if err != nil {
 		return nil, err
 	}
 
-	lb["vips"] = oMap
-	lb["protocol"] = protocol
+	row["vips"] = oMap
+	row["protocol"] = protocol
 
 	condition := libovsdb.NewCondition("name", "==", name)
 
 	insertOp := libovsdb.Operation{
 		Op:    opUpdate,
 		Table: tableLoadBalancer,
-		Row:   lb,
+		Row:   row,
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{insertOp}
@@ -64,30 +62,29 @@ func (odbi *ovnDBImp) lbAddImp(name string, vipPort string, protocol string, add
 	if err != nil {
 		return nil, err
 	}
-	//row to insert
-	lb := make(OVNRow)
-	lb["name"] = name
 
-	if uuid := odbi.getRowUUID(tableLoadBalancer, lb); len(uuid) > 0 {
+	row := make(OVNRow)
+	row["name"] = name
+
+	if uuid := odbi.getRowUUID(tableLoadBalancer, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
 
 	// prepare vips map
 	vipMap := make(map[string]string)
-	members := strings.Join(addrs, ",")
-	vipMap[vipPort] = members
+	vipMap[vipPort] = strings.Join(addrs, ",")
 
 	oMap, err := libovsdb.NewOvsMap(vipMap)
 	if err != nil {
 		return nil, err
 	}
-	lb["vips"] = oMap
-	lb["protocol"] = protocol
+	row["vips"] = oMap
+	row["protocol"] = protocol
 
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
 		Table:    tableLoadBalancer,
-		Row:      lb,
+		Row:      row,
 		UUIDName: namedUUID,
 	}
 
@@ -122,26 +119,42 @@ func (odbi *ovnDBImp) lbDelImp(name string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetLB(name string) []*LoadBalancer {
-	var lbList []*LoadBalancer
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
+func (odbi *ovnDBImp) GetLB(name string) ([]*LoadBalancer, error) {
+	var listLB []*LoadBalancer
 
-	for uuid, drows := range odbi.cache[tableLoadBalancer] {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for uuid, drows := range cacheLoadBalancer {
 		if lbName, ok := drows.Fields["name"].(string); ok && lbName == name {
-			lb := odbi.RowToLB(uuid)
-			lbList = append(lbList, lb)
+			lb, err := odbi.rowToLB(uuid)
+			if err != nil {
+				return nil, err
+			}
+			listLB = append(listLB, lb)
 		}
 	}
-	return lbList
+	return listLB, nil
 }
 
-func (odbi *ovnDBImp) RowToLB(uuid string) *LoadBalancer {
-	return &LoadBalancer{
-		UUID:       uuid,
-		protocol:   odbi.cache[tableLoadBalancer][uuid].Fields["protocol"].(string),
-		Name:       odbi.cache[tableLoadBalancer][uuid].Fields["name"].(string),
-		vips:       odbi.cache[tableLoadBalancer][uuid].Fields["vips"].(libovsdb.OvsMap).GoMap,
-		ExternalID: odbi.cache[tableLoadBalancer][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+func (odbi *ovnDBImp) rowToLB(uuid string) (*LoadBalancer, error) {
+	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer][uuid]
+	if !ok {
+		return nil, ErrorNotFound
 	}
+
+	lb := &LoadBalancer{
+		UUID:       uuid,
+		protocol:   cacheLoadBalancer.Fields["protocol"].(string),
+		Name:       cacheLoadBalancer.Fields["name"].(string),
+		vips:       cacheLoadBalancer.Fields["vips"].(libovsdb.OvsMap).GoMap,
+		ExternalID: cacheLoadBalancer.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+	}
+
+	return lb, nil
 }

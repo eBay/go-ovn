@@ -75,7 +75,7 @@ type ovnDBClient struct {
 type ovnDBImp struct {
 	client     *ovnDBClient
 	cache      map[string]map[string]libovsdb.Row
-	cachemutex sync.Mutex
+	cachemutex sync.RWMutex
 	tranmutex  sync.Mutex
 	callback   OVNSignal
 }

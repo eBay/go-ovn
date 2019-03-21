@@ -189,35 +189,39 @@ func (odb *OVNDB) Execute(cmds ...*OvnCommand) error {
 	return odb.imp.Execute(cmds...)
 }
 
-func (odb *OVNDB) GetLogicSwitches() []*LogicalSwitch {
-	return odb.imp.GetLogicSwitches()
+func (odb *OVNDB) GetLogicalSwitches() ([]*LogicalSwitch, error) {
+	return odb.imp.GetLogicalSwitches()
 }
 
-func (odb *OVNDB) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
-	return odb.imp.GetLogicPortsBySwitch(lsw)
+func (odb *OVNDB) GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
+	return odb.imp.GetLogicalSwitchPortsBySwitch(lsw)
 }
 
 func (odb *OVNDB) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error) {
 	return odb.imp.GetLogicalRouterPortsByRouter(lr)
 }
 
-func (odb *OVNDB) GetACLsBySwitch(lsw string) []*ACL {
+func (odb *OVNDB) GetACLsBySwitch(lsw string) ([]*ACL, error) {
 	return odb.imp.GetACLsBySwitch(lsw)
 }
 
-func (odb *OVNDB) GetAddressSets() []*AddressSet {
+func (odb *OVNDB) GetAddressSets() ([]*AddressSet, error) {
 	return odb.imp.GetAddressSets()
 }
 
-func (odb *OVNDB) GetASByName(name string) *AddressSet {
+func (odb *OVNDB) GetASByName(name string) (*AddressSet, error) {
 	return odb.imp.GetASByName(name)
 }
 
-func (odb *OVNDB) GetLogicalRouters() []*LogicalRouter {
+func (odb *OVNDB) GetLogicalRouter(name string) ([]*LogicalRouter, error) {
+	return odb.imp.GetLogicalRouter(name)
+}
+
+func (odb *OVNDB) GetLogicalRouters() ([]*LogicalRouter, error) {
 	return odb.imp.GetLogicalRouters()
 }
 
-func (odb *OVNDB) GetLB(name string) []*LoadBalancer {
+func (odb *OVNDB) GetLB(name string) ([]*LoadBalancer, error) {
 	return odb.imp.GetLB(name)
 }
 
@@ -233,7 +237,7 @@ func (odb *OVNDB) DelDHCPOptions(uuid string) (*OvnCommand, error) {
 	return odb.imp.delDHCPOptionsImp(uuid)
 }
 
-func (odb *OVNDB) GetDHCPOptions() []*DHCPOptions {
+func (odb *OVNDB) GetDHCPOptions() ([]*DHCPOptions, error) {
 	return odb.imp.getDHCPOptionsImp()
 }
 

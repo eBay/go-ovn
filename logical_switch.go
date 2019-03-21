@@ -73,22 +73,35 @@ func (odbi *ovnDBImp) lswDelImp(lsw string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) RowToLogicalSwitch(uuid string) *LogicalSwitch {
+func (odbi *ovnDBImp) rowToLogicalSwitch(uuid string) *LogicalSwitch {
+	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch][uuid]
+	if !ok {
+		return nil
+	}
+
 	ls := &LogicalSwitch{
 		UUID:       uuid,
-		Name:       odbi.cache[tableLogicalSwitch][uuid].Fields["name"].(string),
-		ExternalID: odbi.cache[tableLogicalSwitch][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		Name:       cacheLogicalSwitch.Fields["name"].(string),
+		ExternalID: cacheLogicalSwitch.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 	return ls
 }
 
 // Get all logical switches
-func (odbi *ovnDBImp) GetLogicSwitches() []*LogicalSwitch {
-	var lslist = []*LogicalSwitch{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, _ := range odbi.cache[tableLogicalSwitch] {
-		lslist = append(lslist, odbi.RowToLogicalSwitch(uuid))
+func (odbi *ovnDBImp) GetLogicalSwitches() ([]*LogicalSwitch, error) {
+	var listLS []*LogicalSwitch
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	if !ok {
+		return nil, ErrorNotFound
 	}
-	return lslist
+
+	for uuid, _ := range cacheLogicalSwitch {
+		listLS = append(listLS, odbi.rowToLogicalSwitch(uuid))
+	}
+
+	return listLS, nil
 }

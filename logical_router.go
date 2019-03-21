@@ -77,21 +77,27 @@ func (odbi *ovnDBImp) lrDelImp(name string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetLogicalRouter(name string) []*LogicalRouter {
+func (odbi *ovnDBImp) GetLogicalRouter(name string) ([]*LogicalRouter, error) {
 	var lrList []*LogicalRouter
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
 
-	for uuid, drows := range odbi.cache[tableLogicalRouter] {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalRouter, ok := odbi.cache[tableLogicalRouter]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for uuid, drows := range cacheLogicalRouter {
 		if lrName, ok := drows.Fields["name"].(string); ok && lrName == name {
-			lr := odbi.RowToLogicalRouter(uuid)
+			lr := odbi.rowToLogicalRouter(uuid)
 			lrList = append(lrList, lr)
 		}
 	}
-	return lrList
+	return lrList, nil
 }
 
-func (odbi *ovnDBImp) RowToLogicalRouter(uuid string) *LogicalRouter {
+func (odbi *ovnDBImp) rowToLogicalRouter(uuid string) *LogicalRouter {
 	lr := &LogicalRouter{
 		UUID:       uuid,
 		Name:       odbi.cache[tableLogicalRouter][uuid].Fields["name"].(string),
@@ -122,12 +128,20 @@ func (odbi *ovnDBImp) RowToLogicalRouter(uuid string) *LogicalRouter {
 }
 
 // Get all logical switches
-func (odbi *ovnDBImp) GetLogicalRouters() []*LogicalRouter {
-	var lrlist = []*LogicalRouter{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, _ := range odbi.cache[tableLogicalRouter] {
-		lrlist = append(lrlist, odbi.RowToLogicalRouter(uuid))
+func (odbi *ovnDBImp) GetLogicalRouters() ([]*LogicalRouter, error) {
+	var listLR []*LogicalRouter
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalRouter, ok := odbi.cache[tableLogicalRouter]
+	if !ok {
+		return nil, ErrorNotFound
 	}
-	return lrlist
+
+	for uuid, _ := range cacheLogicalRouter {
+		listLR = append(listLR, odbi.rowToLogicalRouter(uuid))
+	}
+
+	return listLR, nil
 }
