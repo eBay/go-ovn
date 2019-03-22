@@ -49,16 +49,28 @@ func newNBImp(client *ovnDBClient, callback OVNSignal) (*ovnDBImp, error) {
 	return nbimp, nil
 }
 
-func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
+func (odbi *ovnDBImp) getRowUUIDs(table string, row OVNRow) []string {
+	var uuids []string
+	var wildcard bool
+
+	if reflect.DeepEqual(row, make(OVNRow)) {
+		wildcard = true
+	}
+
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
 	cacheTable, ok := odbi.cache[table]
 	if !ok {
-		return ""
+		return nil
 	}
 
 	for uuid, drows := range cacheTable {
+		if wildcard {
+			uuids = append(uuids, uuid)
+			continue
+		}
+
 		found := false
 		for field, value := range row {
 			if v, ok := drows.Fields[field]; ok {
@@ -71,8 +83,17 @@ func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
 			}
 		}
 		if found {
-			return uuid
+			uuids = append(uuids, uuid)
 		}
+	}
+
+	return uuids
+}
+
+func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
+	uuids := odbi.getRowUUIDs(table, row)
+	if len(uuids) > 0 {
+		return uuids[0]
 	}
 	return ""
 }
@@ -198,6 +219,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableDHCPOptions:
 						dhcp := odbi.rowToDHCPOptions(uuid)
 						odbi.callback.OnDHCPOptionsCreate(dhcp)
+					case tableQoS:
+						qos := odbi.rowToQoS(uuid)
+						odbi.callback.OnQoSCreate(qos)
 					}
 				}
 			} else {
@@ -221,6 +245,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableDHCPOptions:
 						dhcp := odbi.rowToDHCPOptions(uuid)
 						odbi.callback.OnDHCPOptionsDelete(dhcp)
+					case tableQoS:
+						qos := odbi.rowToQoS(uuid)
+						odbi.callback.OnQoSDelete(qos)
 					}
 				}
 				delete(odbi.cache[table], uuid)

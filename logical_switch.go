@@ -21,9 +21,15 @@ import (
 )
 
 type LogicalSwitch struct {
-	UUID       string
-	Name       string
-	ExternalID map[interface{}]interface{}
+	UUID         string
+	Name         string
+	Ports        []string
+	LoadBalancer []string
+	ACLs         []string
+	QoSRules     []string
+	DNSRecords   []string
+	OtherConfig  map[interface{}]interface{}
+	ExternalID   map[interface{}]interface{}
 }
 
 func (odbi *ovnDBImp) lswListImp() (*OvnCommand, error) {
@@ -80,10 +86,52 @@ func (odbi *ovnDBImp) rowToLogicalSwitch(uuid string) *LogicalSwitch {
 	}
 
 	ls := &LogicalSwitch{
-		UUID:       uuid,
-		Name:       cacheLogicalSwitch.Fields["name"].(string),
-		ExternalID: cacheLogicalSwitch.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		UUID:        uuid,
+		Name:        cacheLogicalSwitch.Fields["name"].(string),
+		OtherConfig: cacheLogicalSwitch.Fields["other_config"].(libovsdb.OvsMap).GoMap,
+		ExternalID:  cacheLogicalSwitch.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
+	if ports, ok := cacheLogicalSwitch.Fields["ports"]; ok {
+		switch ports.(type) {
+		case libovsdb.UUID:
+			ls.Ports = []string{ports.(libovsdb.UUID).GoUUID}
+		case libovsdb.OvsSet:
+			ls.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
+		}
+	}
+	if lbs, ok := cacheLogicalSwitch.Fields["load_balancer"]; ok {
+		switch lbs.(type) {
+		case libovsdb.UUID:
+			ls.LoadBalancer = []string{lbs.(libovsdb.UUID).GoUUID}
+		case libovsdb.OvsSet:
+			ls.LoadBalancer = odbi.ConvertGoSetToStringArray(lbs.(libovsdb.OvsSet))
+		}
+	}
+	if acls, ok := cacheLogicalSwitch.Fields["acls"]; ok {
+		switch acls.(type) {
+		case libovsdb.UUID:
+			ls.ACLs = []string{acls.(libovsdb.UUID).GoUUID}
+		case libovsdb.OvsSet:
+			ls.ACLs = odbi.ConvertGoSetToStringArray(acls.(libovsdb.OvsSet))
+		}
+	}
+	if qosrules, ok := cacheLogicalSwitch.Fields["qos_rules"]; ok {
+		switch qosrules.(type) {
+		case libovsdb.UUID:
+			ls.QoSRules = []string{qosrules.(libovsdb.UUID).GoUUID}
+		case libovsdb.OvsSet:
+			ls.QoSRules = odbi.ConvertGoSetToStringArray(qosrules.(libovsdb.OvsSet))
+		}
+	}
+	if dnsrecords, ok := cacheLogicalSwitch.Fields["dns_records"]; ok {
+		switch dnsrecords.(type) {
+		case libovsdb.UUID:
+			ls.DNSRecords = []string{dnsrecords.(libovsdb.UUID).GoUUID}
+		case libovsdb.OvsSet:
+			ls.DNSRecords = odbi.ConvertGoSetToStringArray(dnsrecords.(libovsdb.OvsSet))
+		}
+	}
+
 	return ls
 }
 
