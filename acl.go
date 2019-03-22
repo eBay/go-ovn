@@ -161,7 +161,7 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 
 	row["action"] = action
 	row["log"] = logflag
-	if logflag {
+	if logflag && len(meter) > 0 {
 		row["meter"] = meter
 	}
 	insertOp := libovsdb.Operation{
