@@ -135,6 +135,24 @@ func (odbi *ovnDBImp) rowToLogicalSwitch(uuid string) *LogicalSwitch {
 	return ls
 }
 
+func (odbi *ovnDBImp) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for uuid, drows := range cacheLogicalSwitch {
+		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == ls {
+			return odbi.rowToLogicalSwitch(uuid), nil
+		}
+	}
+
+	return nil, ErrorNotFound
+}
+
 // Get all logical switches
 func (odbi *ovnDBImp) GetLogicalSwitches() ([]*LogicalSwitch, error) {
 	var listLS []*LogicalSwitch

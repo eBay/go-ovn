@@ -100,6 +100,8 @@ type OVNDBApi interface {
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
+	// Get logical switch by name
+	GetLogicalSwitchByName(ls string) (*LogicalSwitch, error)
 	// Get all logical switches
 	GetLogicalSwitches() ([]*LogicalSwitch, error)
 	// Get all lport by lswitch
