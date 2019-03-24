@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	ErrorSchema   = errors.New("table schema error")
 	ErrorNotFound = errors.New("object not found")
 	ErrorExist    = errors.New("object exist")
 )
@@ -99,7 +100,7 @@ func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string,
 
 	cacheTable, ok := odbi.cache[table]
 	if !ok {
-		return "", ErrorNotFound
+		return "", ErrorSchema
 	}
 
 	for id, drows := range cacheTable {

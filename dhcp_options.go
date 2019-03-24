@@ -150,7 +150,7 @@ func (odbi *ovnDBImp) getDHCPOptionsImp() ([]*DHCPOptions, error) {
 
 	cacheDHCPOptions, ok := odbi.cache[tableDHCPOptions]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for uuid, _ := range cacheDHCPOptions {

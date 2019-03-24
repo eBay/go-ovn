@@ -118,7 +118,7 @@ func (odbi *ovnDBImp) GetAddressSets() ([]*AddressSet, error) {
 
 	cacheAddressSet, ok := odbi.cache[tableAddressSet]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for uuid, drows := range cacheAddressSet {

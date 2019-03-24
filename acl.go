@@ -36,7 +36,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, er
 
 	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
 	if !ok {
-		return "", ErrorNotFound
+		return "", ErrorSchema
 	}
 
 	for _, drows := range cacheLogicalSwitch {
@@ -50,7 +50,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, er
 							if va, ok := a.(libovsdb.UUID); ok {
 								cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
 								if !ok {
-									return "", ErrorNotFound
+									return "", ErrorSchema
 								}
 								for field, value := range row {
 									switch field {
@@ -90,7 +90,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, er
 					if va, ok := acls.(libovsdb.UUID); ok {
 						cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
 						if !ok {
-							return "", ErrorNotFound
+							return "", ErrorSchema
 						}
 
 						for field, value := range row {

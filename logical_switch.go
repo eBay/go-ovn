@@ -96,7 +96,7 @@ func (odbi *ovnDBImp) GetLogicalSwitches() ([]*LogicalSwitch, error) {
 
 	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for uuid, _ := range cacheLogicalSwitch {

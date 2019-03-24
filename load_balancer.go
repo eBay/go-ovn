@@ -127,7 +127,7 @@ func (odbi *ovnDBImp) GetLB(name string) ([]*LoadBalancer, error) {
 
 	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for uuid, drows := range cacheLoadBalancer {
@@ -145,7 +145,7 @@ func (odbi *ovnDBImp) GetLB(name string) ([]*LoadBalancer, error) {
 func (odbi *ovnDBImp) rowToLB(uuid string) (*LoadBalancer, error) {
 	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer][uuid]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	lb := &LoadBalancer{

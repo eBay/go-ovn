@@ -139,7 +139,7 @@ func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitch
 
 	cachePortGroup, ok := odbi.cache[tablePortGroup]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for _, drows := range cachePortGroup {

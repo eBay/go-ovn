@@ -259,7 +259,7 @@ func (odbi *ovnDBImp) GetLogicalSwitchPortByName(lsp string) (*LogicalSwitchPort
 
 	cacheLogicalSwitchPort, ok := odbi.cache[tableLogicalSwitchPort]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for uuid, drows := range cacheLogicalSwitchPort {
@@ -279,7 +279,7 @@ func (odbi *ovnDBImp) GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitc
 
 	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
 	if !ok {
-		return nil, ErrorNotFound
+		return nil, ErrorSchema
 	}
 
 	for _, drows := range cacheLogicalSwitch {
