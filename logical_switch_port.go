@@ -19,7 +19,7 @@ package goovn
 import (
 	"fmt"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type LogicalSwitchPort struct {
@@ -161,11 +161,11 @@ func (odbi *ovnDBImp) LSPSetDHCPv4Options(lsp string, uuid string) (*OvnCommand,
 }
 
 func (odbi *ovnDBImp) LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error) {
-	lp, err := odbi.GetLogicalPortByName(lsp)
+	lp, err := odbi.GetLogicalSwitchPortByName(lsp)
 	if err != nil {
 		return nil, err
 	}
-	return odbi.RowToDHCPOptions(lp.DHCPv4Options), nil
+	return odbi.rowToDHCPOptions(lp.DHCPv4Options), nil
 }
 
 func (odbi *ovnDBImp) LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error) {
@@ -182,11 +182,11 @@ func (odbi *ovnDBImp) LSPSetDHCPv6Options(lsp string, options string) (*OvnComma
 }
 
 func (odbi *ovnDBImp) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
-	lp, err := odbi.GetLogicalPortByName(lsp)
+	lp, err := odbi.GetLogicalSwitchPortByName(lsp)
 	if err != nil {
 		return nil, err
 	}
-	return odbi.RowToDHCPOptions(lp.DHCPv6Options), nil
+	return odbi.rowToDHCPOptions(lp.DHCPv6Options), nil
 }
 
 func (odbi *ovnDBImp) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
@@ -205,7 +205,7 @@ func (odbi *ovnDBImp) LSPSetOpt(lsp string, options map[string]string) (*OvnComm
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogicalSwitchPort {
+func (odbi *ovnDBImp) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	lp := &LogicalSwitchPort{
 		UUID: uuid,
 		Name: odbi.cache[tableLogicalSwitchPort][uuid].Fields["name"].(string),
@@ -253,23 +253,36 @@ func (odbi *ovnDBImp) RowToLogicalPort(uuid string) *LogicalSwitchPort {
 }
 
 // Get lsp by name
-func (odbi *ovnDBImp) GetLogicalPortByName(lsp string) (*LogicalSwitchPort, error) {
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, drows := range odbi.cache[tableLogicalSwitchPort] {
+func (odbi *ovnDBImp) GetLogicalSwitchPortByName(lsp string) (*LogicalSwitchPort, error) {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalSwitchPort, ok := odbi.cache[tableLogicalSwitchPort]
+	if !ok {
+		return nil, ErrorSchema
+	}
+
+	for uuid, drows := range cacheLogicalSwitchPort {
 		if rlsp, ok := drows.Fields["name"].(string); ok && rlsp == lsp {
-			return odbi.RowToLogicalPort(uuid), nil
+			return odbi.rowToLogicalPort(uuid), nil
 		}
 	}
 	return nil, ErrorNotFound
 }
 
 // Get all lport by lswitch
-func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
-	var lplist = []*LogicalSwitchPort{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for _, drows := range odbi.cache[tableLogicalSwitch] {
+func (odbi *ovnDBImp) GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
+	var listLSP []*LogicalSwitchPort
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	if !ok {
+		return nil, ErrorSchema
+	}
+
+	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lsw {
 			ports := drows.Fields["ports"]
 			if ports != nil {
@@ -278,8 +291,8 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, e
 					if ps, ok := ports.(libovsdb.OvsSet); ok {
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
-								tp := odbi.RowToLogicalPort(vp.GoUUID)
-								lplist = append(lplist, tp)
+								tp := odbi.rowToLogicalPort(vp.GoUUID)
+								listLSP = append(listLSP, tp)
 							}
 						}
 					} else {
@@ -287,8 +300,8 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, e
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
-						tp := odbi.RowToLogicalPort(vp.GoUUID)
-						lplist = append(lplist, tp)
+						tp := odbi.rowToLogicalPort(vp.GoUUID)
+						listLSP = append(listLSP, tp)
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -299,5 +312,5 @@ func (odbi *ovnDBImp) GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, e
 			break
 		}
 	}
-	return lplist, nil
+	return listLSP, nil
 }

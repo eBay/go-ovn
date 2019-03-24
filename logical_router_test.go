@@ -18,7 +18,10 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrs := ovndbapi.GetLogicalRouters()
+	lrs, err := ovndbapi.GetLogicalRouters()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lrs) != 1 {
 		t.Fatalf("lr not created %v", lrs)
 	}
@@ -32,7 +35,10 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrs = ovndbapi.GetLogicalRouters()
+	lrs, err = ovndbapi.GetLogicalRouters()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lrs) != 0 {
 		t.Fatalf("lr not deleted %v", lrs)
 	}

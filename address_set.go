@@ -17,7 +17,7 @@
 package goovn
 
 import (
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type AddressSet struct {
@@ -84,14 +84,18 @@ func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetASByName(name string) *AddressSet {
-	addresssets := odbi.GetAddressSets()
-	for _, s := range addresssets {
+func (odbi *ovnDBImp) GetASByName(name string) (*AddressSet, error) {
+	listAS, err := odbi.GetAddressSets()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range listAS {
 		if s.Name == name {
-			return s
+			return s, nil
 		}
 	}
-	return nil
+	return nil, ErrorNotFound
 }
 
 func (odbi *ovnDBImp) ASDel(name string) (*OvnCommand, error) {
@@ -106,11 +110,18 @@ func (odbi *ovnDBImp) ASDel(name string) (*OvnCommand, error) {
 }
 
 // Get all addressset
-func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
-	adlist := make([]*AddressSet, 0, 0)
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, drows := range odbi.cache[tableAddressSet] {
+func (odbi *ovnDBImp) GetAddressSets() ([]*AddressSet, error) {
+	var listAS []*AddressSet
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheAddressSet, ok := odbi.cache[tableAddressSet]
+	if !ok {
+		return nil, ErrorSchema
+	}
+
+	for uuid, drows := range cacheAddressSet {
 		ta := &AddressSet{
 			UUID:       uuid,
 			Name:       drows.Fields["name"].(string),
@@ -132,7 +143,7 @@ func (odbi *ovnDBImp) GetAddressSets() []*AddressSet {
 			}
 		}
 		ta.Addresses = addresses
-		adlist = append(adlist, ta)
+		listAS = append(listAS, ta)
 	}
-	return adlist
+	return listAS, nil
 }

@@ -2,7 +2,8 @@ GO OVN
 ========
 
 A Go library for OVN DB access using native OVSDB protocol.
-It is based on the [OVSDB Library](https://github.com/socketplane/libovsdb.git)
+It is based on the [OVSDB Library] (https://github.com/socketplane/libovsdb.git), but used own fork
+https://github.com/ebay/libovsdb.git with patches.
 
 ## What is OVN?
 

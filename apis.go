@@ -17,7 +17,7 @@
 package goovn
 
 import (
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type OvnCommand struct {
@@ -94,23 +94,25 @@ type OVNDBApi interface {
 	Execute(cmds ...*OvnCommand) error
 
 	// Get all logical switches
-	GetLogicSwitches() []*LogicalSwitch
+	GetLogicalSwitches() ([]*LogicalSwitch, error)
 	// Get all lport by lswitch
-	GetLogicPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error)
+	GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error)
 	// Get all lrp by lr
 	GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error)
 
 	// Get all acl by lswitch
-	GetACLsBySwitch(lsw string) []*ACL
+	GetACLsBySwitch(lsw string) ([]*ACL, error)
 
-	GetAddressSets() []*AddressSet
-	GetASByName(name string) *AddressSet
+	GetAddressSets() ([]*AddressSet, error)
+	GetASByName(name string) (*AddressSet, error)
 	// Get LB with given name
-	GetLB(name string) []*LoadBalancer
+	GetLB(name string) ([]*LoadBalancer, error)
 	// Get dhcp options
-	GetDHCPOptions() []*DHCPOptions
+	GetDHCPOptions() ([]*DHCPOptions, error)
 	// Get LR with given name
-	GetLogicalRouters() []*LogicalRouter
+	GetLogicalRouter(name string) ([]*LogicalRouter, error)
+	// Get LRs
+	GetLogicalRouters() ([]*LogicalRouter, error)
 	SetCallBack(callback OVNSignal)
 }
 

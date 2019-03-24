@@ -128,12 +128,15 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws := ovndbapi.GetLogicSwitches()
+	lsws, err := ovndbapi.GetLogicalSwitches()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lsws) != 1 {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
-	lsps, err := ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err := ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,14 +155,17 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assert.Equal(t, true, len(lsps) == 2, "test[%s]: %+v", "added 2 ports", lsps)
 
-	acls := ovndbapi.GetACLsBySwitch(LSW)
+	acls, err := ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
 		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
@@ -177,7 +183,10 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
@@ -189,7 +198,10 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
 
 	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
@@ -201,7 +213,10 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
 
 	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
@@ -213,7 +228,11 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
 
 	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
@@ -225,7 +244,10 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
 
 	cmd, err = ovndbapi.LSPDel(LSP)
@@ -237,7 +259,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +275,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicPortsBySwitch(LSW)
+	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +294,10 @@ func TestACLs(t *testing.T) {
 }
 
 func findAS(name string) bool {
-	as := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.GetAddressSets()
+	if err != nil {
+		return false
+	}
 	for _, a := range as {
 		if a.Name == name {
 			return true
@@ -282,7 +307,10 @@ func findAS(name string) bool {
 }
 
 func addressSetCmp(asname string, targetvalue []string) bool {
-	as := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.GetAddressSets()
+	if err != nil {
+		return false
+	}
 	for _, a := range as {
 		if a.Name == asname {
 			if len(a.Addresses) == len(targetvalue) {
@@ -323,7 +351,10 @@ func TestAddressSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	as := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.GetAddressSets()
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, addressSetCmp("AS1", addressList), "test[%s] and value[%v]", "address set 1 added.", as[0].Addresses)
 
 	cmd, err = ovndbapi.ASAdd("AS2", addressList, nil)
@@ -334,7 +365,10 @@ func TestAddressSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	as = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.GetAddressSets()
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set 2 added.", as[1].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5", "127.0.0.6"}
@@ -347,7 +381,10 @@ func TestAddressSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	as = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.GetAddressSets()
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set added with different list.", as[0].Addresses)
 
 	addressList = []string{"127.0.0.4", "127.0.0.5"}
@@ -359,7 +396,10 @@ func TestAddressSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	as = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.GetAddressSets()
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, true, addressSetCmp("AS2", addressList), "test[%s] and value[%v]", "address set updated.", as[0].Addresses)
 
 	cmd, err = ovndbapi.ASDel("AS1")
@@ -407,7 +447,10 @@ func TestLoadBalancer(t *testing.T) {
 	t.Logf("Updating LB to OVN done")
 
 	t.Logf("Gettting LB by name")
-	lb := ovndbapi.GetLB("lb1")
+	lb, err := ovndbapi.GetLB("lb1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lb) != 1 {
 		t.Fatalf("err getting lbs, total:%v", len(lb))
 	}
@@ -424,7 +467,10 @@ func TestLoadBalancer(t *testing.T) {
 	}
 
 	// Verify deletion
-	lb = ovndbapi.GetLB("lb1")
+	lb, err = ovndbapi.GetLB("lb1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(lb) != 0 {
 		t.Fatalf("error: lb deletion not done, total:%v", len(lb))
 	}

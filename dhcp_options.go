@@ -17,7 +17,7 @@
 package goovn
 
 import (
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type DHCPOptions struct {
@@ -27,12 +27,17 @@ type DHCPOptions struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) RowToDHCPOptions(uuid string) *DHCPOptions {
+func (odbi *ovnDBImp) rowToDHCPOptions(uuid string) *DHCPOptions {
+	cacheDHCPOptions, ok := odbi.cache[tableDHCPOptions][uuid]
+	if !ok {
+		return nil
+	}
+
 	dhcp := &DHCPOptions{
 		UUID:       uuid,
-		CIDR:       odbi.cache[tableDHCPOptions][uuid].Fields["cidr"].(string),
-		Options:    odbi.cache[tableDHCPOptions][uuid].Fields["options"].(libovsdb.OvsMap).GoMap,
-		ExternalID: odbi.cache[tableDHCPOptions][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		CIDR:       cacheDHCPOptions.Fields["cidr"].(string),
+		Options:    cacheDHCPOptions.Fields["options"].(libovsdb.OvsMap).GoMap,
+		ExternalID: cacheDHCPOptions.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
 	return dhcp
@@ -137,12 +142,19 @@ func (odbi *ovnDBImp) dhcpOptionsListImp() (*OvnCommand, error) {
 }
 
 // Get all dhcp options
-func (odbi *ovnDBImp) getDHCPOptionsImp() []*DHCPOptions {
-	var dhcpList = []*DHCPOptions{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for uuid, _ := range odbi.cache[tableDHCPOptions] {
-		dhcpList = append(dhcpList, odbi.RowToDHCPOptions(uuid))
+func (odbi *ovnDBImp) getDHCPOptionsImp() ([]*DHCPOptions, error) {
+	var listDHCP []*DHCPOptions
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheDHCPOptions, ok := odbi.cache[tableDHCPOptions]
+	if !ok {
+		return nil, ErrorSchema
 	}
-	return dhcpList
+
+	for uuid, _ := range cacheDHCPOptions {
+		listDHCP = append(listDHCP, odbi.rowToDHCPOptions(uuid))
+	}
+	return listDHCP, nil
 }

@@ -19,7 +19,7 @@ package goovn
 import (
 	"fmt"
 
-	"github.com/socketplane/libovsdb"
+	"github.com/ebay/libovsdb"
 )
 
 type LogicalRouterPort struct {
@@ -129,7 +129,7 @@ func (odbi *ovnDBImp) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) RowToLogicalRouterPort(uuid string) *LogicalRouterPort {
+func (odbi *ovnDBImp) rowToLogicalRouterPort(uuid string) *LogicalRouterPort {
 	lrp := &LogicalRouterPort{
 		UUID:       uuid,
 		Name:       odbi.cache[tableLogicalRouterPort][uuid].Fields["name"].(string),
@@ -182,10 +182,17 @@ func (odbi *ovnDBImp) RowToLogicalRouterPort(uuid string) *LogicalRouterPort {
 }
 
 func (odbi *ovnDBImp) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error) {
-	var lrplist = []*LogicalRouterPort{}
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-	for _, drows := range odbi.cache[tableLogicalRouter] {
+	var listLRP []*LogicalRouterPort
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLogicalRouter, ok := odbi.cache[tableLogicalRouter]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for _, drows := range cacheLogicalRouter {
 		if rlr, ok := drows.Fields["name"].(string); ok && rlr == lr {
 			ports := drows.Fields["ports"]
 			if ports != nil {
@@ -194,8 +201,8 @@ func (odbi *ovnDBImp) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouter
 					if ps, ok := ports.(libovsdb.OvsSet); ok {
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
-								tp := odbi.RowToLogicalRouterPort(vp.GoUUID)
-								lrplist = append(lrplist, tp)
+								tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+								listLRP = append(listLRP, tp)
 							}
 						}
 					} else {
@@ -203,8 +210,8 @@ func (odbi *ovnDBImp) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouter
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
-						tp := odbi.RowToLogicalRouterPort(vp.GoUUID)
-						lrplist = append(lrplist, tp)
+						tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+						listLRP = append(listLRP, tp)
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -215,5 +222,5 @@ func (odbi *ovnDBImp) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouter
 			break
 		}
 	}
-	return lrplist, nil
+	return listLRP, nil
 }
