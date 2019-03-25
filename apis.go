@@ -90,9 +90,18 @@ type OVNDBApi interface {
 	// Del dhcp options via provided external_ids
 	DelDHCPOptions(uuid string) (*OvnCommand, error)
 
+	// Add qos rule
+	QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error)
+	// Del qos rule, to delete wildcard specify priority -1 and string options as ""
+	QoSDel(ls string, direction string, priority int, match string) (*OvnCommand, error)
+	// Get qos rules by logical switch name
+	GetQoSBySwitch(ls string) ([]*QoS, error)
+
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
+	// Get logical switch by name
+	GetLogicalSwitchByName(ls string) (*LogicalSwitch, error)
 	// Get all logical switches
 	GetLogicalSwitches() ([]*LogicalSwitch, error)
 	// Get all lport by lswitch
@@ -134,6 +143,9 @@ type OVNSignal interface {
 
 	OnDHCPOptionsCreate(dhcp *DHCPOptions)
 	OnDHCPOptionsDelete(dhcp *DHCPOptions)
+
+	OnQoSCreate(qos *QoS)
+	OnQoSDelete(qos *QoS)
 }
 
 // Notifier

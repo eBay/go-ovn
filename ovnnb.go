@@ -185,8 +185,24 @@ func (odb *OVNDB) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand,
 	return odb.imp.LSPSetOpt(lsp, options)
 }
 
+func (odb *OVNDB) QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.addQoSImp(ls, direction, priority, match, action, bandwidth, external_ids)
+}
+
+func (odb *OVNDB) QoSDel(ls string, direction string, priority int, match string) (*OvnCommand, error) {
+	return odb.imp.delQoSImp(ls, direction, priority, match)
+}
+
+func (odb *OVNDB) GetQoSBySwitch(ls string) ([]*QoS, error) {
+	return odb.imp.listQoSImp(ls)
+}
+
 func (odb *OVNDB) Execute(cmds ...*OvnCommand) error {
 	return odb.imp.Execute(cmds...)
+}
+
+func (odb *OVNDB) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) {
+	return odb.imp.GetLogicalSwitchByName(ls)
 }
 
 func (odb *OVNDB) GetLogicalSwitches() ([]*LogicalSwitch, error) {

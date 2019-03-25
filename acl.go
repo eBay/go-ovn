@@ -201,7 +201,7 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 		row["match"] = match
 	}
 	//in ovn pirority is greater than/equal 0,
-	//if input the pirority < 0, lots of acls will be deleted if matches direct and match condition judgement.
+	//if input the priority < 0, lots of acls will be deleted if matches direct and match condition judgement.
 	if priority >= 0 {
 		row["priority"] = priority
 	}
