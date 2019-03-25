@@ -109,13 +109,45 @@ func (odbi *ovnDBImp) lbAddImp(name string, vipPort string, protocol string, add
 }
 
 func (odbi *ovnDBImp) lbDelImp(name string) (*OvnCommand, error) {
+	var operations []libovsdb.Operation
+
 	condition := libovsdb.NewCondition("name", "==", name)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
 		Table: tableLoadBalancer,
 		Where: []interface{}{condition},
 	}
-	operations := []libovsdb.Operation{deleteOp}
+
+	// Also delete references from Logical switches
+	row := make(OVNRow)
+	row["name"] = name
+	lbuuid := odbi.getRowUUID(tableLoadBalancer, row)
+	if len(lbuuid) == 0 {
+		return nil, ErrorNotFound
+	}
+	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+	mutation := libovsdb.NewMutation("load_balancer", opDelete, mutateSet)
+	lswitches, err := odbi.getRowsMatchingUUID(tableLogicalSwitch, "load_balancer", lbuuid)
+	if err != nil && err != ErrorNotFound {
+		return nil, err
+	} else if err == nil {
+		// mutate all matching lswitches for the corresponding load_balancer
+		for _, lswitch := range lswitches {
+			mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{lswitch})
+			mutateOp := libovsdb.Operation{
+				Op:        opMutate,
+				Table:     tableLogicalSwitch,
+				Mutations: []interface{}{mutation},
+				Where:     []interface{}{mucondition},
+			}
+			operations = append(operations, mutateOp)
+		}
+	}
+	operations = append(operations, deleteOp)
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 

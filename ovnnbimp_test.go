@@ -458,7 +458,7 @@ func TestLoadBalancer(t *testing.T) {
 
 	t.Logf("Deleting LB")
 	ocmd, err = ovndbapi.LBDel("lb1")
-	if err != nil {
+	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
 	}
 	err = ovndbapi.Execute(ocmd)
