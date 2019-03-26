@@ -117,6 +117,18 @@ func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) (*OvnComman
 	return odb.imp.lspSetPortSecurityImp(lsp, security...)
 }
 
+func (odb *OVNDB) LSLBAdd(lswitch string, lb string) (*OvnCommand, error) {
+	return odb.imp.lslbAddImp(lswitch, lb)
+}
+
+func (odb *OVNDB) LSLBDel(lswitch string, lb string) (*OvnCommand, error) {
+	return odb.imp.lslbDelImp(lswitch, lb)
+}
+
+func (odb *OVNDB) LSLBList(lswitch string) ([]*LoadBalancer, error) {
+	return odb.imp.lslblistImp(lswitch)
+}
+
 func (odb *OVNDB) LRAdd(name string, external_ids map[string]string) (*OvnCommand, error) {
 	return odb.imp.lrAddImp(name, external_ids)
 }
@@ -131,6 +143,18 @@ func (odb *OVNDB) LRPAdd(lr string, lrp string, mac string, network []string, pe
 
 func (odb *OVNDB) LRPDel(lr string, lrp string) (*OvnCommand, error) {
 	return odb.imp.lrpDelImp(lr, lrp)
+}
+
+func (odb *OVNDB) LRLBAdd(lr string, lb string) (*OvnCommand, error) {
+	return odb.imp.lrlbAddImp(lr, lb)
+}
+
+func (odb *OVNDB) LRLBDel(lr string, lb string) (*OvnCommand, error) {
+	return odb.imp.lrlbDelImp(lr, lb)
+}
+
+func (odb *OVNDB) LRLBList(lr string) ([]*LoadBalancer, error) {
+	return odb.imp.lrlblistImp(lr)
 }
 
 func (odb *OVNDB) LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {

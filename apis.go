@@ -47,6 +47,12 @@ type OVNDBApi interface {
 	LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
 	// Set port security per lport
 	LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
+	// Add LB to LSW
+	LSLBAdd(lswitch string, lb string) (*OvnCommand, error)
+	// Delete LB from LSW
+	LSLBDel(lswitch string, lb string) (*OvnCommand, error)
+	// List Load balancers for a LSW
+	LSLBList(lswitch string) ([]*LoadBalancer, error)
 	// Add ACL
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
 	// Delete acl
@@ -65,6 +71,12 @@ type OVNDBApi interface {
 	LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete LRP with given name on given lr
 	LRPDel(lr string, lrp string) (*OvnCommand, error)
+	// Add LB to LR
+	LRLBAdd(lr string, lb string) (*OvnCommand, error)
+	// Delete LB from LR
+	LRLBDel(lr string, lb string) (*OvnCommand, error)
+	// List Load balancers for a LR
+	LRLBList(lr string) ([]*LoadBalancer, error)
 	// Add LB
 	LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Delete LB with given name
@@ -146,6 +158,9 @@ type OVNSignal interface {
 
 	OnQoSCreate(qos *QoS)
 	OnQoSDelete(qos *QoS)
+
+	OnLoadBalancerCreate(ls *LoadBalancer)
+	OnLoadBalancerDelete(ls *LoadBalancer)
 }
 
 // Notifier
