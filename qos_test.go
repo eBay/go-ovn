@@ -24,7 +24,7 @@ func TestQoS(t *testing.T) {
 	var cmd *OvnCommand
 	var err error
 
-	cmd, err = ovndbapi.LSWAdd(LSW)
+	cmd, err = ovndbapi.LSAdd(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestQoS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qosrules, err := ovndbapi.GetQoSBySwitch(LSW)
+	qosrules, err := ovndbapi.QoSList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestQoS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qosrules, err = ovndbapi.GetQoSBySwitch(LSW)
+	qosrules, err = ovndbapi.QoSList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -278,7 +278,7 @@ func (odbi *ovnDBImp) GetLogicalSwitchPortByName(lsp string) (*LogicalSwitchPort
 }
 
 // Get all lport by lswitch
-func (odbi *ovnDBImp) GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
+func (odbi *ovnDBImp) LSPList(lsw string) ([]*LogicalSwitchPort, error) {
 	var listLSP []*LogicalSwitchPort
 
 	odbi.cachemutex.RLock()

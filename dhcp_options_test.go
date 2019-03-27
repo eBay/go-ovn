@@ -28,7 +28,7 @@ func TestDHCPOptions(t *testing.T) {
 	var err error
 
 	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.LSWAdd(LSW)
+	cmd, err = ovndbapi.LSAdd(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestDHCPOptions(t *testing.T) {
 	}
 	cmds = append(cmds, cmd)
 
-	cmd, err = ovndbapi.AddDHCPOptions(
+	cmd, err = ovndbapi.DHCPOptionsAdd(
 		"192.168.0.0/24",
 		map[string]string{
 			"server_id":  "192.168.1.1",
@@ -62,7 +62,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws, err := ovndbapi.GetLogicalSwitches()
+	lsws, err := ovndbapi.LSList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
-	dhcp_opts, err := ovndbapi.GetDHCPOptions()
+	dhcp_opts, err := ovndbapi.DHCPOptionsList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err := ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err := ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestDHCPOptions(t *testing.T) {
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].DHCPv4Options != "", "test[%s]", "setted dhcpv4_options")
 
-	cmd, err = ovndbapi.DelDHCPOptions(dhcp_opts[0].UUID)
+	cmd, err = ovndbapi.DHCPOptionsDel(dhcp_opts[0].UUID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dhcp_opts, err = ovndbapi.GetDHCPOptions()
+	dhcp_opts, err = ovndbapi.DHCPOptionsList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,14 +127,14 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err = ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assert.Equal(t, true, len(lsps) == 0, "test[%s]", "one port remove")
 
-	cmd, err = ovndbapi.LSWDel(LSW)
+	cmd, err = ovndbapi.LSDel(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}

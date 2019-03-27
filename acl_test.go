@@ -28,7 +28,7 @@ func TestACLs(t *testing.T) {
 	var err error
 
 	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.LSWAdd(LSW)
+	cmd, err = ovndbapi.LSAdd(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws, err := ovndbapi.GetLogicalSwitches()
+	lsws, err := ovndbapi.LSList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestACLs(t *testing.T) {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
-	lsps, err := ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err := ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err = ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err = ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,14 +218,14 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.GetLogicalSwitchPortsBySwitch(LSW)
+	lsps, err = ovndbapi.LSPList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assert.Equal(t, true, len(lsps) == 0, "test[%s]", "one port remove")
 
-	cmd, err = ovndbapi.LSWDel(LSW)
+	cmd, err = ovndbapi.LSDel(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,4 +235,3 @@ func TestACLs(t *testing.T) {
 	}
 
 }
-
