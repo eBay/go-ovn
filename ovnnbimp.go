@@ -238,7 +238,11 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableQoS:
 						qos := odbi.rowToQoS(uuid)
 						odbi.callback.OnQoSCreate(qos)
+					case tableLoadBalancer:
+						lb, _ := odbi.rowToLB(uuid)
+						odbi.callback.OnLoadBalancerCreate(lb)
 					}
+
 				}
 			} else {
 				if odbi.callback != nil {
@@ -264,6 +268,9 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 					case tableQoS:
 						qos := odbi.rowToQoS(uuid)
 						odbi.callback.OnQoSDelete(qos)
+					case tableLoadBalancer:
+						lb, _ := odbi.rowToLB(uuid)
+						odbi.callback.OnLoadBalancerDelete(lb)
 					}
 				}
 				delete(odbi.cache[table], uuid)
