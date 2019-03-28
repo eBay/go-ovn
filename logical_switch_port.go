@@ -207,8 +207,10 @@ func (odbi *ovnDBImp) LSPSetOpt(lsp string, options map[string]string) (*OvnComm
 
 func (odbi *ovnDBImp) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	lp := &LogicalSwitchPort{
-		UUID: uuid,
-		Name: odbi.cache[tableLogicalSwitchPort][uuid].Fields["name"].(string),
+		UUID:       uuid,
+		Name:       odbi.cache[tableLogicalSwitchPort][uuid].Fields["name"].(string),
+		Type:       odbi.cache[tableLogicalSwitchPort][uuid].Fields["type"].(string),
+		ExternalID: odbi.cache[tableLogicalSwitchPort][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
 	if dhcpv4, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["dhcpv4_options"]; ok {
@@ -249,6 +251,11 @@ func (odbi *ovnDBImp) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 			//glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport port security.")
 		}
 	}
+
+	if options, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["options"]; ok {
+		lp.Options = options.(libovsdb.OvsMap).GoMap
+	}
+
 	return lp
 }
 
