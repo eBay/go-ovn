@@ -89,16 +89,16 @@ func newNBByServer(server string, port int, callback OVNSignal, protocol string)
 	return &OVNDB{imp}, nil
 }
 
-func (odb *OVNDB) LSWAdd(lsw string) (*OvnCommand, error) {
-	return odb.imp.lswAddImp(lsw)
+func (odb *OVNDB) LSAdd(lsw string) (*OvnCommand, error) {
+	return odb.imp.lsAddImp(lsw)
 }
 
-func (odb *OVNDB) LSWDel(lsw string) (*OvnCommand, error) {
-	return odb.imp.lswDelImp(lsw)
+func (odb *OVNDB) LSDel(lsw string) (*OvnCommand, error) {
+	return odb.imp.lsDelImp(lsw)
 }
 
-func (odb *OVNDB) LSWList() (*OvnCommand, error) {
-	return odb.imp.lswListImp()
+func (odb *OVNDB) LSList() ([]*LogicalSwitch, error) {
+	return odb.imp.lsListImp()
 }
 
 func (odb *OVNDB) LSPAdd(lsw string, lsp string) (*OvnCommand, error) {
@@ -115,6 +115,26 @@ func (odb *OVNDB) LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, e
 
 func (odb *OVNDB) LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error) {
 	return odb.imp.lspSetPortSecurityImp(lsp, security...)
+}
+
+func (odb *OVNDB) LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error) {
+	return odb.imp.LSPSetDHCPv4Options(lsp, options)
+}
+
+func (odb *OVNDB) LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error) {
+	return odb.imp.LSPGetDHCPv4Options(lsp)
+}
+
+func (odb *OVNDB) LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error) {
+	return odb.imp.LSPSetDHCPv6Options(lsp, options)
+}
+
+func (odb *OVNDB) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
+	return odb.imp.LSPGetDHCPv6Options(lsp)
+}
+
+func (odb *OVNDB) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
+	return odb.imp.LSPSetOpt(lsp, options)
 }
 
 func (odb *OVNDB) LSLBAdd(lswitch string, lb string) (*OvnCommand, error) {
@@ -135,6 +155,10 @@ func (odb *OVNDB) LRAdd(name string, external_ids map[string]string) (*OvnComman
 
 func (odb *OVNDB) LRDel(name string) (*OvnCommand, error) {
 	return odb.imp.lrDelImp(name)
+}
+
+func (odb *OVNDB) LRList() ([]*LogicalRouter, error) {
+	return odb.imp.lrListImp()
 }
 
 func (odb *OVNDB) LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error) {
@@ -189,26 +213,6 @@ func (odb *OVNDB) ASUpdate(name string, addrs []string, external_ids map[string]
 	return odb.imp.ASUpdate(name, addrs, external_ids)
 }
 
-func (odb *OVNDB) LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error) {
-	return odb.imp.LSPSetDHCPv4Options(lsp, options)
-}
-
-func (odb *OVNDB) LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error) {
-	return odb.imp.LSPGetDHCPv4Options(lsp)
-}
-
-func (odb *OVNDB) LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error) {
-	return odb.imp.LSPSetDHCPv6Options(lsp, options)
-}
-
-func (odb *OVNDB) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
-	return odb.imp.LSPGetDHCPv6Options(lsp)
-}
-
-func (odb *OVNDB) LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error) {
-	return odb.imp.LSPSetOpt(lsp, options)
-}
-
 func (odb *OVNDB) QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error) {
 	return odb.imp.addQoSImp(ls, direction, priority, match, action, bandwidth, external_ids)
 }
@@ -217,7 +221,7 @@ func (odb *OVNDB) QoSDel(ls string, direction string, priority int, match string
 	return odb.imp.delQoSImp(ls, direction, priority, match)
 }
 
-func (odb *OVNDB) GetQoSBySwitch(ls string) ([]*QoS, error) {
+func (odb *OVNDB) QoSList(ls string) ([]*QoS, error) {
 	return odb.imp.listQoSImp(ls)
 }
 
@@ -229,12 +233,8 @@ func (odb *OVNDB) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) {
 	return odb.imp.GetLogicalSwitchByName(ls)
 }
 
-func (odb *OVNDB) GetLogicalSwitches() ([]*LogicalSwitch, error) {
-	return odb.imp.GetLogicalSwitches()
-}
-
-func (odb *OVNDB) GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error) {
-	return odb.imp.GetLogicalSwitchPortsBySwitch(lsw)
+func (odb *OVNDB) LSPList(lsw string) ([]*LogicalSwitchPort, error) {
+	return odb.imp.LSPList(lsw)
 }
 
 func (odb *OVNDB) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error) {
@@ -257,28 +257,24 @@ func (odb *OVNDB) GetLogicalRouter(name string) ([]*LogicalRouter, error) {
 	return odb.imp.GetLogicalRouter(name)
 }
 
-func (odb *OVNDB) GetLogicalRouters() ([]*LogicalRouter, error) {
-	return odb.imp.GetLogicalRouters()
-}
-
 func (odb *OVNDB) GetLB(name string) ([]*LoadBalancer, error) {
 	return odb.imp.GetLB(name)
 }
 
-func (odb *OVNDB) AddDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
-	return odb.imp.addDHCPOptionsImp(cidr, options, external_ids)
+func (odb *OVNDB) DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.dhcpOptionsAddImp(cidr, options, external_ids)
 }
 
-func (odb *OVNDB) SetDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
-	return odb.imp.setDHCPOptionsImp(cidr, options, external_ids)
+func (odb *OVNDB) DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.dhcpOptionsSetImp(cidr, options, external_ids)
 }
 
-func (odb *OVNDB) DelDHCPOptions(uuid string) (*OvnCommand, error) {
-	return odb.imp.delDHCPOptionsImp(uuid)
+func (odb *OVNDB) DHCPOptionsDel(uuid string) (*OvnCommand, error) {
+	return odb.imp.dhcpOptionsDelImp(uuid)
 }
 
-func (odb *OVNDB) GetDHCPOptions() ([]*DHCPOptions, error) {
-	return odb.imp.getDHCPOptionsImp()
+func (odb *OVNDB) DHCPOptionsList() ([]*DHCPOptions, error) {
+	return odb.imp.dhcpOptionsListImp()
 }
 
 func (odb *OVNDB) SetCallBack(callback OVNSignal) {

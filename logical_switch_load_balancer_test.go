@@ -17,19 +17,20 @@
 package goovn
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
-	LB3 = "lb3"
+	LB3  = "lb3"
 	LSW1 = "LSW1"
 )
 
 func TestLSLoadBalancer(t *testing.T) {
 	// create Switch
 	t.Logf("Adding  %s to OVN", LSW1)
-	cmd, err := ovndbapi.LSWAdd(LSW1)
+	cmd, err := ovndbapi.LSAdd(LSW1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +76,7 @@ func TestLSLoadBalancer(t *testing.T) {
 		t.Fatalf("lbs not created in %s", LSW1)
 	}
 	assert.Equal(t, true, lbs[0].Name == LB3, "Added lb to lswitch")
-    // delete lb from switch
+	// delete lb from switch
 	t.Logf("Deleting LB LB3 to LSW1itches %s", LSW1)
 	cmd, err = ovndbapi.LSLBDel(LSW1, LB3)
 	if err != nil {
@@ -86,13 +87,13 @@ func TestLSLoadBalancer(t *testing.T) {
 		t.Fatalf("Deleting LB LB3 to LSW1itch failed with err %v", err)
 	}
 	t.Logf("Deleting LB LB3 to LSW1itch %s Done", LSW1)
-    // verify lb deletion from switch
+	// verify lb deletion from switch
 	lbs, err = ovndbapi.LSLBList(LSW1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, len(lbs) == 0, "Deleted lb from lswitch")
-    // Delete LB
+	// Delete LB
 	t.Logf("Deleting LB")
 	cmd, err = ovndbapi.LBDel(LB3)
 	if err != nil && err != ErrorNotFound {
@@ -104,7 +105,7 @@ func TestLSLoadBalancer(t *testing.T) {
 	}
 	// Finally delete Switch
 	t.Logf("Deleting LS")
-	cmd, err = ovndbapi.LSWDel(LSW1)
+	cmd, err = ovndbapi.LSDel(LSW1)
 	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
 	}

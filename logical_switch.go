@@ -33,19 +33,7 @@ type LogicalSwitch struct {
 	ExternalID   map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) lswListImp() (*OvnCommand, error) {
-	condition := libovsdb.NewCondition("name", "!=", "")
-	selectOp := libovsdb.Operation{
-		Op:    opSelect,
-		Table: tableLogicalSwitch,
-		Where: []interface{}{condition},
-	}
-
-	operations := []libovsdb.Operation{selectOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
-}
-
-func (odbi *ovnDBImp) lswAddImp(lsw string) (*OvnCommand, error) {
+func (odbi *ovnDBImp) lsAddImp(lsw string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -69,7 +57,7 @@ func (odbi *ovnDBImp) lswAddImp(lsw string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lswDelImp(lsw string) (*OvnCommand, error) {
+func (odbi *ovnDBImp) lsDelImp(lsw string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", lsw)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -154,8 +142,7 @@ func (odbi *ovnDBImp) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) 
 	return nil, ErrorNotFound
 }
 
-// Get all logical switches
-func (odbi *ovnDBImp) GetLogicalSwitches() ([]*LogicalSwitch, error) {
+func (odbi *ovnDBImp) lsListImp() ([]*LogicalSwitch, error) {
 	var listLS []*LogicalSwitch
 
 	odbi.cachemutex.RLock()

@@ -129,7 +129,7 @@ func (odbi *ovnDBImp) rowToLogicalRouter(uuid string) *LogicalRouter {
 }
 
 // Get all logical switches
-func (odbi *ovnDBImp) GetLogicalRouters() ([]*LogicalRouter, error) {
+func (odbi *ovnDBImp) lrListImp() ([]*LogicalRouter, error) {
 	var listLR []*LogicalRouter
 
 	odbi.cachemutex.RLock()

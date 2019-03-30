@@ -69,7 +69,7 @@ func newDHCPRow(cidr string, options map[string]string, external_ids map[string]
 	return row, nil
 }
 
-func (odbi *ovnDBImp) addDHCPOptionsImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovnDBImp) dhcpOptionsAddImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (odbi *ovnDBImp) addDHCPOptionsImp(cidr string, options map[string]string, 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) setDHCPOptionsImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovnDBImp) dhcpOptionsSetImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
 
 	row, err := newDHCPRow(cidr, nil, external_ids)
 	if err != nil {
@@ -118,7 +118,7 @@ func (odbi *ovnDBImp) setDHCPOptionsImp(cidr string, options map[string]string, 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) delDHCPOptionsImp(uuid string) (*OvnCommand, error) {
+func (odbi *ovnDBImp) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{uuid})
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -129,20 +129,8 @@ func (odbi *ovnDBImp) delDHCPOptionsImp(uuid string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) dhcpOptionsListImp() (*OvnCommand, error) {
-	condition := libovsdb.NewCondition("name", "!=", "")
-	selectOp := libovsdb.Operation{
-		Op:    opSelect,
-		Table: tableDHCPOptions,
-		Where: []interface{}{condition},
-	}
-
-	operations := []libovsdb.Operation{selectOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
-}
-
-// Get all dhcp options
-func (odbi *ovnDBImp) getDHCPOptionsImp() ([]*DHCPOptions, error) {
+// List all dhcp options
+func (odbi *ovnDBImp) dhcpOptionsListImp() ([]*DHCPOptions, error) {
 	var listDHCP []*DHCPOptions
 
 	odbi.cachemutex.RLock()

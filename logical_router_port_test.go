@@ -18,7 +18,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrs, err := ovndbapi.GetLogicalRouters()
+	lrs, err := ovndbapi.LRList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrs, err = ovndbapi.GetLogicalRouters()
+	lrs, err = ovndbapi.LRList()
 	if err != nil {
 		t.Fatal(err)
 	}

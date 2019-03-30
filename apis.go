@@ -33,56 +33,69 @@ type Execution interface {
 
 // North bound api set
 type OVNDBApi interface {
-	// Create a logical switch named SWITCH
-	LSWAdd(lsw string) (*OvnCommand, error)
-	//delete SWITCH and all its ports
-	LSWDel(lsw string) (*OvnCommand, error)
-	// Print the names of all logical switches
-	LSWList() (*OvnCommand, error)
+	// Create ls named SWITCH
+	LSAdd(ls string) (*OvnCommand, error)
+	// Del ls and all its ports
+	LSDel(ls string) (*OvnCommand, error)
+	// Get all logical switches
+	LSList() ([]*LogicalSwitch, error)
+
 	// Add logical port PORT on SWITCH
-	LSPAdd(lsw, lsp string) (*OvnCommand, error)
+	LSPAdd(ls string, lsp string) (*OvnCommand, error)
 	// Delete PORT from its attached switch
 	LSPDel(lsp string) (*OvnCommand, error)
 	// Set addressset per lport
 	LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
 	// Set port security per lport
 	LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
+	// Get all lport by lswitch
+	LSPList(ls string) ([]*LogicalSwitchPort, error)
+
 	// Add LB to LSW
 	LSLBAdd(lswitch string, lb string) (*OvnCommand, error)
 	// Delete LB from LSW
 	LSLBDel(lswitch string, lb string) (*OvnCommand, error)
 	// List Load balancers for a LSW
 	LSLBList(lswitch string) ([]*LoadBalancer, error)
+
 	// Add ACL
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
 	// Delete acl
 	ACLDel(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
+
 	// Update address set
 	ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
 	// Add addressset
 	ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete addressset
 	ASDel(name string) (*OvnCommand, error)
+
 	// Add LR with given name
 	LRAdd(name string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete LR with given name
 	LRDel(name string) (*OvnCommand, error)
+	// Get LRs
+	LRList() ([]*LogicalRouter, error)
+
 	// Add LRP with given name on given lr
 	LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete LRP with given name on given lr
 	LRPDel(lr string, lrp string) (*OvnCommand, error)
+
 	// Add LB to LR
 	LRLBAdd(lr string, lb string) (*OvnCommand, error)
 	// Delete LB from LR
 	LRLBDel(lr string, lb string) (*OvnCommand, error)
 	// List Load balancers for a LR
 	LRLBList(lr string) ([]*LoadBalancer, error)
+
 	// Add LB
 	LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Delete LB with given name
 	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+
 	// Set dhcp4_options uuid on lsp
 	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
 	// Get dhcp4_options from lsp
@@ -96,28 +109,23 @@ type OVNDBApi interface {
 	LSPSetOpt(lsp string, options map[string]string) (*OvnCommand, error)
 
 	// Add dhcp options for cidr and provided external_ids
-	AddDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Set dhcp options for specific cidr and provided external_ids
-	SetDHCPOptions(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Del dhcp options via provided external_ids
-	DelDHCPOptions(uuid string) (*OvnCommand, error)
+	DHCPOptionsDel(uuid string) (*OvnCommand, error)
+	// List dhcp options
+	DHCPOptionsList() ([]*DHCPOptions, error)
 
 	// Add qos rule
 	QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error)
 	// Del qos rule, to delete wildcard specify priority -1 and string options as ""
 	QoSDel(ls string, direction string, priority int, match string) (*OvnCommand, error)
-	// Get qos rules by logical switch name
-	GetQoSBySwitch(ls string) ([]*QoS, error)
-
-	// Exec command, support mul-commands in one transaction.
-	Execute(cmds ...*OvnCommand) error
+	// Get qos rules by logical switch
+	QoSList(ls string) ([]*QoS, error)
 
 	// Get logical switch by name
 	GetLogicalSwitchByName(ls string) (*LogicalSwitch, error)
-	// Get all logical switches
-	GetLogicalSwitches() ([]*LogicalSwitch, error)
-	// Get all lport by lswitch
-	GetLogicalSwitchPortsBySwitch(lsw string) ([]*LogicalSwitchPort, error)
 	// Get all lrp by lr
 	GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error)
 
@@ -128,12 +136,11 @@ type OVNDBApi interface {
 	GetASByName(name string) (*AddressSet, error)
 	// Get LB with given name
 	GetLB(name string) ([]*LoadBalancer, error)
-	// Get dhcp options
-	GetDHCPOptions() ([]*DHCPOptions, error)
 	// Get LR with given name
 	GetLogicalRouter(name string) ([]*LogicalRouter, error)
-	// Get LRs
-	GetLogicalRouters() ([]*LogicalRouter, error)
+
+	// Exec command, support mul-commands in one transaction.
+	Execute(cmds ...*OvnCommand) error
 	SetCallBack(callback OVNSignal)
 }
 

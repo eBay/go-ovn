@@ -44,14 +44,14 @@ func init() {
 
 func main() {
 
-	ocmd, _ := ovndbapi.LSWAdd("ls1")
+	ocmd, _ := ovndbapi.LSAdd("ls1")
 	ovndbapi.Execute(ocmd)
 	ocmd, _ = ovndbapi.LSPAdd("ls1", "test")
 	ovndbapi.Execute(ocmd)
 	ocmd, _ = ovndbapi.LSPSetAddress("test", "12:34:56:78:90 10.10.10.1")
 	ovndbapi.Execute(ocmd)
 
-	lports, _ := ovndbapi.GetLogicalSwitchPortsBySwitch("ls1")
+	lports, _ := ovndbapi.LSPList("ls1")
 	for _, lp := range lports {
 		fmt.Printf("%v\n", *lp)
 	}
@@ -94,7 +94,7 @@ func main() {
 	}
 	ocmd, _ = ovndbapi.LSPDel("test")
 	ovndbapi.Execute(ocmd)
-	ocmd, _ = ovndbapi.LSWDel("ls1")
+	ocmd, _ = ovndbapi.LSDel("ls1")
 	ovndbapi.Execute(ocmd)
 
 }
