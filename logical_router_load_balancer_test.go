@@ -17,8 +17,9 @@
 package goovn
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -37,7 +38,7 @@ func TestLRLoadBalancer(t *testing.T) {
 		t.Fatal(err)
 	}
 	// verify router create
-	lrs, err := ovndbapi.GetLogicalRouter(LR1)
+	lrs, err := ovndbapi.LRGet(LR1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +101,7 @@ func TestLRLoadBalancer(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 	// Verify deletion
-	lb, err := ovndbapi.GetLB(LB2)
+	lb, err := ovndbapi.LBGet(LB2)
 	if err != nil {
 		t.Fatal(err)
 	}

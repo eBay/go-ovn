@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"fmt"
+
 	"github.com/ebay/libovsdb"
 )
 
@@ -33,7 +34,7 @@ type LogicalSwitch struct {
 	ExternalID   map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) lsAddImp(lsw string) (*OvnCommand, error) {
+func (odbi *ovndb) lsAddImp(lsw string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (odbi *ovnDBImp) lsAddImp(lsw string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lsDelImp(lsw string) (*OvnCommand, error) {
+func (odbi *ovndb) lsDelImp(lsw string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", lsw)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -68,7 +69,7 @@ func (odbi *ovnDBImp) lsDelImp(lsw string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) rowToLogicalSwitch(uuid string) *LogicalSwitch {
+func (odbi *ovndb) rowToLogicalSwitch(uuid string) *LogicalSwitch {
 	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch][uuid]
 	if !ok {
 		return nil
@@ -124,7 +125,8 @@ func (odbi *ovnDBImp) rowToLogicalSwitch(uuid string) *LogicalSwitch {
 	return ls
 }
 
-func (odbi *ovnDBImp) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) {
+func (odbi *ovndb) lsGetImp(ls string) ([]*LogicalSwitch, error) {
+	var lsList []*LogicalSwitch
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -135,14 +137,17 @@ func (odbi *ovnDBImp) GetLogicalSwitchByName(ls string) (*LogicalSwitch, error) 
 
 	for uuid, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == ls {
-			return odbi.rowToLogicalSwitch(uuid), nil
+			lsList = append(lsList, odbi.rowToLogicalSwitch(uuid))
 		}
 	}
 
-	return nil, ErrorNotFound
+	if len(lsList) == 0 {
+		return nil, ErrorNotFound
+	}
+	return lsList, nil
 }
 
-func (odbi *ovnDBImp) lsListImp() ([]*LogicalSwitch, error) {
+func (odbi *ovndb) lsListImp() ([]*LogicalSwitch, error) {
 	var listLS []*LogicalSwitch
 
 	odbi.cachemutex.RLock()
@@ -160,7 +165,7 @@ func (odbi *ovnDBImp) lsListImp() ([]*LogicalSwitch, error) {
 	return listLS, nil
 }
 
-func (odbi *ovnDBImp) lslbAddImp(lswitch string, lb string) (*OvnCommand, error) {
+func (odbi *ovndb) lslbAddImp(lswitch string, lb string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = lb
@@ -191,7 +196,7 @@ func (odbi *ovnDBImp) lslbAddImp(lswitch string, lb string) (*OvnCommand, error)
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lslbDelImp(lswitch string, lb string) (*OvnCommand, error) {
+func (odbi *ovndb) lslbDelImp(lswitch string, lb string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = lb
@@ -223,7 +228,7 @@ func (odbi *ovnDBImp) lslbDelImp(lswitch string, lb string) (*OvnCommand, error)
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lslblistImp(lswitch string) ([]*LoadBalancer, error) {
+func (odbi *ovndb) lslbListImp(lswitch string) ([]*LoadBalancer, error) {
 	var listLB []*LoadBalancer
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
@@ -272,7 +277,7 @@ func (odbi *ovnDBImp) lslblistImp(lswitch string) ([]*LoadBalancer, error) {
 	return listLB, nil
 }
 
-func (odbi *ovnDBImp) lsExtIdsAddImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lsExtIdsAddImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = ls
@@ -299,7 +304,7 @@ func (odbi *ovnDBImp) lsExtIdsAddImp(ls string, external_ids map[string]string) 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lsExtIdsDelImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lsExtIdsDelImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = ls

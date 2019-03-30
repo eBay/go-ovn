@@ -31,15 +31,18 @@ const (
 	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
 )
 
-var ovndbapi goovn.OVNDBApi
+var ovndbapi goovn.Client
 
 func init() {
+	var err error
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
 	}
-	var socket = ovs_rundir + "/" + OVNNB_SOCKET
-	ovndbapi, _ = goovn.GetInstance(socket, goovn.UNIX, "", 0, nil)
+	ovndbapi, err = goovn.NewClient(&goovn.Config{Addr: "unix:" + ovs_rundir + "/" + OVNNB_SOCKET})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
@@ -65,7 +68,7 @@ func main() {
 	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
 	ovndbapi.Execute(ocmd)
 
-	acls, _ := ovndbapi.GetACLsBySwitch("ls1")
+	acls, _ := ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
@@ -73,7 +76,7 @@ func main() {
 
 	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH, 1001, map[string]string{})
 	ovndbapi.Execute(ocmd)
-	acls, _ = ovndbapi.GetACLsBySwitch("ls1")
+	acls, _ = ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
@@ -81,14 +84,14 @@ func main() {
 	fmt.Println()
 	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
 	ovndbapi.Execute(ocmd)
-	acls, _ = ovndbapi.GetACLsBySwitch("ls1")
+	acls, _ = ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	fmt.Println()
 	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
 	ovndbapi.Execute(ocmd)
-	acls, _ = ovndbapi.GetACLsBySwitch("ls1")
+	acls, _ = ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}

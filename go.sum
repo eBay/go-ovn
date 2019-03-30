@@ -4,8 +4,8 @@ github.com/cenkalti/rpc2 v0.0.0-20170726070524-c51a77e5f664 h1:GqbYbGcGyW6AwuNC+
 github.com/cenkalti/rpc2 v0.0.0-20170726070524-c51a77e5f664/go.mod h1:v2npkhrXyk5BCnkNIiPdRI23Uq6uWPUQGL2hnRcRr/M=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/ebay/libovsdb v0.0.0-20190321012136-3f9a0a351361 h1:yBERDGYNK8zerH0mFzRNHV460RzXW4bpdJ6WBNEyzWk=
-github.com/ebay/libovsdb v0.0.0-20190321012136-3f9a0a351361/go.mod h1:8L+p8pOFMbf/ecD7yP6IPEi2eLOmy4D7K/j7PYdkIL4=
+github.com/ebay/libovsdb v0.0.0-20190410020142-df4f42ff0dbc h1:s7jxWkrREDWJhniA2yWF/i6hYkSvOSTe5WRfnfA1uHs=
+github.com/ebay/libovsdb v0.0.0-20190410020142-df4f42ff0dbc/go.mod h1:TPIbkgdnu8IfDA510pGDS3zYGmnvrPttnge3uhBQf/0=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

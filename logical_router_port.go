@@ -35,7 +35,7 @@ type LogicalRouterPort struct {
 	ExternalID     map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) lrpAddImp(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lrpAddImp(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (odbi *ovnDBImp) lrpAddImp(lr string, lrp string, mac string, network []str
 
 }
 
-func (odbi *ovnDBImp) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
+func (odbi *ovndb) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = lrp
 
@@ -129,7 +129,7 @@ func (odbi *ovnDBImp) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) rowToLogicalRouterPort(uuid string) *LogicalRouterPort {
+func (odbi *ovndb) rowToLogicalRouterPort(uuid string) *LogicalRouterPort {
 	lrp := &LogicalRouterPort{
 		UUID:       uuid,
 		Name:       odbi.cache[tableLogicalRouterPort][uuid].Fields["name"].(string),
@@ -181,7 +181,7 @@ func (odbi *ovnDBImp) rowToLogicalRouterPort(uuid string) *LogicalRouterPort {
 	return lrp
 }
 
-func (odbi *ovnDBImp) GetLogicalRouterPortsByRouter(lr string) ([]*LogicalRouterPort, error) {
+func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 	var listLRP []*LogicalRouterPort
 
 	odbi.cachemutex.RLock()

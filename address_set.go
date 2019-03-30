@@ -27,7 +27,7 @@ type AddressSet struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) asUpdateImp(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = name
 	addresses, err := libovsdb.NewOvsSet(addrs)
@@ -54,7 +54,7 @@ func (odbi *ovnDBImp) ASUpdate(name string, addrs []string, external_ids map[str
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) asAddImp(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = name
 	//should support the -is-exist flag here.
@@ -84,8 +84,9 @@ func (odbi *ovnDBImp) ASAdd(name string, addrs []string, external_ids map[string
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetASByName(name string) (*AddressSet, error) {
-	listAS, err := odbi.GetAddressSets()
+// TODO fix to get as from cache directly
+func (odbi *ovndb) asGetImp(name string) (*AddressSet, error) {
+	listAS, err := odbi.ASList()
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (odbi *ovnDBImp) GetASByName(name string) (*AddressSet, error) {
 	return nil, ErrorNotFound
 }
 
-func (odbi *ovnDBImp) ASDel(name string) (*OvnCommand, error) {
+func (odbi *ovndb) asDelImp(name string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", name)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -110,7 +111,7 @@ func (odbi *ovnDBImp) ASDel(name string) (*OvnCommand, error) {
 }
 
 // Get all addressset
-func (odbi *ovnDBImp) GetAddressSets() ([]*AddressSet, error) {
+func (odbi *ovndb) asListImp() ([]*AddressSet, error) {
 	var listAS []*AddressSet
 
 	odbi.cachemutex.RLock()

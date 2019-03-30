@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"fmt"
+
 	"github.com/ebay/libovsdb"
 )
 
@@ -35,7 +36,7 @@ type LogicalRouter struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) lrAddImp(name string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lrAddImp(name string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -67,7 +68,7 @@ func (odbi *ovnDBImp) lrAddImp(name string, external_ids map[string]string) (*Ov
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lrDelImp(name string) (*OvnCommand, error) {
+func (odbi *ovndb) lrDelImp(name string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", name)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -78,7 +79,7 @@ func (odbi *ovnDBImp) lrDelImp(name string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetLogicalRouter(name string) ([]*LogicalRouter, error) {
+func (odbi *ovndb) lrGetImp(name string) ([]*LogicalRouter, error) {
 	var lrList []*LogicalRouter
 
 	odbi.cachemutex.RLock()
@@ -98,7 +99,7 @@ func (odbi *ovnDBImp) GetLogicalRouter(name string) ([]*LogicalRouter, error) {
 	return lrList, nil
 }
 
-func (odbi *ovnDBImp) rowToLogicalRouter(uuid string) *LogicalRouter {
+func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	lr := &LogicalRouter{
 		UUID:       uuid,
 		Name:       odbi.cache[tableLogicalRouter][uuid].Fields["name"].(string),
@@ -129,7 +130,7 @@ func (odbi *ovnDBImp) rowToLogicalRouter(uuid string) *LogicalRouter {
 }
 
 // Get all logical switches
-func (odbi *ovnDBImp) lrListImp() ([]*LogicalRouter, error) {
+func (odbi *ovndb) lrListImp() ([]*LogicalRouter, error) {
 	var listLR []*LogicalRouter
 
 	odbi.cachemutex.RLock()
@@ -147,7 +148,7 @@ func (odbi *ovnDBImp) lrListImp() ([]*LogicalRouter, error) {
 	return listLR, nil
 }
 
-func (odbi *ovnDBImp) lrlbAddImp(lr string, lb string) (*OvnCommand, error) {
+func (odbi *ovndb) lrlbAddImp(lr string, lb string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = lb
@@ -178,7 +179,7 @@ func (odbi *ovnDBImp) lrlbAddImp(lr string, lb string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lrlbDelImp(lr string, lb string) (*OvnCommand, error) {
+func (odbi *ovndb) lrlbDelImp(lr string, lb string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["name"] = lb
@@ -210,7 +211,7 @@ func (odbi *ovnDBImp) lrlbDelImp(lr string, lb string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lrlblistImp(lr string) ([]*LoadBalancer, error) {
+func (odbi *ovndb) lrlbListImp(lr string) ([]*LoadBalancer, error) {
 	var listLB []*LoadBalancer
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()

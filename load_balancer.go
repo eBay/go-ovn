@@ -30,7 +30,7 @@ type LoadBalancer struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) lbUpdateImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
+func (odbi *ovndb) lbUpdateImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
 	row := make(OVNRow)
 
 	// prepare vips map
@@ -57,7 +57,7 @@ func (odbi *ovnDBImp) lbUpdateImp(name string, vipPort string, protocol string, 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lbAddImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
+func (odbi *ovndb) lbAddImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	namedUUID, err := newRowUUID()
 	if err != nil {
@@ -92,7 +92,7 @@ func (odbi *ovnDBImp) lbAddImp(name string, vipPort string, protocol string, add
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) lbDelImp(name string) (*OvnCommand, error) {
+func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 
 	condition := libovsdb.NewCondition("name", "==", name)
@@ -134,7 +134,7 @@ func (odbi *ovnDBImp) lbDelImp(name string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) GetLB(name string) ([]*LoadBalancer, error) {
+func (odbi *ovndb) lbGetImp(name string) ([]*LoadBalancer, error) {
 	var listLB []*LoadBalancer
 
 	odbi.cachemutex.RLock()
@@ -157,7 +157,7 @@ func (odbi *ovnDBImp) GetLB(name string) ([]*LoadBalancer, error) {
 	return listLB, nil
 }
 
-func (odbi *ovnDBImp) rowToLB(uuid string) (*LoadBalancer, error) {
+func (odbi *ovndb) rowToLB(uuid string) (*LoadBalancer, error) {
 	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer][uuid]
 	if !ok {
 		return nil, ErrorSchema
