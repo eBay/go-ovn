@@ -58,6 +58,11 @@ type OVNDBApi interface {
 	// List Load balancers for a LSW
 	LSLBList(lswitch string) ([]*LoadBalancer, error)
 
+	// Add ExtIDs to SWITCH
+	LSExtIdsAdd(lswitch string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete ExtIDs from SWITCH
+	LSExtIdsDel(lswitch string, external_ids map[string]string) (*OvnCommand, error)
+
 	// Add ACL
 	ACLAdd(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
 	// Delete acl
