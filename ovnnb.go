@@ -149,6 +149,14 @@ func (odb *OVNDB) LSLBList(lswitch string) ([]*LoadBalancer, error) {
 	return odb.imp.lslblistImp(lswitch)
 }
 
+func (odb *OVNDB) LSExtIdsAdd(lsw string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.lsExtIdsAddImp(lsw, external_ids)
+}
+
+func (odb *OVNDB) LSExtIdsDel(lsw string, external_ids map[string]string) (*OvnCommand, error) {
+	return odb.imp.lsExtIdsDelImp(lsw, external_ids)
+}
+
 func (odb *OVNDB) LRAdd(name string, external_ids map[string]string) (*OvnCommand, error) {
 	return odb.imp.lrAddImp(name, external_ids)
 }

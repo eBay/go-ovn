@@ -271,3 +271,57 @@ func (odbi *ovnDBImp) lslblistImp(lswitch string) ([]*LoadBalancer, error) {
 	}
 	return listLB, nil
 }
+
+func (odbi *ovnDBImp) lsExtIdsAddImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+	var operations []libovsdb.Operation
+	row := make(OVNRow)
+	row["name"] = ls
+	lsuuid := odbi.getRowUUID(tableLogicalSwitch, row)
+	if len(lsuuid) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(external_ids) == 0 {
+		return nil, fmt.Errorf("external_ids is nil or empty")
+	}
+	mutateSet, err := libovsdb.NewOvsMap(external_ids)
+	if err != nil {
+		return nil, err
+	}
+	mutation := libovsdb.NewMutation("external_ids", opInsert, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", ls)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitch,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations = append(operations, mutateOp)
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovnDBImp) lsExtIdsDelImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+	var operations []libovsdb.Operation
+	row := make(OVNRow)
+	row["name"] = ls
+	lsuuid := odbi.getRowUUID(tableLogicalSwitch, row)
+	if len(lsuuid) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(external_ids) == 0 {
+		return nil, fmt.Errorf("external_ids is nil or empty")
+	}
+	mutateSet, err := libovsdb.NewOvsMap(external_ids)
+	if err != nil {
+		return nil, err
+	}
+	mutation := libovsdb.NewMutation("external_ids", opDelete, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", ls)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitch,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations = append(operations, mutateOp)
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
