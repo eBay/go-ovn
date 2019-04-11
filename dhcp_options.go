@@ -27,7 +27,7 @@ type DHCPOptions struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) rowToDHCPOptions(uuid string) *DHCPOptions {
+func (odbi *ovndb) rowToDHCPOptions(uuid string) *DHCPOptions {
 	cacheDHCPOptions, ok := odbi.cache[tableDHCPOptions][uuid]
 	if !ok {
 		return nil
@@ -69,7 +69,7 @@ func newDHCPRow(cidr string, options map[string]string, external_ids map[string]
 	return row, nil
 }
 
-func (odbi *ovnDBImp) dhcpOptionsAddImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) dhcpOptionsAddImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (odbi *ovnDBImp) dhcpOptionsAddImp(cidr string, options map[string]string, 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) dhcpOptionsSetImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) dhcpOptionsSetImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
 
 	row, err := newDHCPRow(cidr, nil, external_ids)
 	if err != nil {
@@ -118,7 +118,7 @@ func (odbi *ovnDBImp) dhcpOptionsSetImp(cidr string, options map[string]string, 
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
+func (odbi *ovndb) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{uuid})
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -130,7 +130,7 @@ func (odbi *ovnDBImp) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
 }
 
 // List all dhcp options
-func (odbi *ovnDBImp) dhcpOptionsListImp() ([]*DHCPOptions, error) {
+func (odbi *ovndb) dhcpOptionsListImp() ([]*DHCPOptions, error) {
 	var listDHCP []*DHCPOptions
 
 	odbi.cachemutex.RLock()

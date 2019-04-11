@@ -46,7 +46,7 @@ func TestLoadBalancer(t *testing.T) {
 	t.Logf("Updating LB to OVN done")
 
 	t.Logf("Gettting LB by name")
-	lb, err := ovndbapi.GetLB(LB1)
+	lb, err := ovndbapi.LBGet(LB1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestLoadBalancer(t *testing.T) {
 	}
 
 	// Verify deletion
-	lb, err = ovndbapi.GetLB(LB1)
+	lb, err = ovndbapi.LBGet(LB1)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -17,17 +17,18 @@
 package goovn
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
-	LS3 = "LS3"
+	LS3             = "LS3"
 	NEUTRON_NETWORK = "neutron:network"
-	DUMMY = "dummy"
-	FOO = "foo"
-	BAR = "bar"
-	)
+	DUMMY           = "dummy"
+	FOO             = "foo"
+	BAR             = "bar"
+)
 
 func TestLSwitchExtIds(t *testing.T) {
 	// create Switch
@@ -41,11 +42,11 @@ func TestLSwitchExtIds(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ls, err := ovndbapi.GetLogicalSwitchByName(LS3)
+	ls, err := ovndbapi.LSGet(LS3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ls.Name != LS3 {
+	if ls[0].Name != LS3 {
 		t.Fatalf("ls not created %v", LS3)
 	}
 	// Add external_id to LS3
@@ -58,12 +59,12 @@ func TestLSwitchExtIds(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Get LS3 and get external_id NEUTRON_NETWORK
-	lswitch, err := ovndbapi.GetLogicalSwitchByName(LS3)
+	lswitch, err := ovndbapi.LSGet(LS3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	externalIDs := lswitch.ExternalID
-	for key, val := range(externalIDs) {
+	externalIDs := lswitch[0].ExternalID
+	for key, val := range externalIDs {
 		if key == NEUTRON_NETWORK {
 			assert.Equal(t, true, val.(string) == DUMMY, "Got external ID dummy")
 			t.Logf("Successfully validated external_id key NEUTRON_NETWORK to LS3")
@@ -90,12 +91,12 @@ func TestLSwitchExtIds(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Get LS3 and get external_id
-	lswitch, err = ovndbapi.GetLogicalSwitchByName(LS3)
+	lswitch, err = ovndbapi.LSGet(LS3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	externalIDs = lswitch.ExternalID
-	for key, val := range(externalIDs) {
+	externalIDs = lswitch[0].ExternalID
+	for key, val := range externalIDs {
 		if key == FOO {
 			assert.Equal(t, true, val.(string) == BAR, "Externel id with value dummy deleted")
 			t.Logf("Deleted external_id key NEUTRON_NETWORK from LS3")

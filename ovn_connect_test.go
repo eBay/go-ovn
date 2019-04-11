@@ -17,6 +17,7 @@
 package goovn
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -37,20 +38,21 @@ const (
 	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
 )
 
-var ovndbapi OVNDBApi
+var ovndbapi Client
 
 func TestMain(m *testing.M) {
-	var api OVNDBApi
+	var api Client
 	var err error
 
+	cfg := &Config{}
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
 	}
 	var ovn_nb_db = os.Getenv("OVN_NB_DB")
 	if ovn_nb_db == "" {
-		var socket = ovs_rundir + "/" + OVNNB_SOCKET
-		api, err = GetInstance(socket, UNIX, "", 0, nil)
+		cfg.Addr = "unix:" + ovs_rundir + "/" + OVNNB_SOCKET
+		api, err = NewClient(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -60,14 +62,15 @@ func TestMain(m *testing.M) {
 			log.Fatal("Unexpected format of $OVN_NB_DB")
 		}
 		if len(strs) == 2 {
-			var socket = ovs_rundir + "/" + strs[1]
-			api, err = GetInstance(socket, UNIX, "", 0, nil)
+			cfg.Addr = "unix:" + ovs_rundir + "/" + strs[1]
+			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			port, _ := strconv.Atoi(strs[2])
-			api, err = GetInstance("", strs[0], strs[1], port, nil)
+			cfg.Addr = fmt.Sprintf("tcp:%s%s:%d", strs[0], strs[1], port)
+			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}

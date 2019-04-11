@@ -39,11 +39,11 @@ func TestLSLoadBalancer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ls, err := ovndbapi.GetLogicalSwitchByName(LSW1)
+	ls, err := ovndbapi.LSGet(LSW1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ls.Name != LSW1 {
+	if ls[0].Name != LSW1 {
 		t.Fatalf("ls not created %v", LSW1)
 	}
 	// Create LB LB3

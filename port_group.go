@@ -30,7 +30,7 @@ type PortGroup struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) pgAddImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (odbi *ovnDBImp) pgAddImp(group string, ports []string, external_ids map[st
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) pgSetPortsImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) pgSetPortsImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = group
 
@@ -97,7 +97,7 @@ func (odbi *ovnDBImp) pgSetPortsImp(group string, ports []string, external_ids m
 
 }
 
-func (odbi *ovnDBImp) pgDelImp(group string) (*OvnCommand, error) {
+func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", group)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -108,7 +108,7 @@ func (odbi *ovnDBImp) pgDelImp(group string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) RowToPortGroup(uuid string) *PortGroup {
+func (odbi *ovndb) RowToPortGroup(uuid string) *PortGroup {
 	pg := &PortGroup{
 		UUID:       uuid,
 		Name:       odbi.cache[tablePortGroup][uuid].Fields["name"].(string),
@@ -131,7 +131,7 @@ func (odbi *ovnDBImp) RowToPortGroup(uuid string) *PortGroup {
 	return pg
 }
 
-func (odbi *ovnDBImp) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitchPort, error) {
+func (odbi *ovndb) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitchPort, error) {
 	var listLSP []*LogicalSwitchPort
 
 	odbi.cachemutex.RLock()

@@ -23,7 +23,7 @@ import (
 )
 
 func findAS(name string) bool {
-	as, err := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.ASList()
 	if err != nil {
 		return false
 	}
@@ -36,7 +36,7 @@ func findAS(name string) bool {
 }
 
 func addressSetCmp(asname string, targetvalue []string) bool {
-	as, err := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.ASList()
 	if err != nil {
 		return false
 	}
@@ -80,7 +80,7 @@ func TestAddressSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	as, err := ovndbapi.GetAddressSets()
+	as, err := ovndbapi.ASList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestAddressSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	as, err = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.ASList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestAddressSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	as, err = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.ASList()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestAddressSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	as, err = ovndbapi.GetAddressSets()
+	as, err = ovndbapi.ASList()
 	if err != nil {
 		t.Fatal(err)
 	}

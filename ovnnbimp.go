@@ -33,23 +33,7 @@ var (
 
 type OVNRow map[string]interface{}
 
-func newNBImp(client *ovnDBClient, callback OVNSignal) (*ovnDBImp, error) {
-	nbimp := &ovnDBImp{
-		client: client,
-		cache:  make(map[string]map[string]libovsdb.Row),
-	}
-	initial, err := nbimp.client.dbclient.MonitorAll(NBDB, "")
-	if err != nil {
-		return nil, err
-	}
-	nbimp.populateCache(*initial)
-	notifier := ovnNotifier{nbimp}
-	nbimp.client.dbclient.Register(notifier)
-	nbimp.callback = callback
-	return nbimp, nil
-}
-
-func (odbi *ovnDBImp) getRowUUIDs(table string, row OVNRow) []string {
+func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
 	var uuids []string
 	var wildcard bool
 
@@ -90,7 +74,7 @@ func (odbi *ovnDBImp) getRowUUIDs(table string, row OVNRow) []string {
 	return uuids
 }
 
-func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
+func (odbi *ovndb) getRowUUID(table string, row OVNRow) string {
 	uuids := odbi.getRowUUIDs(table, row)
 	if len(uuids) > 0 {
 		return uuids[0]
@@ -100,7 +84,7 @@ func (odbi *ovnDBImp) getRowUUID(table string, row OVNRow) string {
 
 //test if map s contains t
 //This function is not both s and t are nil at same time
-func (odbi *ovnDBImp) oMapContians(s, t map[interface{}]interface{}) bool {
+func (odbi *ovndb) oMapContians(s, t map[interface{}]interface{}) bool {
 	if s == nil || t == nil {
 		return false
 	}
@@ -115,7 +99,7 @@ func (odbi *ovnDBImp) oMapContians(s, t map[interface{}]interface{}) bool {
 	return true
 }
 
-func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string, error) {
+func (odbi *ovndb) getRowUUIDContainsUUID(table, field, uuid string) (string, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -133,7 +117,7 @@ func (odbi *ovnDBImp) getRowUUIDContainsUUID(table, field, uuid string) (string,
 	return "", ErrorNotFound
 }
 
-func (odbi *ovnDBImp) getRowsMatchingUUID(table, field, uuid string) ([]string, error) {
+func (odbi *ovndb) getRowsMatchingUUID(table, field, uuid string) ([]string, error) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 	var uuids []string
@@ -149,11 +133,11 @@ func (odbi *ovnDBImp) getRowsMatchingUUID(table, field, uuid string) ([]string, 
 	return uuids, nil
 }
 
-func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
+func (odbi *ovndb) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
 	// Only support one trans at same time now.
 	odbi.tranmutex.Lock()
 	defer odbi.tranmutex.Unlock()
-	reply, err := odbi.client.dbclient.Transact(NBDB, ops...)
+	reply, err := odbi.client.Transact(dbNB, ops...)
 
 	if err != nil {
 		return reply, err
@@ -170,7 +154,7 @@ func (odbi *ovnDBImp) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationR
 	return reply, nil
 }
 
-func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
+func (odbi *ovndb) execute(cmds ...*OvnCommand) error {
 	if cmds == nil {
 		return nil
 	}
@@ -187,7 +171,7 @@ func (odbi *ovnDBImp) Execute(cmds ...*OvnCommand) error {
 	return nil
 }
 
-func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
+func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
 	for field, value := range row.Fields {
 		if v, ok := value.(float64); ok {
 			n := int(v)
@@ -198,7 +182,7 @@ func (odbi *ovnDBImp) float64_to_int(row libovsdb.Row) {
 	}
 }
 
-func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
+func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	empty := libovsdb.Row{}
 
 	odbi.cachemutex.Lock()
@@ -279,7 +263,7 @@ func (odbi *ovnDBImp) populateCache(updates libovsdb.TableUpdates) {
 	}
 }
 
-func (odbi *ovnDBImp) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
+func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 	var ret = []string{}
 	for _, s := range oset.GoSet {
 		value, ok := s.(string)

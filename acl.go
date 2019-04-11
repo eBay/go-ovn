@@ -30,7 +30,7 @@ type ACL struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error) {
+func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -131,7 +131,7 @@ func (odbi *ovnDBImp) getACLUUIDByRow(lsw, table string, row OVNRow) (string, er
 	return "", ErrorNotFound
 }
 
-func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
+func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (odbi *ovnDBImp) aclAddImp(lsw, direct, match, action string, priority int,
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
 	row := make(OVNRow)
 
 	wherecondition := []interface{}{}
@@ -241,7 +241,7 @@ func (odbi *ovnDBImp) aclDelImp(lsw, direct, match string, priority int, externa
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) rowToACL(uuid string) *ACL {
+func (odbi *ovndb) rowToACL(uuid string) *ACL {
 	cacheACL, ok := odbi.cache[tableACL][uuid]
 	if !ok {
 		return nil
@@ -261,7 +261,7 @@ func (odbi *ovnDBImp) rowToACL(uuid string) *ACL {
 }
 
 // Get all acl by lswitch
-func (odbi *ovnDBImp) GetACLsBySwitch(lsw string) ([]*ACL, error) {
+func (odbi *ovndb) aclListImp(lsw string) ([]*ACL, error) {
 	var listACL []*ACL
 
 	odbi.cachemutex.RLock()

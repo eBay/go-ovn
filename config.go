@@ -17,21 +17,12 @@
 package goovn
 
 import (
-	"github.com/ebay/libovsdb"
+	"crypto/tls"
 )
 
-type ovnNotifier struct {
-	odbi *ovndb
-}
-
-func (notify ovnNotifier) Update(context interface{}, tableUpdates libovsdb.TableUpdates) {
-	notify.odbi.populateCache(tableUpdates)
-}
-func (notify ovnNotifier) Locked([]interface{}) {
-}
-func (notify ovnNotifier) Stolen([]interface{}) {
-}
-func (notify ovnNotifier) Echo([]interface{}) {
-}
-func (notify ovnNotifier) Disconnected(client *libovsdb.OvsdbClient) {
+type Config struct {
+	Addr         string
+	TLSConfig    *tls.Config
+	SignalCB     OVNSignal
+	DisconnectCB string
 }

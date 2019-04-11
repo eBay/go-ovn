@@ -33,7 +33,7 @@ type QoS struct {
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovnDBImp) rowToQoS(uuid string) *QoS {
+func (odbi *ovndb) rowToQoS(uuid string) *QoS {
 	cacheQoS, ok := odbi.cache[tableQoS][uuid]
 	if !ok {
 		return nil
@@ -52,7 +52,7 @@ func (odbi *ovnDBImp) rowToQoS(uuid string) *QoS {
 	return qos
 }
 
-func (odbi *ovnDBImp) addQoSImp(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) qosAddImp(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (odbi *ovnDBImp) addQoSImp(ls string, direction string, priority int, match
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) delQoSImp(ls string, direction string, priority int, match string) (*OvnCommand, error) {
+func (odbi *ovndb) qosDelImp(ls string, direction string, priority int, match string) (*OvnCommand, error) {
 	row := make(OVNRow)
 
 	if len(direction) > 0 {
@@ -133,11 +133,12 @@ func (odbi *ovnDBImp) delQoSImp(ls string, direction string, priority int, match
 	}
 
 	if len(selUUIDs) == 0 {
-		lsw, err := odbi.GetLogicalSwitchByName(ls)
+		lsw, err := odbi.lsGetImp(ls)
 		if err != nil {
 			return nil, err
 		}
-		selUUIDs = lsw.QoSRules
+		// TODO return error if multiple switches have the same name or modify all of them?
+		selUUIDs = lsw[0].QoSRules
 	}
 
 	var delUUIDs []libovsdb.UUID
@@ -170,7 +171,7 @@ func (odbi *ovnDBImp) delQoSImp(ls string, direction string, priority int, match
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovnDBImp) listQoSImp(ls string) ([]*QoS, error) {
+func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 	var listQoS []*QoS
 
 	odbi.cachemutex.RLock()

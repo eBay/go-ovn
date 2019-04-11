@@ -105,7 +105,7 @@ func TestACLs(t *testing.T) {
 
 	assert.Equal(t, true, len(lsps) == 2, "test[%s]: %+v", "added 2 ports", lsps)
 
-	acls, err := ovndbapi.GetACLsBySwitch(LSW)
+	acls, err := ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	acls, err = ovndbapi.GetACLsBySwitch(LSW)
+	acls, err = ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
