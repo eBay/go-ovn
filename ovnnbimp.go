@@ -19,6 +19,7 @@ package goovn
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
@@ -330,6 +331,7 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 		case reflect.Int:
 			f.SetInt(int64(val.(int)))
 		case reflect.String:
+			log.Printf("%#+v\n", val)
 			f.SetString(val.(string))
 		case reflect.Map:
 			if f.IsNil() {
