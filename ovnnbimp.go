@@ -331,7 +331,7 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 		case reflect.Int:
 			f.SetInt(int64(val.(int)))
 		case reflect.String:
-			log.Printf("%#+v\n", val)
+			log.Printf("%#+v\n", tag)
 			f.SetString(val.(string))
 		case reflect.Map:
 			if f.IsNil() {
