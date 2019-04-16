@@ -340,7 +340,12 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 			switch val.(type) {
 			case libovsdb.OvsSet:
 				for _, vmv := range val.(libovsdb.OvsSet).GoSet {
-					reflect.Append(f, reflect.ValueOf(vmv))
+					switch vmv.(type) {
+					case libovsdb.UUID:
+						reflect.Append(f, reflect.ValueOf(vmv.(libovsdb.UUID).GoUUID))
+					default:
+						panic(vmv)
+					}
 				}
 			case libovsdb.UUID:
 				vmv := val.(libovsdb.UUID).GoUUID
