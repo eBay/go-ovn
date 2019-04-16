@@ -191,6 +191,7 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	for table, tableUpdate := range updates.Updates {
 		if _, ok := odbi.cache[table]; !ok {
 			odbi.cache[table] = make(map[string]libovsdb.Row)
+			odbi.cache2[table] = make(map[string]interface{})
 		}
 		for uuid, row := range tableUpdate.Rows {
 			// TODO: this is a workaround for the problem of
@@ -198,7 +199,8 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 			odbi.float64_to_int(row.New)
 
 			if !reflect.DeepEqual(row.New, empty) {
-				odbi.cache[table][uuid] = rowToTableRow(table, uuid, row.New)
+				odbi.cache[table][uuid] = row.New
+				odbi.cache2[table][uuid] = rowToTableRow(table, uuid, row.New)
 				if odbi.callback != nil {
 					switch table {
 					case tableLogicalRouter:
