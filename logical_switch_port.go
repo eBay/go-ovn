@@ -29,8 +29,8 @@ type LogicalSwitchPort struct {
 	Options       map[interface{}]interface{} `ovn:"options"`
 	Addresses     []string                    `ovn:"addresses"`
 	PortSecurity  []string                    `ovn:"port_security"`
-	DHCPv4Options string                      `ovn:"dhcpv4_options"`
-	DHCPv6Options string                      `ovn:"dhcpv6_options"`
+	DHCPv4Options []string                    `ovn:"dhcpv4_options"`
+	DHCPv6Options []string                    `ovn:"dhcpv6_options"`
 	ExternalID    map[interface{}]interface{} `ovn:"external_ids"`
 }
 
