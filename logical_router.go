@@ -23,17 +23,17 @@ import (
 )
 
 type LogicalRouter struct {
-	UUID    string
-	Name    string
-	Enabled bool
+	UUID    string `ovn:"uuid"`
+	Name    string `ovn:"name"`
+	Enabled bool   `ovn:"enabled"`
 
-	Ports        []string
-	StaticRoutes []string
-	NAT          []string
-	LoadBalancer []string
+	Ports        []string `ovn:"ports"`
+	StaticRoutes []string `ovn:"static_routes"`
+	NAT          []string `ovn:"nat"`
+	LoadBalancer []string `ovn:"load_balancer"`
 
-	Options    map[interface{}]interface{}
-	ExternalID map[interface{}]interface{}
+	Options    map[interface{}]interface{} `ovn:"options"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) lrAddImp(name string, external_ids map[string]string) (*OvnCommand, error) {

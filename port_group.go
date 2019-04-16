@@ -23,11 +23,11 @@ import (
 )
 
 type PortGroup struct {
-	UUID       string
-	Name       string
-	Ports      []string
-	ACLs       []string
-	ExternalID map[interface{}]interface{}
+	UUID       string                      `ovn:"uuid"`
+	Name       string                      `ovn:"name"`
+	Ports      []string                    `ovn:"ports"`
+	ACLs       []string                    `ovn:"acls"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {

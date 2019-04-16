@@ -21,10 +21,10 @@ import (
 )
 
 type DHCPOptions struct {
-	UUID       string
-	CIDR       string
-	Options    map[interface{}]interface{}
-	ExternalID map[interface{}]interface{}
+	UUID       string                      `ovn:"uuid"`
+	CIDR       string                      `ovn:"cidr"`
+	Options    map[interface{}]interface{} `ovn:"options"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) rowToDHCPOptions(uuid string) *DHCPOptions {

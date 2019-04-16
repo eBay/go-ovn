@@ -23,11 +23,11 @@ import (
 )
 
 type LoadBalancer struct {
-	UUID       string
-	Name       string
-	vips       map[interface{}]interface{}
-	protocol   string
-	ExternalID map[interface{}]interface{}
+	UUID       string                      `ovn:"uuid"`
+	Name       string                      `ovn:"name"`
+	vips       map[interface{}]interface{} `ovn:"vips"`
+	protocol   string                      `ovn:"protocol"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) lbUpdateImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {

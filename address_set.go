@@ -21,10 +21,10 @@ import (
 )
 
 type AddressSet struct {
-	UUID       string
-	Name       string
-	Addresses  []string
-	ExternalID map[interface{}]interface{}
+	UUID       string                      `ovn:"uuid"`
+	Name       string                      `ovn:"name"`
+	Addresses  []string                    `ovn:"addresses"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) asUpdateImp(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {

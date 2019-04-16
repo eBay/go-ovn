@@ -23,15 +23,15 @@ import (
 )
 
 type LogicalSwitchPort struct {
-	UUID          string
-	Name          string
-	Type          string
-	Options       map[interface{}]interface{}
-	Addresses     []string
-	PortSecurity  []string
-	DHCPv4Options string
-	DHCPv6Options string
-	ExternalID    map[interface{}]interface{}
+	UUID          string                      `ovn:"uuid"`
+	Name          string                      `ovn:"name"`
+	Type          string                      `ovn:"type"`
+	Options       map[interface{}]interface{} `ovn:"options"`
+	Addresses     []string                    `ovn:"addresses"`
+	PortSecurity  []string                    `ovn:"port_security"`
+	DHCPv4Options string                      `ovn:"dhcpv4_options"`
+	DHCPv6Options string                      `ovn:"dhcpv6_options"`
+	ExternalID    map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) lspAddImp(lsw, lsp string) (*OvnCommand, error) {

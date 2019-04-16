@@ -17,10 +17,10 @@
 package goovn
 
 type GatewayChassis struct {
-	UUID        string
-	Name        string
-	ChassisName string
-	Priority    int
-	Options     map[interface{}]interface{}
-	ExternalID  map[interface{}]interface{}
+	UUID        string                      `ovn:"uuid"`
+	Name        string                      `ovn:"name"`
+	ChassisName string                      `ovn:"chassis_name"`
+	Priority    int                         `ovn:"priority"`
+	Options     map[interface{}]interface{} `ovn:"options"`
+	ExternalID  map[interface{}]interface{} `ovn:"external_ids"`
 }

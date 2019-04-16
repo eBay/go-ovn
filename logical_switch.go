@@ -23,15 +23,15 @@ import (
 )
 
 type LogicalSwitch struct {
-	UUID         string
-	Name         string
-	Ports        []string
-	LoadBalancer []string
-	ACLs         []string
-	QoSRules     []string
-	DNSRecords   []string
-	OtherConfig  map[interface{}]interface{}
-	ExternalID   map[interface{}]interface{}
+	UUID         string                      `ovn:"uuid"`
+	Name         string                      `ovn:"name"`
+	Ports        []string                    `ovn:"ports"`
+	LoadBalancer []string                    `ovn:"load_balancer"`
+	ACLs         []string                    `ovn:"acls"`
+	QoSRules     []string                    `ovn:"qos_rules"`
+	DNSRecords   []string                    `ovn:"dns_records"`
+	OtherConfig  map[interface{}]interface{} `ovn:"other_config"`
+	ExternalID   map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) lsAddImp(lsw string) (*OvnCommand, error) {

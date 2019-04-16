@@ -23,16 +23,16 @@ import (
 )
 
 type LogicalRouterPort struct {
-	UUID           string
-	Name           string
-	GatewayChassis []string
-	Networks       []string
-	MAC            string
-	Enabled        bool
-	IPv6RAConfigs  map[interface{}]interface{}
-	Options        map[interface{}]interface{}
-	Peer           string
-	ExternalID     map[interface{}]interface{}
+	UUID           string                      `ovn:"uuid"`
+	Name           string                      `ovn:"name"`
+	GatewayChassis []string                    `ovn:"gateway_chassis"`
+	Networks       []string                    `ovn:"networks"`
+	MAC            string                      `ovn:"mac"`
+	Enabled        bool                        `ovn:"enabled"`
+	IPv6RAConfigs  map[interface{}]interface{} `ovn:"ipv6_ra_configs"`
+	Options        map[interface{}]interface{} `ovn:"options"`
+	Peer           string                      `ovn:"peer"`
+	ExternalID     map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) lrpAddImp(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error) {
