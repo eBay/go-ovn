@@ -198,7 +198,7 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 			odbi.float64_to_int(row.New)
 
 			if !reflect.DeepEqual(row.New, empty) {
-				odbi.cache[table][uuid] = row.New
+				odbi.cache[table][uuid] = rowToTableRow(table, uuid, row.New)
 				if odbi.callback != nil {
 					switch table {
 					case tableLogicalRouter:
@@ -272,4 +272,70 @@ func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 		}
 	}
 	return ret
+}
+
+func rowToTableRow(table string, uuid string, row libovsdb.Row) interface{} {
+	var tblrow interface{}
+
+	// TODO map name to struct
+	switch table {
+	case tableQoS:
+		tblrow = &QoS{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableLogicalSwitch:
+		tblrow = &LogicalSwitch{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableLogicalSwitchPort:
+		tblrow = &LogicalSwitchPort{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableAddressSet:
+		tblrow = &AddressSet{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tablePortGroup:
+		tblrow = &PortGroup{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableLoadBalancer:
+		tblrow = &LoadBalancer{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableLogicalRouterPort:
+		tblrow = &LogicalRouterPort{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableLogicalRouterStaticRoute:
+		tblrow = &LogicalRouterStaticRoute{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	case tableDHCPOptions:
+		tblrow = &DHCPOptions{UUID: uuid}
+		rowUnmarshal(row, tblrow)
+	}
+
+	return tblrow
+}
+
+func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
+	t := reflect.ValueOf(tblrow).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		ft := t.Type().Field(i)
+		if !f.IsValid() || !f.CanSet() {
+			continue
+		}
+		tag := ft.Tag.Get("ovn")
+		val, ok := row.Fields[tag]
+		if !ok {
+			continue
+		}
+		switch f.Kind() {
+		case reflect.Int:
+			f.SetInt(int64(val.(int)))
+		case reflect.String:
+			f.SetString(val.(string))
+		case reflect.Map:
+			if f.IsNil() {
+				f.Set(reflect.MakeMap(f.Type()))
+			}
+			for vmk, vmv := range val.(libovsdb.OvsMap).GoMap {
+				f.SetMapIndex(reflect.ValueOf(vmk), reflect.ValueOf(vmv))
+			}
+		}
+	}
 }

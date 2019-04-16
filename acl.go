@@ -34,100 +34,107 @@ func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
-	if !ok {
-		return "", ErrorSchema
-	}
+	/*
+		cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+		if !ok {
+			return "", ErrorSchema
+		}
 
-	for _, drows := range cacheLogicalSwitch {
-		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lsw {
-			acls := drows.Fields["acls"]
-			if acls != nil {
-				switch acls.(type) {
-				case libovsdb.OvsSet:
-					if as, ok := acls.(libovsdb.OvsSet); ok {
-						for _, a := range as.GoSet {
-							if va, ok := a.(libovsdb.UUID); ok {
-								cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
-								if !ok {
-									return "", ErrorSchema
-								}
-								for field, value := range row {
-									switch field {
-									case "action":
-										if cacheACL.Fields["action"].(string) != value {
-											goto unmatched
-										}
-									case "direction":
-										if cacheACL.Fields["direction"].(string) != value {
-											goto unmatched
-										}
-									case "match":
-										if cacheACL.Fields["match"].(string) != value {
-											goto unmatched
-										}
-									case "priority":
-										if cacheACL.Fields["priority"].(int) != value {
-											goto unmatched
-										}
-									case "log":
-										if cacheACL.Fields["log"].(bool) != value {
-											goto unmatched
-										}
-									case "external_ids":
-										if value != nil && !odbi.oMapContians(cacheACL.Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
-											goto unmatched
+		for _, row := range cacheLogicalSwitch {
+			ls := row.(*LogicalSwitch)
+			if ls.Name != lsw {
+				continue
+			}
+			if len(ls.ACLs) == 0 {
+				continue
+			}
+			acls := ls.ACLs
+				if acls != nil {
+					switch acls.(type) {
+					case libovsdb.OvsSet:
+						if as, ok := acls.(libovsdb.OvsSet); ok {
+							for _, a := range as.GoSet {
+								if va, ok := a.(libovsdb.UUID); ok {
+									cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
+									if !ok {
+										return "", ErrorSchema
+									}
+									for field, value := range row {
+										switch field {
+										case "action":
+											if cacheACL.Fields["action"].(string) != value {
+												goto unmatched
+											}
+										case "direction":
+											if cacheACL.Fields["direction"].(string) != value {
+												goto unmatched
+											}
+										case "match":
+											if cacheACL.Fields["match"].(string) != value {
+												goto unmatched
+											}
+										case "priority":
+											if cacheACL.Fields["priority"].(int) != value {
+												goto unmatched
+											}
+										case "log":
+											if cacheACL.Fields["log"].(bool) != value {
+												goto unmatched
+											}
+										case "external_ids":
+											if value != nil && !odbi.oMapContians(cacheACL.Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
+												goto unmatched
+											}
 										}
 									}
+									return va.GoUUID, nil
 								}
-								return va.GoUUID, nil
+							unmatched:
 							}
-						unmatched:
+							return "", ErrorNotFound
 						}
-						return "", ErrorNotFound
-					}
-				case libovsdb.UUID:
-					if va, ok := acls.(libovsdb.UUID); ok {
-						cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
-						if !ok {
-							return "", ErrorSchema
-						}
+					case libovsdb.UUID:
+						if va, ok := acls.(libovsdb.UUID); ok {
+							cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
+							if !ok {
+								return "", ErrorSchema
+							}
 
-						for field, value := range row {
-							switch field {
-							case "action":
-								if cacheACL.Fields["action"].(string) != value {
-									goto out
-								}
-							case "direction":
-								if cacheACL.Fields["direction"].(string) != value {
-									goto out
-								}
-							case "match":
-								if cacheACL.Fields["match"].(string) != value {
-									goto out
-								}
-							case "priority":
-								if cacheACL.Fields["priority"].(int) != value {
-									goto out
-								}
-							case "log":
-								if cacheACL.Fields["log"].(bool) != value {
-									goto out
-								}
-							case "external_ids":
-								if value != nil && !odbi.oMapContians(cacheACL.Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
-									goto out
+							for field, value := range row {
+								switch field {
+								case "action":
+									if cacheACL.Fields["action"].(string) != value {
+										goto out
+									}
+								case "direction":
+									if cacheACL.Fields["direction"].(string) != value {
+										goto out
+									}
+								case "match":
+									if cacheACL.Fields["match"].(string) != value {
+										goto out
+									}
+								case "priority":
+									if cacheACL.Fields["priority"].(int) != value {
+										goto out
+									}
+								case "log":
+									if cacheACL.Fields["log"].(bool) != value {
+										goto out
+									}
+								case "external_ids":
+									if value != nil && !odbi.oMapContians(cacheACL.Fields["external_ids"].(libovsdb.OvsMap).GoMap, value.(*libovsdb.OvsMap).GoMap) {
+										goto out
+									}
 								}
 							}
+							return va.GoUUID, nil
+						out:
 						}
-						return va.GoUUID, nil
-					out:
-					}
 				}
 			}
 		}
-	}
+	*/
 	return "", ErrorNotFound
 }
 

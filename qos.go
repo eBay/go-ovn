@@ -24,13 +24,13 @@ import (
 )
 
 type QoS struct {
-	UUID       string
-	Priority   int
-	Direction  string
-	Match      string
-	Action     map[interface{}]interface{}
-	Bandwidth  map[interface{}]interface{}
-	ExternalID map[interface{}]interface{}
+	UUID       string                      `ovn:"uuid"`
+	Priority   int                         `ovn:"priority"`
+	Direction  string                      `ovn:"direction"`
+	Match      string                      `ovn:"match"`
+	Action     map[interface{}]interface{} `ovn:"action"`
+	Bandwidth  map[interface{}]interface{} `ovn:"bandwidth"`
+	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 
 func (odbi *ovndb) rowToQoS(uuid string) *QoS {
