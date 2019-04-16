@@ -27,6 +27,9 @@ type ACL struct {
 	Match      string                      `ovn:"match"`
 	Priority   int                         `ovn:"priority"`
 	Log        bool                        `ovn:"log"`
+	Name       string                      `ovn:"name"`
+	Severity   string                      `ovn:"severity"`
+	Meter      string                      `ovn:"meter"`
 	ExternalID map[interface{}]interface{} `ovn:"external_ids"`
 }
 

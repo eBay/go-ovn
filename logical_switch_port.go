@@ -165,7 +165,7 @@ func (odbi *ovndb) lspGetDHCPv4OptionsImp(lsp string) (*DHCPOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	return odbi.rowToDHCPOptions(lp.DHCPv4Options), nil
+	return odbi.rowToDHCPOptions(lp.DHCPv4Options[0]), nil
 }
 
 func (odbi *ovndb) lspSetDHCPv6OptionsImp(lsp string, options string) (*OvnCommand, error) {
@@ -186,7 +186,7 @@ func (odbi *ovndb) lspGetDHCPv6OptionsImp(lsp string) (*DHCPOptions, error) {
 	if err != nil {
 		return nil, err
 	}
-	return odbi.rowToDHCPOptions(lp.DHCPv6Options), nil
+	return odbi.rowToDHCPOptions(lp.DHCPv6Options[0]), nil
 }
 
 func (odbi *ovndb) lspSetOptionsImp(lsp string, options map[string]string) (*OvnCommand, error) {
@@ -216,7 +216,7 @@ func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	if dhcpv4, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["dhcpv4_options"]; ok {
 		switch dhcpv4.(type) {
 		case libovsdb.UUID:
-			lp.DHCPv4Options = dhcpv4.(libovsdb.UUID).GoUUID
+			lp.DHCPv4Options = append(lp.DHCPv4Options, dhcpv4.(libovsdb.UUID).GoUUID)
 		case libovsdb.OvsSet:
 		default:
 		}
@@ -224,7 +224,7 @@ func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	if dhcpv6, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["dhcpv6_options"]; ok {
 		switch dhcpv6.(type) {
 		case libovsdb.UUID:
-			lp.DHCPv6Options = dhcpv6.(libovsdb.UUID).GoUUID
+			lp.DHCPv6Options = append(lp.DHCPv6Options, dhcpv6.(libovsdb.UUID).GoUUID)
 		case libovsdb.OvsSet:
 		default:
 		}

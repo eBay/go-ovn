@@ -98,7 +98,7 @@ func TestDHCPOptions(t *testing.T) {
 	}
 
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
-	assert.Equal(t, true, len(lsps) == 1 && lsps[0].DHCPv4Options != "", "test[%s]", "setted dhcpv4_options")
+	assert.Equal(t, true, len(lsps) == 1 && lsps[0].DHCPv4Options[0] != "", "test[%s]", "setted dhcpv4_options")
 
 	cmd, err = ovndbapi.DHCPOptionsDel(dhcp_opts[0].UUID)
 	if err != nil {

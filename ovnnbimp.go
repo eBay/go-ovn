@@ -333,6 +333,19 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 		case reflect.String:
 			log.Printf("%#+v\n", tag)
 			f.SetString(val.(string))
+		case reflect.Slice:
+			if f.IsNil() {
+				f.Set(reflect.MakeSlice(f.Type(), 0, 0))
+			}
+			switch val.(type) {
+			case libovsdb.OvsSet:
+				for _, vmv := range val.(libovsdb.OvsSet).GoSet {
+					reflect.Append(f, reflect.ValueOf(vmv))
+				}
+			case libovsdb.UUID:
+				vmv := val.(libovsdb.UUID).GoUUID
+				reflect.Append(f, reflect.ValueOf(vmv))
+			}
 		case reflect.Map:
 			if f.IsNil() {
 				f.Set(reflect.MakeMap(f.Type()))
