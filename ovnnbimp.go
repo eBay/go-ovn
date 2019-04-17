@@ -331,7 +331,7 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 		case reflect.Int:
 			f.SetInt(int64(val.(int)))
 		case reflect.String:
-			log.Printf("%#+v\n", tag)
+			log.Printf("%#+v\n", f)
 			f.SetString(val.(string))
 		case reflect.Slice:
 			if f.IsNil() {
@@ -343,6 +343,8 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 					switch vmv.(type) {
 					case libovsdb.UUID:
 						reflect.Append(f, reflect.ValueOf(vmv.(libovsdb.UUID).GoUUID))
+					case string:
+						reflect.Append(f, reflect.ValueOf(vmv))
 					default:
 						panic(vmv)
 					}
