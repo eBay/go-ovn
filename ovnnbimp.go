@@ -19,7 +19,6 @@ package goovn
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -282,39 +281,59 @@ func rowToTableRow(table string, uuid string, row libovsdb.Row) interface{} {
 
 	// TODO map name to struct
 	switch table {
+	case tableACL:
+		tblrow = &ACL{UUID: uuid}
+		rowUnmarshal(row.Fields, tblrow)
 	case tableQoS:
 		tblrow = &QoS{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableLogicalSwitch:
 		tblrow = &LogicalSwitch{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableLogicalSwitchPort:
 		tblrow = &LogicalSwitchPort{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableAddressSet:
 		tblrow = &AddressSet{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tablePortGroup:
 		tblrow = &PortGroup{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableLoadBalancer:
 		tblrow = &LoadBalancer{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableLogicalRouterPort:
 		tblrow = &LogicalRouterPort{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableLogicalRouterStaticRoute:
 		tblrow = &LogicalRouterStaticRoute{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	case tableDHCPOptions:
 		tblrow = &DHCPOptions{UUID: uuid}
-		rowUnmarshal(row, tblrow)
+		rowUnmarshal(row.Fields, tblrow)
 	}
 
 	return tblrow
 }
 
-func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
+func rowMarshal(tblrow interface{}) OVNRow {
+	row := make(OVNRow)
+
+	t := reflect.ValueOf(tblrow).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		ft := t.Type().Field(i)
+		if !f.IsValid() {
+			continue
+		}
+		tag := ft.Tag.Get("ovn")
+		row[tag] = f.Interface()
+	}
+
+	return row
+}
+
+func rowUnmarshal(row OVNRow, tblrow interface{}) {
 	t := reflect.ValueOf(tblrow).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
@@ -323,7 +342,7 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 			continue
 		}
 		tag := ft.Tag.Get("ovn")
-		val, ok := row.Fields[tag]
+		val, ok := row[tag]
 		if !ok {
 			continue
 		}
@@ -331,8 +350,25 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 		case reflect.Int:
 			f.SetInt(int64(val.(int)))
 		case reflect.String:
-			log.Printf("%#+v\n", f)
-			f.SetString(val.(string))
+			switch val.(type) {
+			case libovsdb.OvsSet:
+				for _, vmv := range val.(libovsdb.OvsSet).GoSet {
+					switch vmv.(type) {
+					case libovsdb.UUID:
+						f.SetString(vmv.(libovsdb.UUID).GoUUID)
+					case string:
+						f.SetString(vmv.(string))
+					default:
+						panic(vmv)
+					}
+				}
+			case libovsdb.UUID:
+				f.SetString(val.(libovsdb.UUID).GoUUID)
+			case string:
+				f.SetString(val.(string))
+			default:
+				panic(val)
+			}
 		case reflect.Slice:
 			if f.IsNil() {
 				f.Set(reflect.MakeSlice(f.Type(), 0, 0))
@@ -362,4 +398,67 @@ func rowUnmarshal(row libovsdb.Row, tblrow interface{}) {
 			}
 		}
 	}
+}
+
+func (odbi *ovndb) getRows(table string, row interface{}) ([]interface{}, error) {
+	var rows []interface{}
+	//odbi.cachemutex.RLock()
+	//defer odbi.cachemutex.RUnlock()
+
+	cacheTable, ok := odbi.cache2[table]
+	if !ok {
+		return nil, ErrorSchema
+	}
+
+	// direct get by UUID
+	t := reflect.ValueOf(row).Elem()
+	if v := t.FieldByName("UUID"); len(v.String()) > 0 {
+		if tblrow, ok := cacheTable[v.String()]; ok {
+			rows = append(rows, tblrow)
+			return rows, nil
+		}
+		return nil, ErrorNotFound
+	}
+
+	for _, tblrow := range cacheTable {
+		rowVal := reflect.ValueOf(row).Elem()
+		tblVal := reflect.ValueOf(tblrow).Elem()
+		for i := 0; i < rowVal.NumField(); i++ {
+			rowField := rowVal.Field(i)
+			if reflect.Zero(rowField.Type()) == rowField {
+				continue
+			}
+			tblField := tblVal.Field(i)
+			switch rowField.Type().Kind() {
+			case reflect.Map:
+				//			r := cmp.Equal(row, tblrow)
+				//		log.Printf("ssss %#+v\n", r)
+				rowIter := rowField.MapRange()
+				tblIter := tblField.MapRange()
+				for rowIter.Next() {
+					for tblIter.Next() {
+						mrk := rowIter.Key()
+						mrv := rowIter.Value()
+						mtk := rowIter.Key()
+						mtv := rowIter.Value()
+						if mrk.Interface() != mtk.Interface() || mrv.Interface() != mtv.Interface() {
+							continue
+						}
+					}
+				}
+			default:
+				if rowField.Interface() != tblField.Interface() {
+					continue
+				}
+			}
+		}
+		rows = append(rows, tblrow)
+
+	}
+
+	if len(rows) == 0 {
+		return nil, ErrorNotFound
+	}
+
+	return rows, nil
 }

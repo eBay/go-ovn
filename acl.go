@@ -17,7 +17,10 @@
 package goovn
 
 import (
+	"log"
+
 	"github.com/ebay/libovsdb"
+	//	"github.com/google/go-cmp/cmp"
 )
 
 type ACL struct {
@@ -36,6 +39,15 @@ type ACL struct {
 func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
+
+	xxxacls, err := odbi.getRows(tableACL, &ACL{Priority: 1001})
+	if err != nil {
+		if err != ErrorSchema {
+			return "", err
+		}
+	} else {
+		log.Printf("zzz %#+v\n", xxxacls)
+	}
 
 	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
 	if !ok {
