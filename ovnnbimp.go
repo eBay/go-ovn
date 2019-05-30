@@ -207,6 +207,9 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					case tableLogicalRouterPort:
 						lrp := odbi.rowToLogicalRouterPort(uuid)
 						odbi.callback.OnLogicalRouterPortCreate(lrp)
+					case tableLogicalRouterStaticRoute:
+						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
+						odbi.callback.OnLogicalRouterStaticRouteCreate(lrsr)
 					case tableLogicalSwitch:
 						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.callback.OnLogicalSwitchCreate(ls)
@@ -237,6 +240,9 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					case tableLogicalRouterPort:
 						lrp := odbi.rowToLogicalRouterPort(uuid)
 						odbi.callback.OnLogicalRouterPortDelete(lrp)
+					case tableLogicalRouterStaticRoute:
+						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
+						odbi.callback.OnLogicalRouterStaticRouteDelete(lrsr)
 					case tableLogicalSwitch:
 						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.callback.OnLogicalSwitchDelete(ls)

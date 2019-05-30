@@ -88,6 +88,13 @@ type Client interface {
 	// Get all lrp by lr
 	LRPList(lr string) ([]*LogicalRouterPort, error)
 
+	// Add LRSR with given ip_prefix on given lr
+	LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete LRSR with given ip_prefix on given lr
+	LRSRDel(lr string, ip_prefix string) (*OvnCommand, error)
+	// Get all LRSRs by lr
+	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
+
 	// Add LB to LR
 	LRLBAdd(lr string, lb string) (*OvnCommand, error)
 	// Delete LB from LR
@@ -263,6 +270,18 @@ func (c *ovndb) LRPDel(lr string, lrp string) (*OvnCommand, error) {
 
 func (c *ovndb) LRPList(lr string) ([]*LogicalRouterPort, error) {
 	return c.lrpListImp(lr)
+}
+
+func (c *ovndb) LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.lrsrAddImp(lr, ip_prefix, nexthop, output_port, policy, external_ids)
+}
+
+func (c *ovndb) LRSRDel(lr string, ip_prefix string) (*OvnCommand, error) {
+	return c.lrsrDelImp(lr, ip_prefix)
+}
+
+func (c *ovndb) LRSRList(lr string) ([]*LogicalRouterStaticRoute, error) {
+	return c.lrsrListImp(lr)
 }
 
 func (c *ovndb) LRLBAdd(lr string, lb string) (*OvnCommand, error) {

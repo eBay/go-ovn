@@ -48,6 +48,9 @@ type OVNSignal interface {
 	OnLogicalRouterPortCreate(lrp *LogicalRouterPort)
 	OnLogicalRouterPortDelete(lrp *LogicalRouterPort)
 
+	OnLogicalRouterStaticRouteCreate(lrsr *LogicalRouterStaticRoute)
+	OnLogicalRouterStaticRouteDelete(lrsr *LogicalRouterStaticRoute)
+
 	OnACLCreate(acl *ACL)
 	OnACLDelete(acl *ACL)
 
