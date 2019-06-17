@@ -69,7 +69,7 @@ func TestMain(m *testing.M) {
 			}
 		} else {
 			port, _ := strconv.Atoi(strs[2])
-			cfg.Addr = fmt.Sprintf("tcp:%s%s:%d", strs[0], strs[1], port)
+			cfg.Addr = fmt.Sprintf("%s:%s:%d", strs[0], strs[1], port)
 			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
