@@ -118,13 +118,74 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 		}
 	}
 
-	ports := odbi.cache[tableLogicalRouter][uuid].Fields["ports"]
-	switch ports.(type) {
-	case string:
-		lr.Ports = []string{ports.(string)}
-	case libovsdb.OvsSet:
-		lr.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
+	var lbs []string
+	load_balancer := odbi.cache[tableLogicalRouter][uuid].Fields["load_balancer"]
+	if load_balancer !=nil{
+		switch load_balancer.(type){
+		case libovsdb.OvsSet:
+			if lb, ok := load_balancer.(libovsdb.OvsSet); ok {
+				for _, l := range lb.GoSet {
+					if lb, ok := l.(libovsdb.UUID); ok {
+						lb, _ := odbi.rowToLB(lb.GoUUID)
+						lbs = append(lbs, lb.Name)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if lb, ok := load_balancer.(libovsdb.UUID); ok {
+				lb, _ := odbi.rowToLB(lb.GoUUID)
+
+				lbs = append(lbs, lb.Name)
+			}
+		}
 	}
+	lr.LoadBalancer = lbs
+
+	var lps []string
+	ports := odbi.cache[tableLogicalRouter][uuid].Fields["ports"]
+	if ports != nil{
+		switch ports.(type) {
+		case string:
+			lr.Ports = []string{ports.(string)}
+		case libovsdb.OvsSet:
+			if ps, ok := ports.(libovsdb.OvsSet); ok {
+				for _, p := range ps.GoSet {
+					if vp, ok := p.(libovsdb.UUID); ok {
+						tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+						lps = append( lps, tp.Name)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if vp, ok := ports.(libovsdb.UUID); ok {
+				tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+				lps = append(lps, tp.Name)
+			}
+		}
+	}
+	lr.Ports = lps
+
+	var listLRSR []string
+	staticRoutes := odbi.cache[tableLogicalRouter][uuid].Fields["static_routes"]
+	if staticRoutes != nil {
+		switch staticRoutes.(type) {
+		case libovsdb.OvsSet:
+			if sr, ok := staticRoutes.(libovsdb.OvsSet); ok {
+				for _, s := range sr.GoSet {
+					if sruid, ok := s.(libovsdb.UUID); ok {
+						rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
+						listLRSR = append(listLRSR, rsr.IPPrefix)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if sruid, ok := staticRoutes.(libovsdb.UUID); ok {
+				rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
+				listLRSR = append(listLRSR, rsr.IPPrefix)
+			}
+		}
+	}
+	lr.StaticRoutes = listLRSR
 
 	return lr
 }
