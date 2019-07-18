@@ -199,68 +199,68 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 
 			if !reflect.DeepEqual(row.New, empty) {
 				odbi.cache[table][uuid] = row.New
-				if odbi.callback != nil {
+				if odbi.signalCB != nil {
 					switch table {
 					case tableLogicalRouter:
 						lr := odbi.rowToLogicalRouter(uuid)
-						odbi.callback.OnLogicalRouterCreate(lr)
+						odbi.signalCB.OnLogicalRouterCreate(lr)
 					case tableLogicalRouterPort:
 						lrp := odbi.rowToLogicalRouterPort(uuid)
-						odbi.callback.OnLogicalRouterPortCreate(lrp)
+						odbi.signalCB.OnLogicalRouterPortCreate(lrp)
 					case tableLogicalRouterStaticRoute:
 						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
-						odbi.callback.OnLogicalRouterStaticRouteCreate(lrsr)
+						odbi.signalCB.OnLogicalRouterStaticRouteCreate(lrsr)
 					case tableLogicalSwitch:
 						ls := odbi.rowToLogicalSwitch(uuid)
-						odbi.callback.OnLogicalSwitchCreate(ls)
+						odbi.signalCB.OnLogicalSwitchCreate(ls)
 					case tableLogicalSwitchPort:
 						lp := odbi.rowToLogicalPort(uuid)
-						odbi.callback.OnLogicalPortCreate(lp)
+						odbi.signalCB.OnLogicalPortCreate(lp)
 					case tableACL:
 						acl := odbi.rowToACL(uuid)
-						odbi.callback.OnACLCreate(acl)
+						odbi.signalCB.OnACLCreate(acl)
 					case tableDHCPOptions:
 						dhcp := odbi.rowToDHCPOptions(uuid)
-						odbi.callback.OnDHCPOptionsCreate(dhcp)
+						odbi.signalCB.OnDHCPOptionsCreate(dhcp)
 					case tableQoS:
 						qos := odbi.rowToQoS(uuid)
-						odbi.callback.OnQoSCreate(qos)
+						odbi.signalCB.OnQoSCreate(qos)
 					case tableLoadBalancer:
 						lb, _ := odbi.rowToLB(uuid)
-						odbi.callback.OnLoadBalancerCreate(lb)
+						odbi.signalCB.OnLoadBalancerCreate(lb)
 					}
 
 				}
 			} else {
-				if odbi.callback != nil {
+				if odbi.signalCB != nil {
 					switch table {
 					case tableLogicalRouter:
 						lr := odbi.rowToLogicalRouter(uuid)
-						odbi.callback.OnLogicalRouterDelete(lr)
+						odbi.signalCB.OnLogicalRouterDelete(lr)
 					case tableLogicalRouterPort:
 						lrp := odbi.rowToLogicalRouterPort(uuid)
-						odbi.callback.OnLogicalRouterPortDelete(lrp)
+						odbi.signalCB.OnLogicalRouterPortDelete(lrp)
 					case tableLogicalRouterStaticRoute:
 						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
-						odbi.callback.OnLogicalRouterStaticRouteDelete(lrsr)
+						odbi.signalCB.OnLogicalRouterStaticRouteDelete(lrsr)
 					case tableLogicalSwitch:
 						ls := odbi.rowToLogicalSwitch(uuid)
-						odbi.callback.OnLogicalSwitchDelete(ls)
+						odbi.signalCB.OnLogicalSwitchDelete(ls)
 					case tableLogicalSwitchPort:
 						lp := odbi.rowToLogicalPort(uuid)
-						odbi.callback.OnLogicalPortDelete(lp)
+						odbi.signalCB.OnLogicalPortDelete(lp)
 					case tableACL:
 						acl := odbi.rowToACL(uuid)
-						odbi.callback.OnACLDelete(acl)
+						odbi.signalCB.OnACLDelete(acl)
 					case tableDHCPOptions:
 						dhcp := odbi.rowToDHCPOptions(uuid)
-						odbi.callback.OnDHCPOptionsDelete(dhcp)
+						odbi.signalCB.OnDHCPOptionsDelete(dhcp)
 					case tableQoS:
 						qos := odbi.rowToQoS(uuid)
-						odbi.callback.OnQoSDelete(qos)
+						odbi.signalCB.OnQoSDelete(qos)
 					case tableLoadBalancer:
 						lb, _ := odbi.rowToLB(uuid)
-						odbi.callback.OnLoadBalancerDelete(lb)
+						odbi.signalCB.OnLoadBalancerDelete(lb)
 					}
 				}
 				delete(odbi.cache[table], uuid)

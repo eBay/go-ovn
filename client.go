@@ -143,17 +143,19 @@ type Client interface {
 }
 
 type ovndb struct {
-	client     *libovsdb.OvsdbClient
-	cache      map[string]map[string]libovsdb.Row
-	cachemutex sync.RWMutex
-	tranmutex  sync.Mutex
-	callback   OVNSignal
+	client       *libovsdb.OvsdbClient
+	cache        map[string]map[string]libovsdb.Row
+	cachemutex   sync.RWMutex
+	tranmutex    sync.Mutex
+	signalCB     OVNSignal
+	disconnectCB OVNDisconnectedCallback
 }
 
 func NewClient(cfg *Config) (Client, error) {
 	imp := &ovndb{
-		cache:    make(map[string]map[string]libovsdb.Row),
-		callback: cfg.SignalCB,
+		cache:        make(map[string]map[string]libovsdb.Row),
+		signalCB:     cfg.SignalCB,
+		disconnectCB: cfg.DisconnectCB,
 	}
 
 	c, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)

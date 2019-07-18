@@ -24,5 +24,5 @@ type Config struct {
 	Addr         string
 	TLSConfig    *tls.Config
 	SignalCB     OVNSignal
-	DisconnectCB string
+	DisconnectCB OVNDisconnectedCallback
 }

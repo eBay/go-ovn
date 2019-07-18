@@ -35,6 +35,8 @@ type Execution interface {
 	Execute(cmds ...*OvnCommand) error
 }
 
+type OVNDisconnectedCallback func()
+
 type OVNSignal interface {
 	OnLogicalSwitchCreate(ls *LogicalSwitch)
 	OnLogicalSwitchDelete(ls *LogicalSwitch)
