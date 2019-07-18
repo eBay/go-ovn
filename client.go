@@ -140,6 +140,9 @@ type Client interface {
 
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
+
+	// Close connection to OVN
+	Close() error
 }
 
 type ovndb struct {
