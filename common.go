@@ -49,3 +49,25 @@ const (
 	tableSSL                      string = "SSL"
 	tableGatewayChassis           string = "Gateway_Chassis"
 )
+
+var tablesOrder = []string{
+	tableNBGlobal,
+	tableLogicalSwitchPort,
+	tableAddressSet,
+	tablePortGroup,
+	tableACL,
+	tableQoS,
+	tableMeter,
+	tableMeterBand,
+	tableLogicalRouterPort,
+	tableLogicalRouterStaticRoute,
+	tableNAT,
+	tableDHCPOptions,
+	tableConnection,
+	tableDNS,
+	tableSSL,
+	tableGatewayChassis,
+	tableLogicalSwitch,
+	tableLogicalRouter,
+	tableLoadBalancer,
+}
