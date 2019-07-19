@@ -188,7 +188,12 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 
-	for table, tableUpdate := range updates.Updates {
+	for _, table := range tablesOrder {
+		tableUpdate, ok := updates.Updates[table]
+		if !ok {
+			continue
+		}
+
 		if _, ok := odbi.cache[table]; !ok {
 			odbi.cache[table] = make(map[string]libovsdb.Row)
 		}
@@ -229,7 +234,6 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						lb, _ := odbi.rowToLB(uuid)
 						odbi.signalCB.OnLoadBalancerCreate(lb)
 					}
-
 				}
 			} else {
 				if odbi.signalCB != nil {
