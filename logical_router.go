@@ -187,6 +187,29 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	}
 	lr.StaticRoutes = listLRSR
 
+
+	var NATList []string
+	nat := odbi.cache[tableLogicalRouter][uuid].Fields["nat"]
+	if nat != nil {
+		switch nat.(type) {
+		case libovsdb.OvsSet:
+			if sr, ok := nat.(libovsdb.OvsSet); ok {
+				for _, s := range sr.GoSet {
+					if sruid, ok := s.(libovsdb.UUID); ok {
+						rsr := odbi.rowToNat(sruid.GoUUID)
+						NATList = append(NATList, rsr.UUID)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if sruid, ok := nat.(libovsdb.UUID); ok {
+				rsr := odbi.rowToNat(sruid.GoUUID)
+				NATList = append(NATList, rsr.UUID)
+			}
+		}
+	}
+	lr.NAT = NATList
+
 	return lr
 }
 
