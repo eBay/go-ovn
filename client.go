@@ -138,6 +138,13 @@ type Client interface {
 	// Get qos rules by logical switch
 	QoSList(ls string) ([]*QoS, error)
 
+	//Add NAT to Logical Router
+	LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error)
+	//Del NAT from Logical Router
+	LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
+	// Get NAT List by Logical Router
+	LRNATList(lr string) ([]*NAT, error)
+
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
@@ -391,4 +398,16 @@ func (c *ovndb) DHCPOptionsDel(uuid string) (*OvnCommand, error) {
 
 func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
 	return c.dhcpOptionsListImp()
+}
+
+func (c *ovndb) LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
+	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp,external_ids, logicalPortAndExternalMac...)
+}
+
+func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error) {
+	return c.lrNatDelImp(lr, ntype, ip...)
+}
+
+func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
+	return c.lrNatListImp(lr)
 }
