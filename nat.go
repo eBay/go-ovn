@@ -17,7 +17,6 @@
 package goovn
 
 import (
-	"fmt"
 	"github.com/ebay/libovsdb"
 )
 
@@ -31,21 +30,22 @@ type NAT struct {
 	ExternalID  map[interface{}]interface{}
 }
 
-func (odbi *ovndb) rowToNat(uuid string) *NAT{
-	cacheNAT , ok := odbi.cache[tableNAT][uuid]
-	if !ok{
-		fmt.Println("error :",uuid)
+func (odbi *ovndb) rowToNat(uuid string) *NAT {
+	cacheNAT, ok := odbi.cache[tableNAT][uuid]
+	if !ok {
 		return nil
 	}
+
 	nat := &NAT{
-		UUID:	uuid,
-		Type:   cacheNAT.Fields["type"].(string),
+		UUID:       uuid,
+		Type:       cacheNAT.Fields["type"].(string),
 		ExternalIP: cacheNAT.Fields["external_ip"].(string),
-		LogicalIP:   cacheNAT.Fields["logical_ip"].(string),
-		ExternalID:	cacheNAT.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		LogicalIP:  cacheNAT.Fields["logical_ip"].(string),
+		ExternalID: cacheNAT.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
-	if mac ,ok := cacheNAT.Fields["external_mac"];ok{
-		switch mac.(type){
+
+	if mac, ok := cacheNAT.Fields["external_mac"]; ok {
+		switch mac.(type) {
 		case libovsdb.UUID:
 			nat.ExternalMAC = mac.(libovsdb.UUID).GoUUID
 		case string:
@@ -53,7 +53,8 @@ func (odbi *ovndb) rowToNat(uuid string) *NAT{
 		default:
 		}
 	}
-	if lip ,ok:= cacheNAT.Fields["logical_port"];ok{
+
+	if lip, ok := cacheNAT.Fields["logical_port"]; ok {
 		switch lip.(type) {
 		case libovsdb.UUID:
 			nat.LogicalIP = lip.(libovsdb.UUID).GoUUID
@@ -67,39 +68,38 @@ func (odbi *ovndb) rowToNat(uuid string) *NAT{
 	return nat
 }
 
-
-
-func (odbi *ovndb) natAddImp(lr string,Type string, externalIp string,externalMac string,logicalIp string,logicalPort string,external_ids map[string]string)(*OvnCommand, error){
-	nameUUID,err := newRowUUID()
+func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, externalMac string, logicalIp string, logicalPort string, external_ids map[string]string) (*OvnCommand, error) {
+	nameUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}
-	row :=make(OVNRow)
+	row := make(OVNRow)
 
 	row["external_ip"] = externalIp
 
 	row["logical_ip"] = logicalIp
 
-	switch Type {
+	switch ntype {
 	case "snat":
-		row["type"] = Type
+		row["type"] = ntype
 	case "dnat":
-		row["type"] = Type
+		row["type"] = ntype
 	case "dnat_and_snat":
-		row["type"] = Type
+		row["type"] = ntype
 	default:
-		return nil,ErrorSchema
+		return nil, ErrorOption
 	}
 
 	if uuid := odbi.getRowUUID(tableNAT, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
+
 	// The logical_port and  external_mac  are  only  accepted
-	//when  router  is  a  distributed  router  (rather than a gateway
-	//router) and type is dnat_and_snat.
-	if externalMac != ""{
-		if row["type"] != "dnat_and_snat"{
-			return nil,ErrorSchema
+	// when  router  is  a  distributed  router  (rather than a gateway
+	// router) and type is dnat_and_snat.
+	if externalMac != "" {
+		if row["type"] != "dnat_and_snat" {
+			return nil, ErrorOption
 		}
 		row["external_mac"] = externalMac
 	}
@@ -113,17 +113,20 @@ func (odbi *ovndb) natAddImp(lr string,Type string, externalIp string,externalMa
 		}
 		row["external_ids"] = oMap
 	}
+
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
 		Table:    tableNAT,
 		Row:      row,
 		UUIDName: nameUUID,
 	}
+
 	mutateUUID := []libovsdb.UUID{{nameUUID}}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
 	}
+
 	mutation := libovsdb.NewMutation("nat", opInsert, mutateSet)
 	condition := libovsdb.NewCondition("name", "==", lr)
 	mutateOp := libovsdb.Operation{
@@ -132,78 +135,79 @@ func (odbi *ovndb) natAddImp(lr string,Type string, externalIp string,externalMa
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
+
 	operations := []libovsdb.Operation{insertOp, mutateOp}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-
-//Deletes  NATs  from  router. If only router is supplied, all the
-//NATs from the logical router are deleted. If type is also speci‐
-//fied, then all the NATs that match the type will be deleted from
-//the logical router. If all the fields are given, then  a  single
-//NAT  rule that matches all the fields will be deleted. When type
-//	is snat, the ip should be  logical_ip.  When  type  is  dnat  or
-//dnat_and_snat, the ip shoud be external_ip.
-func (odbi *ovndb) natDelImp(lr string,Type string,ip ...string)(*OvnCommand, error){
+// Deletes  NATs  from  router. If only router is supplied, all the
+// NATs from the logical router are deleted. If type is also speci‐
+// fied, then all the NATs that match the type will be deleted from
+// the logical router. If all the fields are given, then  a  single
+// NAT  rule that matches all the fields will be deleted. When type
+// is snat, the ip should be  logical_ip.  When  type  is  dnat  or
+// dnat_and_snat, the ip shoud be external_ip.
+func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
-	row := make(OVNRow)
 	var lrNatUUID string
-	if Type != ""{
-		switch Type {
-		case "snat":
-			row["type"] = Type
-			if len(ip) != 0{
-				row["logical_ip"] = ip[0]
-			}
-		case "dnat":
-			row["type"] = Type
-			if len(ip) != 0{
+
+	row := make(OVNRow)
+
+	switch ntype {
+	case "snat":
+		row["type"] = ntype
+		if len(ip) != 0 {
+			row["logical_ip"] = ip[0]
+		}
+	case "dnat":
+		row["type"] = ntype
+		if len(ip) != 0 {
 			row["external_ip"] = ip[0]
 		}
-		case "dnat_and_snat":
-			row["type"] = Type
-			if len(ip) != 0{
-				row["external_ip"] = ip[0]
-			}
-		default:
-			return nil,ErrorSchema
+	case "dnat_and_snat":
+		row["type"] = ntype
+		if len(ip) != 0 {
+			row["external_ip"] = ip[0]
 		}
-		lrNatUUID = odbi.getRowUUID(tableNAT,row)
-		if len(lrNatUUID) == 0 {
-			return nil, ErrorNotFound
-		}
+	default:
+		return nil, ErrorOption
 	}
-	var natlist []string
-	LR ,_:= odbi.LRGet(lr)
-	if len(LR) == 0 {
+
+	lrNatUUID = odbi.getRowUUID(tableNAT, row)
+	if len(lrNatUUID) == 0 {
 		return nil, ErrorNotFound
 	}
-	for _,v := range LR  {
-		natlist = v.NAT
+
+	LRs, err := odbi.LRGet(lr)
+	if err != nil {
+		return nil, err
+	}
+	natlist := make([]string, len(LRs))
+
+	for i, v := range LRs[0].NAT {
+		natlist[i] = v
 	}
 
 	var mutateUUID []libovsdb.UUID
-	if lrNatUUID != ""{
-		for _, i := range natlist{
-			if lrNatUUID == i{
-				mutateUUID = append(mutateUUID,libovsdb.UUID{GoUUID: lrNatUUID})
-			}
+	for _, v := range natlist {
+		switch lrNatUUID {
+		case v:
+			mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: lrNatUUID})
+		case "":
+			mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: v})
 		}
-	}else{
-		for _, i := range natlist{
-			mutateUUID = append(mutateUUID,libovsdb.UUID{GoUUID: i})
-			}
 	}
 
-	mutateSet ,err := libovsdb.NewOvsSet(mutateUUID)
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
 	}
 
-	lrNatUUID = odbi.getRowUUID(tableNAT,row)
+	lrNatUUID = odbi.getRowUUID(tableNAT, row)
 	if len(lrNatUUID) == 0 {
 		return nil, ErrorNotFound
 	}
+
 	row = make(OVNRow)
 	row["name"] = lr
 	mutation := libovsdb.NewMutation("nat", opDelete, mutateSet)
@@ -214,25 +218,22 @@ func (odbi *ovndb) natDelImp(lr string,Type string,ip ...string)(*OvnCommand, er
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{mucondition},
 	}
+
 	operations = append(operations, mutateOp)
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
-
 }
 
-func (odbi *ovndb) natListImp(lr string) ([]*NAT,error){
-	var NATList []*NAT
-	odbi.cachemutex.RLock()
-	defer odbi.cachemutex.RUnlock()
-
-	LR ,_:= odbi.LRGet(lr)
-	if len(LR) == 0 {
-		return nil, ErrorNotFound
-	}
-	for _,v :=range LR[0].NAT{
-		NATList = append(NATList,odbi.rowToNat(v))
-		return NATList,nil
+func (odbi *ovndb) lrNatListImp(lr string) ([]*NAT, error) {
+	LRs, err := odbi.LRGet(lr)
+	if err != nil {
+		return nil, err
 	}
 
-	return NATList,nil
+	natlist := make([]*NAT, len(LRs[0].NAT))
+
+	for i, v := range LRs[0].NAT {
+		natlist[i] = odbi.rowToNat(v)
+	}
+
+	return natlist, nil
 }
-

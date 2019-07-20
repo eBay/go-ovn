@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	ErrorOption   = errors.New("invalid option specified")
 	ErrorSchema   = errors.New("table schema error")
 	ErrorNotFound = errors.New("object not found")
 	ErrorExist    = errors.New("object exist")

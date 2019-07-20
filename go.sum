@@ -1,11 +1,11 @@
-github.com/cenkalti/hub v0.0.0-20160527103212-11382a9960d3 h1:Q//UW48MUsv/GT4SZWdFbyBVKH1kAFkf+SnxZuy3Q30=
-github.com/cenkalti/hub v0.0.0-20160527103212-11382a9960d3/go.mod h1:tcYwtS3a2d9NO/0xDXVJWx3IedurUjYCqFCmpi0lpHs=
+github.com/cenk/hub v1.0.0/go.mod h1:rJM1LNAW0ppT8FMMuPK6c2NP/R2nH/UthtuRySSaf6Y=
+github.com/cenkalti/hub v1.0.1-0.20160527103212-11382a9960d3/go.mod h1:tcYwtS3a2d9NO/0xDXVJWx3IedurUjYCqFCmpi0lpHs=
 github.com/cenkalti/rpc2 v0.0.0-20170726070524-c51a77e5f664 h1:GqbYbGcGyW6AwuNC+2VbhAePSnKvMhEgHB7Kot9weJU=
 github.com/cenkalti/rpc2 v0.0.0-20170726070524-c51a77e5f664/go.mod h1:v2npkhrXyk5BCnkNIiPdRI23Uq6uWPUQGL2hnRcRr/M=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/ebay/libovsdb v0.0.0-20190410020142-df4f42ff0dbc h1:s7jxWkrREDWJhniA2yWF/i6hYkSvOSTe5WRfnfA1uHs=
-github.com/ebay/libovsdb v0.0.0-20190410020142-df4f42ff0dbc/go.mod h1:TPIbkgdnu8IfDA510pGDS3zYGmnvrPttnge3uhBQf/0=
+github.com/ebay/libovsdb v0.0.0-20190718202342-e49b8c4e1142 h1:xMG/5rkkDv9rjzbSi/pCOZ5OyKW3MhJFQ9E118xWuYU=
+github.com/ebay/libovsdb v0.0.0-20190718202342-e49b8c4e1142/go.mod h1:TPIbkgdnu8IfDA510pGDS3zYGmnvrPttnge3uhBQf/0=
 github.com/google/uuid v1.1.1 h1:Gkbcsh/GbpXz7lPftLA3P6TYMwjCLYm83jiFQZF/3gY=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
