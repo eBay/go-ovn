@@ -50,7 +50,6 @@ func (odbi *ovndb) rowToNat(uuid string) *NAT {
 			nat.ExternalMAC = mac.(libovsdb.UUID).GoUUID
 		case string:
 			nat.ExternalMAC = mac.(string)
-		default:
 		}
 	}
 
@@ -60,7 +59,6 @@ func (odbi *ovndb) rowToNat(uuid string) *NAT {
 			nat.LogicalIP = lip.(libovsdb.UUID).GoUUID
 		case string:
 			nat.LogicalIP = lip.(string)
-		default:
 		}
 
 	}
@@ -68,7 +66,7 @@ func (odbi *ovndb) rowToNat(uuid string) *NAT {
 	return nat
 }
 
-func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, externalMac string, logicalIp string, logicalPort string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
 	nameUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -97,14 +95,16 @@ func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, exter
 	// The logical_port and  external_mac  are  only  accepted
 	// when  router  is  a  distributed  router  (rather than a gateway
 	// router) and type is dnat_and_snat.
-	if externalMac != "" {
-		if row["type"] != "dnat_and_snat" {
+	if row["type"] == "dnat_and_snat" {
+		switch len(logicalPortAndExternalMac) {
+		case 0:
+		case 2:
+			row["logical_port"] = logicalPortAndExternalMac[0]
+			row["external_mac"] = logicalPortAndExternalMac[1]
+		default:
 			return nil, ErrorOption
 		}
-		row["external_mac"] = externalMac
 	}
-
-	row["logical_port"] = logicalPort
 
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
@@ -149,7 +149,6 @@ func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, exter
 // dnat_and_snat, the ip shoud be external_ip.
 func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
-	var lrNatUUID string
 
 	row := make(OVNRow)
 
@@ -169,11 +168,13 @@ func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnComma
 		if len(ip) != 0 {
 			row["external_ip"] = ip[0]
 		}
+	case "":
 	default:
 		return nil, ErrorOption
 	}
 
-	lrNatUUID = odbi.getRowUUID(tableNAT, row)
+	lrNatUUID := make([]string, len(odbi.getRowUUIDs(tableNAT, row)))
+	lrNatUUID = odbi.getRowUUIDs(tableNAT, row)
 	if len(lrNatUUID) == 0 {
 		return nil, ErrorNotFound
 	}
@@ -182,19 +183,23 @@ func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnComma
 	if err != nil {
 		return nil, err
 	}
-	natlist := make([]string, len(LRs))
-
+	if len(LRs) == 0 {
+		return nil, ErrorNotFound
+	}
+	natlist := make([]string, len(LRs[0].NAT))
 	for i, v := range LRs[0].NAT {
 		natlist[i] = v
 	}
 
 	var mutateUUID []libovsdb.UUID
 	for _, v := range natlist {
-		switch lrNatUUID {
-		case v:
-			mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: lrNatUUID})
-		case "":
-			mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: v})
+		for s, lv := range lrNatUUID {
+			switch lv {
+			case v:
+				mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: lrNatUUID[s]})
+			case "":
+				mutateUUID = append(mutateUUID, libovsdb.UUID{GoUUID: v})
+			}
 		}
 	}
 
@@ -203,7 +208,7 @@ func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnComma
 		return nil, err
 	}
 
-	lrNatUUID = odbi.getRowUUID(tableNAT, row)
+	lrNatUUID = odbi.getRowUUIDs(tableNAT, row)
 	if len(lrNatUUID) == 0 {
 		return nil, ErrorNotFound
 	}

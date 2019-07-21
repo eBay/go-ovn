@@ -139,9 +139,9 @@ type Client interface {
 	QoSList(ls string) ([]*QoS, error)
 
 	//Add NAT to Logical Router
-	LRNATAdd(lr string, Type string, externalIp string, externalMac string, logicalIp string, logicalPort string, external_ids map[string]string) (*OvnCommand, error)
+	LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error)
 	//Del NAT from Logical Router
-	LRNATDel(lr string, Type string, ip ...string) (*OvnCommand, error)
+	LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
 	// Get NAT List by Logical Router
 	LRNATList(lr string) ([]*NAT, error)
 
@@ -400,12 +400,12 @@ func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
 	return c.dhcpOptionsListImp()
 }
 
-func (c *ovndb) LRNATAdd(lr string, Type string, externalIp string, externalMac string, logicalIp string, logicalPort string, external_ids map[string]string) (*OvnCommand, error) {
-	return c.lrNatAddImp(lr, Type, externalIp, externalMac, logicalIp, logicalPort, external_ids)
+func (c *ovndb) LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
+	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp,external_ids, logicalPortAndExternalMac...)
 }
 
-func (c *ovndb) LRNATDel(lr string, Type string, ip ...string) (*OvnCommand, error) {
-	return c.lrNatDelImp(lr, Type, ip...)
+func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error) {
+	return c.lrNatDelImp(lr, ntype, ip...)
 }
 
 func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
