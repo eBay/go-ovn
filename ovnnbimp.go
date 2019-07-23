@@ -236,38 +236,41 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					}
 				}
 			} else {
+				defer delete(odbi.cache[table], uuid)
+
 				if odbi.signalCB != nil {
-					switch table {
-					case tableLogicalRouter:
-						lr := odbi.rowToLogicalRouter(uuid)
-						odbi.signalCB.OnLogicalRouterDelete(lr)
-					case tableLogicalRouterPort:
-						lrp := odbi.rowToLogicalRouterPort(uuid)
-						odbi.signalCB.OnLogicalRouterPortDelete(lrp)
-					case tableLogicalRouterStaticRoute:
-						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
-						odbi.signalCB.OnLogicalRouterStaticRouteDelete(lrsr)
-					case tableLogicalSwitch:
-						ls := odbi.rowToLogicalSwitch(uuid)
-						odbi.signalCB.OnLogicalSwitchDelete(ls)
-					case tableLogicalSwitchPort:
-						lp := odbi.rowToLogicalPort(uuid)
-						odbi.signalCB.OnLogicalPortDelete(lp)
-					case tableACL:
-						acl := odbi.rowToACL(uuid)
-						odbi.signalCB.OnACLDelete(acl)
-					case tableDHCPOptions:
-						dhcp := odbi.rowToDHCPOptions(uuid)
-						odbi.signalCB.OnDHCPOptionsDelete(dhcp)
-					case tableQoS:
-						qos := odbi.rowToQoS(uuid)
-						odbi.signalCB.OnQoSDelete(qos)
-					case tableLoadBalancer:
-						lb, _ := odbi.rowToLB(uuid)
-						odbi.signalCB.OnLoadBalancerDelete(lb)
-					}
+					defer func(table, uuid string) {
+						switch table {
+						case tableLogicalRouter:
+							lr := odbi.rowToLogicalRouter(uuid)
+							odbi.signalCB.OnLogicalRouterDelete(lr)
+						case tableLogicalRouterPort:
+							lrp := odbi.rowToLogicalRouterPort(uuid)
+							odbi.signalCB.OnLogicalRouterPortDelete(lrp)
+						case tableLogicalRouterStaticRoute:
+							lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
+							odbi.signalCB.OnLogicalRouterStaticRouteDelete(lrsr)
+						case tableLogicalSwitch:
+							ls := odbi.rowToLogicalSwitch(uuid)
+							odbi.signalCB.OnLogicalSwitchDelete(ls)
+						case tableLogicalSwitchPort:
+							lp := odbi.rowToLogicalPort(uuid)
+							odbi.signalCB.OnLogicalPortDelete(lp)
+						case tableACL:
+							acl := odbi.rowToACL(uuid)
+							odbi.signalCB.OnACLDelete(acl)
+						case tableDHCPOptions:
+							dhcp := odbi.rowToDHCPOptions(uuid)
+							odbi.signalCB.OnDHCPOptionsDelete(dhcp)
+						case tableQoS:
+							qos := odbi.rowToQoS(uuid)
+							odbi.signalCB.OnQoSDelete(qos)
+						case tableLoadBalancer:
+							lb, _ := odbi.rowToLB(uuid)
+							odbi.signalCB.OnLoadBalancerDelete(lb)
+						}
+					}(table, uuid)
 				}
-				delete(odbi.cache[table], uuid)
 			}
 		}
 	}
