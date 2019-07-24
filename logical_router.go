@@ -120,8 +120,8 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 
 	var lbs []string
 	load_balancer := odbi.cache[tableLogicalRouter][uuid].Fields["load_balancer"]
-	if load_balancer !=nil{
-		switch load_balancer.(type){
+	if load_balancer != nil {
+		switch load_balancer.(type) {
 		case libovsdb.OvsSet:
 			if lb, ok := load_balancer.(libovsdb.OvsSet); ok {
 				for _, l := range lb.GoSet {
@@ -143,7 +143,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 
 	var lps []string
 	ports := odbi.cache[tableLogicalRouter][uuid].Fields["ports"]
-	if ports != nil{
+	if ports != nil {
 		switch ports.(type) {
 		case string:
 			lr.Ports = []string{ports.(string)}
@@ -152,7 +152,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 				for _, p := range ps.GoSet {
 					if vp, ok := p.(libovsdb.UUID); ok {
 						tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
-						lps = append( lps, tp.Name)
+						lps = append(lps, tp.Name)
 					}
 				}
 			}
@@ -186,7 +186,6 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 		}
 	}
 	lr.StaticRoutes = listLRSR
-
 
 	var NATList []string
 	nat := odbi.cache[tableLogicalRouter][uuid].Fields["nat"]

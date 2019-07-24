@@ -173,8 +173,7 @@ func (odbi *ovndb) lrNatDelImp(lr string, ntype string, ip ...string) (*OvnComma
 		return nil, ErrorOption
 	}
 
-	lrNatUUID := make([]string, len(odbi.getRowUUIDs(tableNAT, row)))
-	lrNatUUID = odbi.getRowUUIDs(tableNAT, row)
+	lrNatUUID := odbi.getRowUUIDs(tableNAT, row)
 	if len(lrNatUUID) == 0 {
 		return nil, ErrorNotFound
 	}
