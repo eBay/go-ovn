@@ -124,10 +124,12 @@ type Client interface {
 
 	// Add dhcp options for cidr and provided external_ids
 	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
-	// Set dhcp options for specific cidr and provided external_ids
-	DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Set dhcp options and set external_ids for specific uuid
+	DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Del dhcp options via provided external_ids
 	DHCPOptionsDel(uuid string) (*OvnCommand, error)
+	// Get single dhcp via provided uuid
+	DHCPOptionsGet(uuid string) (*DHCPOptions, error)
 	// List dhcp options
 	DHCPOptionsList() ([]*DHCPOptions, error)
 
@@ -388,12 +390,16 @@ func (c *ovndb) DHCPOptionsAdd(cidr string, options map[string]string, external_
 	return c.dhcpOptionsAddImp(cidr, options, external_ids)
 }
 
-func (c *ovndb) DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
-	return c.dhcpOptionsSetImp(cidr, options, external_ids)
+func (c *ovndb) DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.dhcpOptionsSetImp(uuid, options, external_ids)
 }
 
 func (c *ovndb) DHCPOptionsDel(uuid string) (*OvnCommand, error) {
 	return c.dhcpOptionsDelImp(uuid)
+}
+
+func (c *ovndb) DHCPOptionsGet(uuid string) (*DHCPOptions, error) {
+	return c.dhcpOptionsGetImp(uuid)
 }
 
 func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
@@ -401,7 +407,7 @@ func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
 }
 
 func (c *ovndb) LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
-	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp,external_ids, logicalPortAndExternalMac...)
+	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp, external_ids, logicalPortAndExternalMac...)
 }
 
 func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error) {
