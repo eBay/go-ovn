@@ -23,6 +23,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// QoS ovnnb item
 type QoS struct {
 	UUID       string
 	Priority   int

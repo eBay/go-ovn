@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// DHCPOptions ovnnb item
 type DHCPOptions struct {
 	UUID       string
 	CIDR       string

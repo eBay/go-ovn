@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// NAT ovnnb item
 type NAT struct {
 	UUID        string
 	Type        string

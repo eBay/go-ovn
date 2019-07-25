@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalRouter ovnnb item
 type LogicalRouter struct {
 	UUID    string
 	Name    string

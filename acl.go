@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// ACL ovnnb item
 type ACL struct {
 	UUID       string
 	Action     string

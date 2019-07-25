@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalRouterStaticRoute ovnnb item
 type LogicalRouterStaticRoute struct {
 	UUID       string
 	IPPrefix   string

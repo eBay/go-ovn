@@ -32,6 +32,7 @@ var (
 	ErrorExist    = errors.New("object exist")
 )
 
+// OVNRow ovnnb row
 type OVNRow map[string]interface{}
 
 func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {

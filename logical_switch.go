@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalSwitch ovnnb item
 type LogicalSwitch struct {
 	UUID         string
 	Name         string
