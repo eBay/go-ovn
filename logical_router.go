@@ -224,7 +224,7 @@ func (odbi *ovndb) lrListImp() ([]*LogicalRouter, error) {
 		return nil, ErrorNotFound
 	}
 
-	for uuid, _ := range cacheLogicalRouter {
+	for uuid := range cacheLogicalRouter {
 		listLR = append(listLR, odbi.rowToLogicalRouter(uuid))
 	}
 

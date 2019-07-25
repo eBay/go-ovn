@@ -158,7 +158,7 @@ func (odbi *ovndb) lsListImp() ([]*LogicalSwitch, error) {
 		return nil, ErrorSchema
 	}
 
-	for uuid, _ := range cacheLogicalSwitch {
+	for uuid := range cacheLogicalSwitch {
 		listLS = append(listLS, odbi.rowToLogicalSwitch(uuid))
 	}
 
