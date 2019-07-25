@@ -401,7 +401,7 @@ func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
 }
 
 func (c *ovndb) LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
-	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp,external_ids, logicalPortAndExternalMac...)
+	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp, external_ids, logicalPortAndExternalMac...)
 }
 
 func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error) {

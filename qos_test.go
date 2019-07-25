@@ -34,16 +34,25 @@ func TestQoS(t *testing.T) {
 	}
 
 	cmd, err = ovndbapi.QoSAdd(LSW, "to-lport", 1001, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmd, err = ovndbapi.QoSAdd(LSW, "from-lport", 1002, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmd, err = ovndbapi.QoSAdd(LSW, "to-lport", 1003, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)

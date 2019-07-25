@@ -54,6 +54,9 @@ func TestDHCPOptions(t *testing.T) {
 			"lease_time": "6000",
 		},
 		nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	cmds = append(cmds, cmd)
 
 	// execute to create lsw and lsp

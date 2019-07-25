@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"fmt"
+
 	"github.com/ebay/libovsdb"
 )
 
@@ -25,8 +26,8 @@ type LogicalRouterStaticRoute struct {
 	UUID       string
 	IPPrefix   string
 	Nexthop    string
-	OutputPort [] string
-	Policy     [] string
+	OutputPort []string
+	Policy     []string
 	ExternalID map[interface{}]interface{}
 }
 
