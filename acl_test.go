@@ -113,9 +113,9 @@ func TestACLs(t *testing.T) {
 		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
 
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
-	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
+	assert.Equal(t, true, nil != err, "test[%s]", "add same acl twice, should only one added.")
 	err = ovndbapi.Execute(cmd)
-	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
+	assert.Equal(t, true, nil != err, "test[%s]", "add same acl twice, should only one added.")
 
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
 	if err != nil {
