@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LoadBalancer ovnnb item
 type LoadBalancer struct {
 	UUID       string
 	Name       string

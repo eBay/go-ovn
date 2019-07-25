@@ -53,9 +53,8 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 					}
 				}
 				return true
-			} else {
-				return false
 			}
+			return false
 		}
 	}
 	return false

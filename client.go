@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// Client ovnnb client
 type Client interface {
 	// Get logical switch by name
 	LSGet(ls string) ([]*LogicalSwitch, error)

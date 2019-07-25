@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// DHCPOptions ovnnb item
 type DHCPOptions struct {
 	UUID       string
 	CIDR       string
@@ -141,7 +142,7 @@ func (odbi *ovndb) dhcpOptionsListImp() ([]*DHCPOptions, error) {
 		return nil, ErrorSchema
 	}
 
-	for uuid, _ := range cacheDHCPOptions {
+	for uuid := range cacheDHCPOptions {
 		listDHCP = append(listDHCP, odbi.rowToDHCPOptions(uuid))
 	}
 	return listDHCP, nil

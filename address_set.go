@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// AddressSet ovnnb item
 type AddressSet struct {
 	UUID       string
 	Name       string

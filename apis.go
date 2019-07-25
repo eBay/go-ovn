@@ -20,16 +20,19 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// OvnCommand ovnnb command
 type OvnCommand struct {
 	Operations []libovsdb.Operation
 	Exe        Execution
 	Results    [][]map[string]interface{}
 }
 
+// Execute sends command to ovnnb
 func (ocmd *OvnCommand) Execute() error {
 	return ocmd.Exe.Execute()
 }
 
+// Execution executes multiple ovnnb commands
 type Execution interface {
 	//Excute multi-commands
 	Execute(cmds ...*OvnCommand) error
@@ -66,7 +69,7 @@ type OVNSignal interface {
 	OnLoadBalancerDelete(ls *LoadBalancer)
 }
 
-// Notifier
+// OVNNotifier ovnnb notifier
 type OVNNotifier interface {
 	Update(context interface{}, tableUpdates libovsdb.TableUpdates)
 	Locked([]interface{})

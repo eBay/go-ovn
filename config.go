@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 )
 
+// Config ovnnb client config
 type Config struct {
 	Addr         string
 	TLSConfig    *tls.Config

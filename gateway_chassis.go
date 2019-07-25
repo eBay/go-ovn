@@ -16,6 +16,7 @@
 
 package goovn
 
+// GatewayChassis ovnnb item
 type GatewayChassis struct {
 	UUID        string
 	Name        string
