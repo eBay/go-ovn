@@ -36,7 +36,7 @@ func init() {
 	var err error
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
-		ovs_rundir = OvsRundir
+		ovs_rundir = ovsRundir
 	}
 	ovndbapi, err = goovn.NewClient(&goovn.Config{Addr: "unix:" + ovs_rundir + "/" + ovnnbSocket})
 	if err != nil {
