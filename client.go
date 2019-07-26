@@ -158,6 +158,7 @@ type Client interface {
 type ovndb struct {
 	client       *libovsdb.OvsdbClient
 	cache        map[string]map[string]libovsdb.Row
+	cache2       map[string]map[string]interface{}
 	cachemutex   sync.RWMutex
 	tranmutex    sync.Mutex
 	signalCB     OVNSignal
