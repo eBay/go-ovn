@@ -54,7 +54,7 @@ func (odbi *ovndb) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
 		UUIDName: namedUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(namedUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (odbi *ovndb) lspDelImp(lsp string) (*OvnCommand, error) {
 		return nil, ErrorNotFound
 	}
 
-	mutateUUID := []libovsdb.UUID{{lspUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lspUUID)}
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -99,7 +99,7 @@ func (odbi *ovndb) lspDelImp(lsp string) (*OvnCommand, error) {
 		return nil, err
 	}
 
-	mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{ucondition})
+	mucondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(ucondition))
 	// simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
@@ -149,7 +149,7 @@ func (odbi *ovndb) lspSetPortSecurityImp(lsp string, security ...string) (*OvnCo
 
 func (odbi *ovndb) lspSetDHCPv4OptionsImp(lsp string, uuid string) (*OvnCommand, error) {
 	row := make(OVNRow)
-	row["dhcpv4_options"] = libovsdb.UUID{uuid}
+	row["dhcpv4_options"] = stringToGoUUID(uuid)
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	updateOp := libovsdb.Operation{
 		Op:    opUpdate,

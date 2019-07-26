@@ -26,10 +26,14 @@ import (
 )
 
 var (
-	ErrorOption   = errors.New("invalid option specified")
-	ErrorSchema   = errors.New("table schema error")
+	// ErrorOption used when invalid args specified
+	ErrorOption = errors.New("invalid option specified")
+	// ErrorSchema used when something wrong in ovnnb
+	ErrorSchema = errors.New("table schema error")
+	// ErrorNotFound used when object not found in ovnnb
 	ErrorNotFound = errors.New("object not found")
-	ErrorExist    = errors.New("object exist")
+	// ErrorExist used when object already exists in ovnnb
+	ErrorExist = errors.New("object exist")
 )
 
 // OVNRow ovnnb row
@@ -287,4 +291,8 @@ func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 		}
 	}
 	return ret
+}
+
+func stringToGoUUID(uuid string) libovsdb.UUID {
+	return libovsdb.UUID{GoUUID: uuid}
 }

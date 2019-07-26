@@ -240,7 +240,7 @@ func (odbi *ovndb) lrlbAddImp(lr string, lb string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	mutation := libovsdb.NewMutation("load_balancer", opInsert, mutateSet)
 	if err != nil {
@@ -271,7 +271,7 @@ func (odbi *ovndb) lrlbDelImp(lr string, lb string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err

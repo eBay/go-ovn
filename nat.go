@@ -122,7 +122,7 @@ func (odbi *ovndb) lrNatAddImp(lr string, ntype string, externalIp string, logic
 		UUIDName: nameUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{nameUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(nameUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err

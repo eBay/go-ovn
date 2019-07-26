@@ -93,7 +93,7 @@ func (odbi *ovndb) qosAddImp(ls string, direction string, priority int, match st
 		UUIDName: namedUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(namedUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -142,13 +142,13 @@ func (odbi *ovndb) qosDelImp(ls string, direction string, priority int, match st
 		selUUIDs = lsw[0].QoSRules
 	}
 
-	var delUUIDs []libovsdb.UUID
-	for _, uuid := range selUUIDs {
-		delUUIDs = append(delUUIDs, libovsdb.UUID{uuid})
+	if len(selUUIDs) == 0 {
+		return nil, ErrorNotFound
 	}
 
-	if len(delUUIDs) == 0 {
-		return nil, ErrorNotFound
+	delUUIDs := make([]libovsdb.UUID, len(selUUIDs))
+	for i, uuid := range selUUIDs {
+		delUUIDs[i] = stringToGoUUID(uuid)
 	}
 
 	deleteSet, err := libovsdb.NewOvsSet(delUUIDs)
