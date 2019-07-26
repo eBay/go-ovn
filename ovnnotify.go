@@ -34,4 +34,7 @@ func (notify ovnNotifier) Stolen([]interface{}) {
 func (notify ovnNotifier) Echo([]interface{}) {
 }
 func (notify ovnNotifier) Disconnected(client *libovsdb.OvsdbClient) {
+	if notify.odbi.disconnectCB != nil {
+		notify.odbi.disconnectCB()
+	}
 }

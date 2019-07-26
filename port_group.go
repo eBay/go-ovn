@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// PortGroup ovnnb item
 type PortGroup struct {
 	UUID       string                      `ovn:"uuid"`
 	Name       string                      `ovn:"name"`

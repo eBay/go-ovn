@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalRouterPort ovnnb item
 type LogicalRouterPort struct {
 	UUID           string                      `ovn:"uuid"`
 	Name           string                      `ovn:"name"`
@@ -72,7 +73,7 @@ func (odbi *ovndb) lrpAddImp(lr string, lrp string, mac string, network []string
 		UUIDName: namedUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(namedUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -100,7 +101,7 @@ func (odbi *ovndb) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
 		return nil, ErrorNotFound
 	}
 
-	mutateUUID := []libovsdb.UUID{{lrpUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lrpUUID)}
 	condition := libovsdb.NewCondition("name", "==", lr)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -117,7 +118,7 @@ func (odbi *ovndb) lrpDelImp(lr, lrp string) (*OvnCommand, error) {
 		return nil, err
 	}
 
-	mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{ucondition})
+	mucondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(ucondition))
 	// simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,

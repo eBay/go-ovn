@@ -17,6 +17,8 @@
 package goovn
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
@@ -26,16 +28,21 @@ import (
 )
 
 const (
-	OVS_RUNDIR   = "/var/run/openvswitch"
-	OVNNB_SOCKET = "nb1.ovsdb"
-	LR           = "TEST_LR"
-	LRP          = "TEST_LRP"
-	LSW          = "TEST_LSW"
-	LSP          = "TEST_LSP"
-	LSP_SECOND   = "TEST_LSP_SECOND "
-	ADDR         = "36:46:56:76:86:96 127.0.0.1"
-	MATCH        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
-	MATCH_SECOND = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
+	OVS_RUNDIR           = "/var/run/openvswitch"
+	OVNNB_SOCKET         = "nb1.ovsdb"
+	LR                   = "TEST_LR"
+	LRP                  = "TEST_LRP"
+	LSW                  = "TEST_LSW"
+	LSP                  = "TEST_LSP"
+	LSP_SECOND           = "TEST_LSP_SECOND "
+	ADDR                 = "36:46:56:76:86:96 127.0.0.1"
+	MATCH                = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
+	MATCH_SECOND         = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
+	defaultClientCACert  = "/etc/openvswitch/client_ca_cert.pem"
+	defaultClientPrivKey = "/etc/openvswitch/ovnnb-privkey.pem"
+	SKIP_TLS_VERIFY      = true
+	SSL                  = "ssl"
+	UNIX                 = "unix"
 )
 
 var ovndbapi Client
@@ -51,7 +58,7 @@ func TestMain(m *testing.M) {
 	}
 	var ovn_nb_db = os.Getenv("OVN_NB_DB")
 	if ovn_nb_db == "" {
-		cfg.Addr = "unix:" + ovs_rundir + "/" + OVNNB_SOCKET
+		cfg.Addr = UNIX + ":" + ovs_rundir + "/" + OVNNB_SOCKET
 		api, err = NewClient(cfg)
 		if err != nil {
 			log.Fatal(err)
@@ -62,14 +69,45 @@ func TestMain(m *testing.M) {
 			log.Fatal("Unexpected format of $OVN_NB_DB")
 		}
 		if len(strs) == 2 {
-			cfg.Addr = "unix:" + ovs_rundir + "/" + strs[1]
+			cfg.Addr = UNIX + ":" + ovs_rundir + "/" + strs[1]
 			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
 			port, _ := strconv.Atoi(strs[2])
-			cfg.Addr = fmt.Sprintf("tcp:%s%s:%d", strs[0], strs[1], port)
+			protocol := strs[0]
+			if protocol == SSL {
+				clientCACert := os.Getenv("CLIENT_CERT_CA_CERT")
+				if clientCACert == "" {
+					clientCACert = defaultClientCACert
+				}
+				clientPrivKey := os.Getenv("CLIENT_PRIVKEY")
+				if clientPrivKey == "" {
+					clientPrivKey = defaultClientPrivKey
+				}
+				cert, err := tls.LoadX509KeyPair(clientCACert, clientPrivKey)
+				if err != nil {
+					log.Fatalf("client: loadkeys: %s", err)
+				}
+				if len(cert.Certificate) != 2 {
+					log.Fatal("client.crt should have 2 concatenated certificates: client + CA")
+				}
+				ca, err := x509.ParseCertificate(cert.Certificate[1])
+				if err != nil {
+					log.Fatal(err)
+				}
+				certPool := x509.NewCertPool()
+				certPool.AddCert(ca)
+				tlsConfig := tls.Config{
+					Certificates:       []tls.Certificate{cert},
+					RootCAs:            certPool,
+					InsecureSkipVerify: SKIP_TLS_VERIFY,
+				}
+				cfg.TLSConfig = &tlsConfig
+			}
+
+			cfg.Addr = fmt.Sprintf("%s:%s:%d", strs[0], strs[1], port)
 			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)

@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalSwitch ovnnb item
 type LogicalSwitch struct {
 	UUID         string                      `ovn:"uuid"`
 	Name         string                      `ovn:"name"`
@@ -158,7 +159,7 @@ func (odbi *ovndb) lsListImp() ([]*LogicalSwitch, error) {
 		return nil, ErrorSchema
 	}
 
-	for uuid, _ := range cacheLogicalSwitch {
+	for uuid := range cacheLogicalSwitch {
 		listLS = append(listLS, odbi.rowToLogicalSwitch(uuid))
 	}
 
@@ -173,7 +174,7 @@ func (odbi *ovndb) lslbAddImp(lswitch string, lb string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	mutation := libovsdb.NewMutation("load_balancer", opInsert, mutateSet)
 	if err != nil {
@@ -210,7 +211,7 @@ func (odbi *ovndb) lslbDelImp(lswitch string, lb string) (*OvnCommand, error) {
 	if len(lsuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err

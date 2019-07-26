@@ -20,6 +20,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// DHCPOptions ovnnb item
 type DHCPOptions struct {
 	UUID       string                      `ovn:"uuid"`
 	CIDR       string                      `ovn:"cidr"`
@@ -91,27 +92,39 @@ func (odbi *ovndb) dhcpOptionsAddImp(cidr string, options map[string]string, ext
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) dhcpOptionsSetImp(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) dhcpOptionsSetImp(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	row := make(OVNRow)
 
-	row, err := newDHCPRow(cidr, nil, external_ids)
-	if err != nil {
-		return nil, err
-	}
-
-	dhcpUUID := odbi.getRowUUID(tableDHCPOptions, row)
-	if len(dhcpUUID) == 0 {
+	_, ok := odbi.cache[tableDHCPOptions][uuid]
+	if !ok {
 		return nil, ErrorNotFound
 	}
 
-	mutatemap, _ := libovsdb.NewOvsMap(options)
-	mutation := libovsdb.NewMutation("options", opInsert, mutatemap)
-	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{dhcpUUID})
+	if options == nil {
+		return nil, ErrorOption
+	}
+
+	oMap, err := libovsdb.NewOvsMap(options)
+	if err != nil {
+		return nil, err
+	}
+	row["options"] = oMap
+
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			return nil, err
+		}
+		row["external_ids"] = oMap
+	}
+
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 
 	mutateOp := libovsdb.Operation{
-		Op:        opMutate,
-		Table:     tableDHCPOptions,
-		Mutations: []interface{}{mutation},
-		Where:     []interface{}{condition},
+		Op:    opUpdate,
+		Table: tableDHCPOptions,
+		Row:   row,
+		Where: []interface{}{condition},
 	}
 
 	operations := []libovsdb.Operation{mutateOp}
@@ -119,7 +132,7 @@ func (odbi *ovndb) dhcpOptionsSetImp(cidr string, options map[string]string, ext
 }
 
 func (odbi *ovndb) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
-	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{uuid})
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
 		Table: tableDHCPOptions,
@@ -141,8 +154,16 @@ func (odbi *ovndb) dhcpOptionsListImp() ([]*DHCPOptions, error) {
 		return nil, ErrorSchema
 	}
 
-	for uuid, _ := range cacheDHCPOptions {
+	for uuid := range cacheDHCPOptions {
 		listDHCP = append(listDHCP, odbi.rowToDHCPOptions(uuid))
 	}
 	return listDHCP, nil
+}
+
+func (odbi *ovndb) dhcpOptionsGetImp(uuid string) (*DHCPOptions, error) {
+	dhcp := odbi.rowToDHCPOptions(uuid)
+	if dhcp == nil {
+		return nil, ErrorNotFound
+	}
+	return dhcp, nil
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// Client ovnnb client
 type Client interface {
 	// Get logical switch by name
 	LSGet(ls string) ([]*LogicalSwitch, error)
@@ -88,6 +89,13 @@ type Client interface {
 	// Get all lrp by lr
 	LRPList(lr string) ([]*LogicalRouterPort, error)
 
+	// Add LRSR with given ip_prefix on given lr
+	LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete LRSR with given ip_prefix on given lr
+	LRSRDel(lr string, ip_prefix string) (*OvnCommand, error)
+	// Get all LRSRs by lr
+	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
+
 	// Add LB to LR
 	LRLBAdd(lr string, lb string) (*OvnCommand, error)
 	// Delete LB from LR
@@ -117,10 +125,12 @@ type Client interface {
 
 	// Add dhcp options for cidr and provided external_ids
 	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
-	// Set dhcp options for specific cidr and provided external_ids
-	DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Set dhcp options and set external_ids for specific uuid
+	DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Del dhcp options via provided external_ids
 	DHCPOptionsDel(uuid string) (*OvnCommand, error)
+	// Get single dhcp via provided uuid
+	DHCPOptionsGet(uuid string) (*DHCPOptions, error)
 	// List dhcp options
 	DHCPOptionsList() ([]*DHCPOptions, error)
 
@@ -131,24 +141,35 @@ type Client interface {
 	// Get qos rules by logical switch
 	QoSList(ls string) ([]*QoS, error)
 
+	//Add NAT to Logical Router
+	LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error)
+	//Del NAT from Logical Router
+	LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
+	// Get NAT List by Logical Router
+	LRNATList(lr string) ([]*NAT, error)
+
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
+
+	// Close connection to OVN
+	Close() error
 }
 
 type ovndb struct {
-	client     *libovsdb.OvsdbClient
-	cache      map[string]map[string]libovsdb.Row
-	cache2     map[string]map[string]interface{}
-	cachemutex sync.RWMutex
-	tranmutex  sync.Mutex
-	callback   OVNSignal
+	client       *libovsdb.OvsdbClient
+	cache        map[string]map[string]libovsdb.Row
+	cachemutex   sync.RWMutex
+	tranmutex    sync.Mutex
+	signalCB     OVNSignal
+	disconnectCB OVNDisconnectedCallback
 }
 
 func NewClient(cfg *Config) (Client, error) {
 	imp := &ovndb{
-		cache:    make(map[string]map[string]libovsdb.Row),
-		cache2:   make(map[string]map[string]interface{}),
-		callback: cfg.SignalCB,
+		cache:        make(map[string]map[string]libovsdb.Row),
+		cache2:       make(map[string]map[string]interface{}),
+		signalCB:     cfg.SignalCB,
+		disconnectCB: cfg.DisconnectCB,
 	}
 
 	c, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)
@@ -267,6 +288,18 @@ func (c *ovndb) LRPList(lr string) ([]*LogicalRouterPort, error) {
 	return c.lrpListImp(lr)
 }
 
+func (c *ovndb) LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.lrsrAddImp(lr, ip_prefix, nexthop, output_port, policy, external_ids)
+}
+
+func (c *ovndb) LRSRDel(lr string, ip_prefix string) (*OvnCommand, error) {
+	return c.lrsrDelImp(lr, ip_prefix)
+}
+
+func (c *ovndb) LRSRList(lr string) ([]*LogicalRouterStaticRoute, error) {
+	return c.lrsrListImp(lr)
+}
+
 func (c *ovndb) LRLBAdd(lr string, lb string) (*OvnCommand, error) {
 	return c.lrlbAddImp(lr, lb)
 }
@@ -359,14 +392,30 @@ func (c *ovndb) DHCPOptionsAdd(cidr string, options map[string]string, external_
 	return c.dhcpOptionsAddImp(cidr, options, external_ids)
 }
 
-func (c *ovndb) DHCPOptionsSet(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
-	return c.dhcpOptionsSetImp(cidr, options, external_ids)
+func (c *ovndb) DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.dhcpOptionsSetImp(uuid, options, external_ids)
 }
 
 func (c *ovndb) DHCPOptionsDel(uuid string) (*OvnCommand, error) {
 	return c.dhcpOptionsDelImp(uuid)
 }
 
+func (c *ovndb) DHCPOptionsGet(uuid string) (*DHCPOptions, error) {
+	return c.dhcpOptionsGetImp(uuid)
+}
+
 func (c *ovndb) DHCPOptionsList() ([]*DHCPOptions, error) {
 	return c.dhcpOptionsListImp()
+}
+
+func (c *ovndb) LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error) {
+	return c.lrNatAddImp(lr, ntype, externalIp, logicalIp, external_ids, logicalPortAndExternalMac...)
+}
+
+func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error) {
+	return c.lrNatDelImp(lr, ntype, ip...)
+}
+
+func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
+	return c.lrNatListImp(lr)
 }

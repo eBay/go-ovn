@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LogicalRouter ovnnb item
 type LogicalRouter struct {
 	UUID    string `ovn:"uuid"`
 	Name    string `ovn:"name"`
@@ -118,13 +119,96 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 		}
 	}
 
-	ports := odbi.cache[tableLogicalRouter][uuid].Fields["ports"]
-	switch ports.(type) {
-	case string:
-		lr.Ports = []string{ports.(string)}
-	case libovsdb.OvsSet:
-		lr.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
+	var lbs []string
+	load_balancer := odbi.cache[tableLogicalRouter][uuid].Fields["load_balancer"]
+	if load_balancer != nil {
+		switch load_balancer.(type) {
+		case libovsdb.OvsSet:
+			if lb, ok := load_balancer.(libovsdb.OvsSet); ok {
+				for _, l := range lb.GoSet {
+					if lb, ok := l.(libovsdb.UUID); ok {
+						lb, _ := odbi.rowToLB(lb.GoUUID)
+						lbs = append(lbs, lb.Name)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if lb, ok := load_balancer.(libovsdb.UUID); ok {
+				lb, _ := odbi.rowToLB(lb.GoUUID)
+
+				lbs = append(lbs, lb.Name)
+			}
+		}
 	}
+	lr.LoadBalancer = lbs
+
+	var lps []string
+	ports := odbi.cache[tableLogicalRouter][uuid].Fields["ports"]
+	if ports != nil {
+		switch ports.(type) {
+		case string:
+			lr.Ports = []string{ports.(string)}
+		case libovsdb.OvsSet:
+			if ps, ok := ports.(libovsdb.OvsSet); ok {
+				for _, p := range ps.GoSet {
+					if vp, ok := p.(libovsdb.UUID); ok {
+						tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+						lps = append(lps, tp.Name)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if vp, ok := ports.(libovsdb.UUID); ok {
+				tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
+				lps = append(lps, tp.Name)
+			}
+		}
+	}
+	lr.Ports = lps
+
+	var listLRSR []string
+	staticRoutes := odbi.cache[tableLogicalRouter][uuid].Fields["static_routes"]
+	if staticRoutes != nil {
+		switch staticRoutes.(type) {
+		case libovsdb.OvsSet:
+			if sr, ok := staticRoutes.(libovsdb.OvsSet); ok {
+				for _, s := range sr.GoSet {
+					if sruid, ok := s.(libovsdb.UUID); ok {
+						rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
+						listLRSR = append(listLRSR, rsr.IPPrefix)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if sruid, ok := staticRoutes.(libovsdb.UUID); ok {
+				rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
+				listLRSR = append(listLRSR, rsr.IPPrefix)
+			}
+		}
+	}
+	lr.StaticRoutes = listLRSR
+
+	var NATList []string
+	nat := odbi.cache[tableLogicalRouter][uuid].Fields["nat"]
+	if nat != nil {
+		switch nat.(type) {
+		case libovsdb.OvsSet:
+			if sr, ok := nat.(libovsdb.OvsSet); ok {
+				for _, s := range sr.GoSet {
+					if sruid, ok := s.(libovsdb.UUID); ok {
+						rsr := odbi.rowToNat(sruid.GoUUID)
+						NATList = append(NATList, rsr.UUID)
+					}
+				}
+			}
+		case libovsdb.UUID:
+			if sruid, ok := nat.(libovsdb.UUID); ok {
+				rsr := odbi.rowToNat(sruid.GoUUID)
+				NATList = append(NATList, rsr.UUID)
+			}
+		}
+	}
+	lr.NAT = NATList
 
 	return lr
 }
@@ -141,7 +225,7 @@ func (odbi *ovndb) lrListImp() ([]*LogicalRouter, error) {
 		return nil, ErrorNotFound
 	}
 
-	for uuid, _ := range cacheLogicalRouter {
+	for uuid := range cacheLogicalRouter {
 		listLR = append(listLR, odbi.rowToLogicalRouter(uuid))
 	}
 
@@ -156,7 +240,7 @@ func (odbi *ovndb) lrlbAddImp(lr string, lb string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	mutation := libovsdb.NewMutation("load_balancer", opInsert, mutateSet)
 	if err != nil {
@@ -187,7 +271,7 @@ func (odbi *ovndb) lrlbDelImp(lr string, lb string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err

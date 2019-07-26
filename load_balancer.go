@@ -22,6 +22,7 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+// LoadBalancer ovnnb item
 type LoadBalancer struct {
 	UUID       string                      `ovn:"uuid"`
 	Name       string                      `ovn:"name"`
@@ -108,7 +109,7 @@ func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lbuuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -120,7 +121,7 @@ func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 	} else if err == nil {
 		// mutate all matching lswitches for the corresponding load_balancer
 		for _, lswitch := range lswitches {
-			mucondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{lswitch})
+			mucondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(lswitch))
 			mutateOp := libovsdb.Operation{
 				Op:        opMutate,
 				Table:     tableLogicalSwitch,

@@ -67,7 +67,7 @@ func TestLSLoadBalancer(t *testing.T) {
 		t.Fatalf("Adding LB LB3 to LSW1itch failed with err %v", err)
 	}
 	t.Logf("Adding LB LB3 to LSW1itch %s Done", LSW1)
-	// verify if lb addtion
+	// verify if lb addition
 	lbs, err := ovndbapi.LSLBList(LSW1)
 	if err != nil {
 		t.Fatal(err)

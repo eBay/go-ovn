@@ -20,9 +20,10 @@ import (
 	"crypto/tls"
 )
 
+// Config ovnnb client config
 type Config struct {
 	Addr         string
 	TLSConfig    *tls.Config
 	SignalCB     OVNSignal
-	DisconnectCB string
+	DisconnectCB OVNDisconnectedCallback
 }
