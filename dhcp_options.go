@@ -118,7 +118,7 @@ func (odbi *ovndb) dhcpOptionsSetImp(uuid string, options map[string]string, ext
 		row["external_ids"] = oMap
 	}
 
-	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{uuid})
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 
 	mutateOp := libovsdb.Operation{
 		Op:    opUpdate,
@@ -132,7 +132,7 @@ func (odbi *ovndb) dhcpOptionsSetImp(uuid string, options map[string]string, ext
 }
 
 func (odbi *ovndb) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
-	condition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{uuid})
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
 		Table: tableDHCPOptions,

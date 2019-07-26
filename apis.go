@@ -38,8 +38,10 @@ type Execution interface {
 	Execute(cmds ...*OvnCommand) error
 }
 
+// OVNDisconnectedCallback executed when ovn client disconnects
 type OVNDisconnectedCallback func()
 
+// OVNSignal notifies on changes to ovnnb
 type OVNSignal interface {
 	OnLogicalSwitchCreate(ls *LogicalSwitch)
 	OnLogicalSwitchDelete(ls *LogicalSwitch)

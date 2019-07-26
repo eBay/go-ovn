@@ -65,7 +65,7 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 		UUIDName: namedUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(namedUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (odbi *ovndb) lrsrDelImp(lr string, ip_prefix string) (*OvnCommand, error) 
 	if len(lrsruuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	mutateUUID := []libovsdb.UUID{{lrsruuid}}
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(lrsruuid)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
