@@ -39,6 +39,10 @@ var (
 // OVNRow ovnnb row
 type OVNRow map[string]interface{}
 
+func NewRow() OVNRow {
+	return make(OVNRow)
+}
+
 func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
 	var uuids []string
 	var wildcard bool
@@ -439,6 +443,7 @@ func (odbi *ovndb) getRows(table string, row interface{}) ([]interface{}, error)
 		return nil, ErrorNotFound
 	}
 
+	// check each row
 	for _, tblrow := range cacheTable {
 		rowVal := reflect.ValueOf(row).Elem()
 		tblVal := reflect.ValueOf(tblrow).Elem()
@@ -472,7 +477,6 @@ func (odbi *ovndb) getRows(table string, row interface{}) ([]interface{}, error)
 			}
 		}
 		rows = append(rows, tblrow)
-
 	}
 
 	if len(rows) == 0 {

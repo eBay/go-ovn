@@ -35,32 +35,39 @@ type LogicalSwitch struct {
 	ExternalID   map[interface{}]interface{} `ovn:"external_ids"`
 }
 
-func (odbi *ovndb) lsAddImp(lsw string) (*OvnCommand, error) {
+func (odbi *ovndb) lsAddImp(name string) (*OvnCommand, error) {
+	//row to insert
+	row := make(OVNRow)
+	row["name"] = name
+
+	if uuid := odbi.getRowUUID(tableLogicalSwitch, row); len(uuid) > 0 {
+		return nil, ErrorExist
+	}
+
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
 	}
 
-	//row to insert
-	lswitch := make(OVNRow)
-	lswitch["name"] = lsw
-
-	if uuid := odbi.getRowUUID(tableLogicalSwitch, lswitch); len(uuid) > 0 {
-		return nil, ErrorExist
-	}
-
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
 		Table:    tableLogicalSwitch,
-		Row:      lswitch,
+		Row:      row,
 		UUIDName: namedUUID,
 	}
 	operations := []libovsdb.Operation{insertOp}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) lsDelImp(lsw string) (*OvnCommand, error) {
-	condition := libovsdb.NewCondition("name", "==", lsw)
+func (odbi *ovndb) lsDelImp(name string) (*OvnCommand, error) {
+	row := make(OVNRow)
+	row["name"] = name
+
+	if uuid := odbi.getRowUUID(tableLogicalSwitch, row); len(uuid) == 0 {
+		return nil, ErrorNotFound
+	}
+
+	condition := libovsdb.NewCondition("name", "==", name)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
 		Table: tableLogicalSwitch,
@@ -126,8 +133,8 @@ func (odbi *ovndb) rowToLogicalSwitch(uuid string) *LogicalSwitch {
 	return ls
 }
 
-func (odbi *ovndb) lsGetImp(ls string) ([]*LogicalSwitch, error) {
-	var lsList []*LogicalSwitch
+func (odbi *ovndb) lsGetImp(name string) ([]*LogicalSwitch, error) {
+	var lsws []*LogicalSwitch
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -136,21 +143,20 @@ func (odbi *ovndb) lsGetImp(ls string) ([]*LogicalSwitch, error) {
 		return nil, ErrorNotFound
 	}
 
-	for uuid, drows := range cacheLogicalSwitch {
-		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == ls {
-			lsList = append(lsList, odbi.rowToLogicalSwitch(uuid))
+	for uuid, rows := range cacheLogicalSwitch {
+		if ls, ok := rows.Fields["name"].(string); ok && ls == name {
+			lsws = append(lsws, odbi.rowToLogicalSwitch(uuid))
 		}
 	}
 
-	if len(lsList) == 0 {
+	if len(lsws) == 0 {
 		return nil, ErrorNotFound
 	}
-	return lsList, nil
+
+	return lsws, nil
 }
 
 func (odbi *ovndb) lsListImp() ([]*LogicalSwitch, error) {
-	var listLS []*LogicalSwitch
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -159,11 +165,14 @@ func (odbi *ovndb) lsListImp() ([]*LogicalSwitch, error) {
 		return nil, ErrorSchema
 	}
 
+	lsws := make([]*LogicalSwitch, len(cacheLogicalSwitch))
+	var i int
 	for uuid := range cacheLogicalSwitch {
-		listLS = append(listLS, odbi.rowToLogicalSwitch(uuid))
+		lsws[i] = odbi.rowToLogicalSwitch(uuid)
+		i++
 	}
 
-	return listLS, nil
+	return lsws, nil
 }
 
 func (odbi *ovndb) lslbAddImp(lswitch string, lb string) (*OvnCommand, error) {
