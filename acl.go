@@ -172,7 +172,7 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 		UUIDName: namedUUID,
 	}
 
-	mutateUUID := []libovsdb.UUID{{namedUUID}}
+	mutateUUID := []libovsdb.UUID{StringToGoUUID(namedUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
@@ -220,7 +220,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 		return nil, err
 	}
 
-	uuidcondition := libovsdb.NewCondition("_uuid", "==", libovsdb.UUID{aclUUID})
+	uuidcondition := libovsdb.NewCondition("_uuid", "==", StringToGoUUID(aclUUID))
 	wherecondition = append(wherecondition, uuidcondition)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -228,7 +228,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 		Where: wherecondition,
 	}
 
-	mutation := libovsdb.NewMutation("acls", opDelete, libovsdb.UUID{aclUUID})
+	mutation := libovsdb.NewMutation("acls", opDelete, StringToGoUUID(aclUUID))
 	condition := libovsdb.NewCondition("name", "==", lsw)
 
 	// Simple mutate operation
