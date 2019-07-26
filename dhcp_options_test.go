@@ -17,6 +17,7 @@
 package goovn
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,32 @@ func TestDHCPOptions(t *testing.T) {
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
-
+	defer func() {
+		cmd, err = ovndbapi.LSDel(LSW)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = ovndbapi.Execute(cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dhcp_opts, err := ovndbapi.DHCPOptionsList()
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmds = make([]*OvnCommand, 0)
+		for _, v := range dhcp_opts {
+			cmd, err := ovndbapi.DHCPOptionsDel(v.UUID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cmds = append(cmds, cmd)
+		}
+		err = ovndbapi.Execute(cmds...)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 	cmds = make([]*OvnCommand, 0)
 	cmd, err = ovndbapi.LSAdd(LSW)
 	if err != nil {
@@ -83,6 +109,40 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatalf("dhcp options not created %v", dhcp_opts)
 	}
 
+	cmd, err = ovndbapi.DHCPOptionsSet(
+		dhcp_opts[0].UUID,
+		map[string]string{
+			"server_id":  "192.168.1.2",
+			"server_mac": "54:54:54:54:54:54",
+			"lease_time": "5000",
+		},
+		nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dhcp_opts, err = ovndbapi.DHCPOptionsList()
+	if err != nil {
+		t.Fatal(err)
+	}
+	options := MapInterfaceToMapString(dhcp_opts[0].Options)
+
+	if options["server_id"] != "192.168.1.2" {
+		t.Fatal("dhcp option set fail")
+	}
+
+	dhcp, err := ovndbapi.DHCPOptionsGet(dhcp_opts[0].UUID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dOptions := MapInterfaceToMapString(dhcp.Options)
+	if len(dOptions) != len(options) {
+		t.Fatal("get single dhcp options fail")
+	}
+
 	cmd, err = ovndbapi.LSPSetDHCPv4Options(LSP, dhcp_opts[0].UUID)
 	if err != nil {
 		t.Fatal(err)
@@ -137,13 +197,14 @@ func TestDHCPOptions(t *testing.T) {
 
 	assert.Equal(t, true, len(lsps) == 0, "test[%s]", "one port remove")
 
-	cmd, err = ovndbapi.LSDel(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
+}
 
+func MapInterfaceToMapString(m map[interface{}]interface{}) map[string]string {
+	mapString := make(map[string]string, len(m))
+	for i, v := range m {
+		strKey := fmt.Sprintf("%v", i)
+		strValue := fmt.Sprintf("%v", v)
+		mapString[strKey] = strValue
+	}
+	return mapString
 }
