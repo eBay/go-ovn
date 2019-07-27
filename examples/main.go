@@ -58,13 +58,10 @@ func main() {
 		fmt.Printf("%v\n", *lp)
 	}
 
-	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", matchFirst, "drop", 1001, nil, true, "")
+	ocmd, _ = ovndbapi.ACLAdd("ls1", &goovn.ACL{Direction: "to-lport", Match: matchFirst, Action: "drop", Priority: 1001})
 	ovndbapi.Execute(ocmd)
 
-	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", matchSecond, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
-	ovndbapi.Execute(ocmd)
-
-	ocmd, _ = ovndbapi.ACLAdd("ls1", "to-lport", matchSecond, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
+	ocmd, _ = ovndbapi.ACLAdd("ls1", &goovn.ACL{Direction: "to-lport", Match: matchSecond, Action: "drop", Priority: 1001, ExternalID: map[string]string{"A": "b", "B": "b"}})
 	ovndbapi.Execute(ocmd)
 
 	acls, _ := ovndbapi.ACLList("ls1")
@@ -73,7 +70,7 @@ func main() {
 	}
 	fmt.Println()
 
-	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", matchFirst, 1001, map[string]string{})
+	ocmd, _ = ovndbapi.ACLDel("ls1", &goovn.ACL{Direction: "to-lport", Match: matchFirst, Priority: 1001})
 	ovndbapi.Execute(ocmd)
 	acls, _ = ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
@@ -81,19 +78,13 @@ func main() {
 	}
 
 	fmt.Println()
-	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", matchFirst, 1001, map[string]string{"A": "a"})
+	ocmd, _ = ovndbapi.ACLDel("ls1", &goovn.ACL{Direction: "to-lport", Match: matchFirst, Priority: 1001, ExternalID: map[string]string{"A": "a"}})
 	ovndbapi.Execute(ocmd)
 	acls, _ = ovndbapi.ACLList("ls1")
 	for _, acl := range acls {
 		fmt.Printf("%v\n", *acl)
 	}
 	fmt.Println()
-	ocmd, _ = ovndbapi.ACLDel("ls1", "to-lport", matchSecond, 1001, map[string]string{"A": "b"})
-	ovndbapi.Execute(ocmd)
-	acls, _ = ovndbapi.ACLList("ls1")
-	for _, acl := range acls {
-		fmt.Printf("%v\n", *acl)
-	}
 	ocmd, _ = ovndbapi.LSPDel("test")
 	ovndbapi.Execute(ocmd)
 	ocmd, _ = ovndbapi.LSDel("ls1")
