@@ -339,16 +339,34 @@ func rowToTableRow(table string, uuid string, row libovsdb.Row) interface{} {
 	return tblrow
 }
 
+func isZero(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return v.Len() == 0
+	case reflect.Bool:
+		return !v.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return v.Int() == 0
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return v.Uint() == 0
+	case reflect.Float32, reflect.Float64:
+		return v.Float() == 0
+	case reflect.Interface, reflect.Ptr:
+		return v.IsNil()
+	}
+	return false
+}
+
 func rowMarshal(tblrow interface{}) OVNRow {
-	row := make(OVNRow)
+	row := NewRow()
 
 	t := reflect.ValueOf(tblrow).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		ft := t.Type().Field(i)
-		if !f.IsValid() {
+		if !f.IsValid() || isZero(f) {
 			continue
 		}
+		ft := t.Type().Field(i)
 		tag := ft.Tag.Get("ovn")
 		row[tag] = f.Interface()
 	}
@@ -430,7 +448,7 @@ func (odbi *ovndb) getRows(table string, row interface{}) ([]interface{}, error)
 
 	cacheTable, ok := odbi.cache2[table]
 	if !ok {
-		return nil, ErrorSchema
+		return nil, ErrorNotFound
 	}
 
 	// direct get by UUID
@@ -443,36 +461,42 @@ func (odbi *ovndb) getRows(table string, row interface{}) ([]interface{}, error)
 		return nil, ErrorNotFound
 	}
 
+outerLoop:
 	// check each row
 	for _, tblrow := range cacheTable {
 		rowVal := reflect.ValueOf(row).Elem()
 		tblVal := reflect.ValueOf(tblrow).Elem()
+	innerLoop:
 		for i := 0; i < rowVal.NumField(); i++ {
 			rowField := rowVal.Field(i)
-			if reflect.Zero(rowField.Type()) == rowField {
-				continue
+			if rowVal.Type().Field(i).Name == "UUID" {
+				continue innerLoop
+			}
+			if isZero(rowField) {
+				continue innerLoop
 			}
 			tblField := tblVal.Field(i)
 			switch rowField.Type().Kind() {
 			case reflect.Map:
-				//			r := cmp.Equal(row, tblrow)
-				//		log.Printf("ssss %#+v\n", r)
-				rowIter := rowField.MapRange()
-				tblIter := tblField.MapRange()
-				for rowIter.Next() {
-					for tblIter.Next() {
-						mrk := rowIter.Key()
-						mrv := rowIter.Value()
-						mtk := rowIter.Key()
-						mtv := rowIter.Value()
-						if mrk.Interface() != mtk.Interface() || mrv.Interface() != mtv.Interface() {
-							continue
-						}
+				if rowField.Len() == 0 {
+					continue innerLoop
+				}
+				if tblField.Len() == 0 {
+					continue outerLoop
+				}
+				rowKeys := rowField.MapKeys()
+				for _, mk := range rowKeys {
+					tblVal := tblField.MapIndex(mk)
+					rowVal := rowField.MapIndex(mk)
+					if reflect.DeepEqual(tblVal, rowVal) {
+						continue
+					} else {
+						continue outerLoop
 					}
 				}
 			default:
 				if rowField.Interface() != tblField.Interface() {
-					continue
+					continue outerLoop
 				}
 			}
 		}

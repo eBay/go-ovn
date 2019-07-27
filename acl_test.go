@@ -34,42 +34,22 @@ func TestACLs(t *testing.T) {
 	}
 	cmds = append(cmds, cmd)
 
-	cmd, err = ovndbapi.LSPAdd(LSW, LSP)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmds = append(cmds, cmd)
-
-	cmd, err = ovndbapi.LSPSetAddress(LSP, ADDR)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmds = append(cmds, cmd)
-
-	cmd, err = ovndbapi.LSPSetPortSecurity(LSP, ADDR)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmds = append(cmds, cmd)
-
 	// execute to create lsw and lsp
 	err = ovndbapi.Execute(cmds...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// nil cmds for next batch
-	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmds = append(cmds, cmd)
-
-	err = ovndbapi.Execute(cmds...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	defer func() {
+		cmd, err = ovndbapi.LSDel(LSW)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = ovndbapi.Execute(cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	lsws, err := ovndbapi.LSList()
 	if err != nil {
@@ -79,47 +59,34 @@ func TestACLs(t *testing.T) {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
-	lsps, err := ovndbapi.LSPList(LSW)
+	// nil cmds for next batch
+	cmds = make([]*OvnCommand, 0)
+	cmd, err = ovndbapi.ACLAdd(LSW, &ACL{Direction: "to-lport", Match: MATCH, Action: "drop", Priority: 1001})
 	if err != nil {
 		t.Fatal(err)
 	}
+	cmds = append(cmds, cmd)
 
-	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
-	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Addresses[0] == ADDR, "test[%s]", "setted port address")
-	assert.Equal(t, true, len(lsps) == 1 && lsps[0].PortSecurity[0] == ADDR, "test[%s]", "setted port port security")
-
-	cmd, err = ovndbapi.LSPAdd(LSW, LSP_SECOND)
+	err = ovndbapi.Execute(cmds...)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	lsps, err = ovndbapi.LSPList(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, true, len(lsps) == 2, "test[%s]: %+v", "added 2 ports", lsps)
 
 	acls, err := ovndbapi.ACLList(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
-		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
+		acls[0].Action == "drop" && acls[0].Priority == 1001, "test[%s] %s", "add acl", acls[0])
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, &ACL{Direction: "to-lport", Match: MATCH, Action: "drop", Priority: 1001})
 	// ACLAdd must return error
-	assert.Equal(t, true, nil != err, "test[%s]", "add same acl twice, should only one added.")
+	assert.Equal(t, false, nil == err, "test[%s]", "add same acl twice, should only one added.")
 	// cmd is nil, so this is noop
 	err = ovndbapi.Execute(cmd)
 	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, &ACL{Direction: "to-lport", Match: MATCH_SECOND, Action: "drop", Priority: 1001, ExternalID: map[string]string{"A": "a", "B": "b"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +101,20 @@ func TestACLs(t *testing.T) {
 	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, &ACL{Direction: "to-lport", Match: MATCH_SECOND, Action: "drop", Priority: 1001, ExternalID: map[string]string{"A": "b", "B": "b"}})
+	// ACLAdd must return error ovn-nbctl acl-add not allow to add the same acl with different external_ids
+	assert.Equal(t, false, nil == err, "test[%s]", "add same acl twice, should only one added.")
+	// cmd is noop
+	err = ovndbapi.Execute(cmd)
+	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
+
+	acls, err = ovndbapi.ACLList(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
+
+	cmd, err = ovndbapi.ACLDel(LSW, &ACL{Direction: "to-lport", Match: MATCH, Priority: 1001})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,40 +127,9 @@ func TestACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
-
-	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	acls, err = ovndbapi.ACLList(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
-
-	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	acls, err = ovndbapi.ACLList(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
 
-	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
+	cmd, err = ovndbapi.ACLDel(LSW, &ACL{Direction: "to-lport", Match: MATCH_SECOND, Priority: 1001, ExternalID: map[string]string{"A": "a"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,47 +142,7 @@ func TestACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
-
-	cmd, err = ovndbapi.LSPDel(LSP)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	lsps, err = ovndbapi.LSPList(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, true, len(lsps) == 1, "test[%s]", "one port remove")
-
-	cmd, err = ovndbapi.LSPDel(LSP_SECOND)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	lsps, err = ovndbapi.LSPList(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(t, true, len(lsps) == 0, "test[%s]", "one port remove")
-
-	cmd, err = ovndbapi.LSDel(LSW)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 }

@@ -56,9 +56,9 @@ type Client interface {
 	LSLBList(ls string) ([]*LoadBalancer, error)
 
 	// Add ACL
-	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
+	ACLAdd(ls string, item *ACL) (*OvnCommand, error)
 	// Delete acl
-	ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
+	ACLDel(ls string, item *ACL) (*OvnCommand, error)
 	// Get all acl by lswitch
 	ACLList(ls string) ([]*ACL, error)
 
@@ -325,12 +325,12 @@ func (c *ovndb) LBDel(name string) (*OvnCommand, error) {
 	return c.lbDelImp(name)
 }
 
-func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
-	return c.aclAddImp(ls, direct, match, action, priority, external_ids, logflag, meter)
+func (c *ovndb) ACLAdd(ls string, item *ACL) (*OvnCommand, error) {
+	return c.aclAddImp(ls, item)
 }
 
-func (c *ovndb) ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
-	return c.aclDelImp(ls, direct, match, priority, external_ids)
+func (c *ovndb) ACLDel(ls string, item *ACL) (*OvnCommand, error) {
+	return c.aclDelImp(ls, item)
 }
 
 func (c *ovndb) ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
