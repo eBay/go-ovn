@@ -203,6 +203,7 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 		if _, ok := odbi.cache[table]; !ok {
 			odbi.cache[table] = make(map[string]interface{})
 		}
+
 		for uuid, row := range tableUpdate.Rows {
 			if row.New != nil {
 				odbi.cache[table][uuid] = row.New
@@ -275,14 +276,25 @@ func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
 
+func (odbi *ovndb) getRowByName(table string, lrow OVNRow) (interface{}, error) {
+	if name, ok := lrow["name"]; ok {
+		row := newRow()
+		row["name"] = name
+		return odbi.getRow(table, row)
+	}
+	return nil, ErrorNotFound
+}
+
 func (odbi *ovndb) getRow(table string, lrow OVNRow) (interface{}, error) {
 	ifaces, err := odbi.getRows(table, lrow)
 	if err != nil {
 		return nil, err
 	}
+
 	if len(ifaces) > 1 {
 		return nil, ErrorOption
 	}
+
 	return ifaces[0], nil
 }
 
@@ -300,6 +312,7 @@ func (odbi *ovndb) getRows(table string, lrow OVNRow) ([]interface{}, error) {
 	// list lookup
 	if lrow == nil || len(lrow) == 0 {
 		for _, iface := range cacheTable {
+			//			log.Printf("AAA %#+v\n", cacheTable)
 			rows = append(rows, iface)
 		}
 		return rows, nil

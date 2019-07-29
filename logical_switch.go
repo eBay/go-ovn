@@ -17,6 +17,9 @@
 package goovn
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/ebay/libovsdb"
 )
 
@@ -30,6 +33,10 @@ type LogicalSwitch interface {
 	Get(...LogicalSwitchOpt) (*libovsdb.LogicalSwitch, error)
 	// List logical switches
 	List() ([]*libovsdb.LogicalSwitch, error)
+	// SetExternalIDs logical switch with LogicalSwitchName or LogicalSwitchUUID
+	SetExternalIDs(...LogicalSwitchOpt) (*OvnCommand, error)
+	// DelExternalIDs logical switch with LogicalSwitchName or LogicalSwitchUUID
+	DelExternalIDs(...LogicalSwitchOpt) (*OvnCommand, error)
 	// LBAdd add LoadBalancer to switch
 	LBAdd(LogicalSwitchOpt, LoadBalancerOpt) (*OvnCommand, error)
 }
@@ -50,6 +57,22 @@ func LogicalSwitchName(n string) LogicalSwitchOpt {
 func LogicalSwitchUUID(n string) LogicalSwitchOpt {
 	return func(o OVNRow) error {
 		o["_uuid"] = n
+		return nil
+	}
+}
+
+func LogicalSwitchExternalIDs(m map[string]string) LogicalSwitchOpt {
+	return func(o OVNRow) error {
+		if m == nil || len(m) == 0 {
+			return ErrorOption
+		}
+
+		mp := make(map[string]string)
+		for k, v := range m {
+			mp[k] = v
+		}
+
+		o["external_ids"] = mp
 		return nil
 	}
 }
@@ -100,9 +123,9 @@ func (imp *lsImp) Del(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
 
 	var condition []interface{}
 	if uuid, ok := row["_uuid"]; ok {
-		condition = libovsdb.NewCondition("_uuid", "==", uuid)
+		condition = libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid.(string)))
 	} else if name, ok := row["name"]; ok {
-		condition = libovsdb.NewCondition("name", "==", name)
+		condition = libovsdb.NewCondition("name", "==", name.(string))
 	} else {
 		return nil, ErrorOption
 	}
@@ -146,6 +169,7 @@ func (imp *lsImp) List() ([]*libovsdb.LogicalSwitch, error) {
 	lsList := make([]*libovsdb.LogicalSwitch, len(rows))
 
 	for i, row := range rows {
+		log.Printf("%#+v\n", row)
 		lsList[i] = row.(*libovsdb.LogicalSwitch)
 	}
 
@@ -167,9 +191,9 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 
 	var lsCondition []interface{}
 	if uuid, ok := lsRow["_uuid"]; ok {
-		lsCondition = libovsdb.NewCondition("_uuid", "==", uuid)
+		lsCondition = libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid.(string)))
 	} else if name, ok := lsRow["name"]; ok {
-		lsCondition = libovsdb.NewCondition("name", "==", name)
+		lsCondition = libovsdb.NewCondition("name", "==", name.(string))
 	} else {
 		return nil, ErrorOption
 	}
@@ -283,24 +307,47 @@ func (odbi *ovndb) lslbListImp(lswitch string) ([]*LoadBalancer, error) {
 	}
 	return listLB, nil
 }
+*/
 
-func (odbi *ovndb) lsExtIdsAddImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+func (imp *lsImp) SetExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
-	row := make(OVNRow)
-	row["name"] = ls
-	lsuuid := odbi.getRowUUID(tableLogicalSwitch, row)
-	if len(lsuuid) == 0 {
-		return nil, ErrorNotFound
+
+	row := newRow()
+
+	if len(opts) == 0 {
+		return nil, ErrorOption
 	}
-	if len(external_ids) == 0 {
+
+	// parse options
+	for _, opt := range opts {
+		if err := opt(row); err != nil {
+			return nil, err
+		}
+	}
+
+	// set only external_ids now
+	external_ids, ok := row["external_ids"]
+	if !ok || len(external_ids.(map[string]string)) == 0 {
 		return nil, fmt.Errorf("external_ids is nil or empty")
 	}
+
+	var lsUUID string
+	if uuid, ok := row["_uuid"]; ok {
+		lsUUID = uuid.(string)
+	} else {
+		iface, err := imp.odbi.getRowByName(tableLogicalSwitch, row)
+		if err != nil {
+			return nil, err
+		}
+		lsUUID = iface.(*libovsdb.LogicalSwitch).UUID
+	}
+
 	mutateSet, err := libovsdb.NewOvsMap(external_ids)
 	if err != nil {
 		return nil, err
 	}
 	mutation := libovsdb.NewMutation("external_ids", opInsert, mutateSet)
-	condition := libovsdb.NewCondition("name", "==", ls)
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(lsUUID))
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
 		Table:     tableLogicalSwitch,
@@ -308,26 +355,48 @@ func (odbi *ovndb) lsExtIdsAddImp(ls string, external_ids map[string]string) (*O
 		Where:     []interface{}{condition},
 	}
 	operations = append(operations, mutateOp)
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) lsExtIdsDelImp(ls string, external_ids map[string]string) (*OvnCommand, error) {
+func (imp *lsImp) DelExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
-	row := make(OVNRow)
-	row["name"] = ls
-	lsuuid := odbi.getRowUUID(tableLogicalSwitch, row)
-	if len(lsuuid) == 0 {
-		return nil, ErrorNotFound
+
+	row := newRow()
+
+	if len(opts) == 0 {
+		return nil, ErrorOption
 	}
-	if len(external_ids) == 0 {
+
+	// parse options
+	for _, opt := range opts {
+		if err := opt(row); err != nil {
+			return nil, err
+		}
+	}
+
+	// set only external_ids now
+	external_ids, ok := row["external_ids"]
+	if !ok || len(external_ids.(map[string]string)) == 0 {
 		return nil, fmt.Errorf("external_ids is nil or empty")
 	}
+
+	var lsUUID string
+	if uuid, ok := row["_uuid"]; ok {
+		lsUUID = uuid.(string)
+	} else {
+		iface, err := imp.odbi.getRow(tableLogicalSwitch, row)
+		if err != nil {
+			return nil, err
+		}
+		lsUUID = iface.(*libovsdb.LogicalSwitch).UUID
+	}
+
 	mutateSet, err := libovsdb.NewOvsMap(external_ids)
 	if err != nil {
 		return nil, err
 	}
 	mutation := libovsdb.NewMutation("external_ids", opDelete, mutateSet)
-	condition := libovsdb.NewCondition("name", "==", ls)
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(lsUUID))
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
 		Table:     tableLogicalSwitch,
@@ -335,6 +404,5 @@ func (odbi *ovndb) lsExtIdsDelImp(ls string, external_ids map[string]string) (*O
 		Where:     []interface{}{condition},
 	}
 	operations = append(operations, mutateOp)
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
-*/
