@@ -45,10 +45,10 @@ const (
 	UNIX                 = "unix"
 )
 
-var ovndbapi Client
+var ovndbapi *Client
 
 func TestMain(m *testing.M) {
-	var api Client
+	var api *Client
 	var err error
 
 	cfg := &Config{}

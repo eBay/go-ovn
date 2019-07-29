@@ -43,32 +43,32 @@ type OVNDisconnectedCallback func()
 
 // OVNSignal notifies on changes to ovnnb
 type OVNSignal interface {
-	OnLogicalSwitchCreate(ls *LogicalSwitch)
-	OnLogicalSwitchDelete(ls *LogicalSwitch)
+	OnLogicalSwitchCreate(*libovsdb.LogicalSwitch)
+	OnLogicalSwitchDelete(*libovsdb.LogicalSwitch)
 
-	OnLogicalPortCreate(lp *LogicalSwitchPort)
-	OnLogicalPortDelete(lp *LogicalSwitchPort)
+	OnLogicalSwitchPortCreate(*libovsdb.LogicalSwitchPort)
+	OnLogicalSwitchPortDelete(*libovsdb.LogicalSwitchPort)
 
-	OnLogicalRouterCreate(lr *LogicalRouter)
-	OnLogicalRouterDelete(lr *LogicalRouter)
+	OnLogicalRouterCreate(*libovsdb.LogicalRouter)
+	OnLogicalRouterDelete(*libovsdb.LogicalRouter)
 
-	OnLogicalRouterPortCreate(lrp *LogicalRouterPort)
-	OnLogicalRouterPortDelete(lrp *LogicalRouterPort)
+	OnLogicalRouterPortCreate(*libovsdb.LogicalRouterPort)
+	OnLogicalRouterPortDelete(*libovsdb.LogicalRouterPort)
 
-	OnLogicalRouterStaticRouteCreate(lrsr *LogicalRouterStaticRoute)
-	OnLogicalRouterStaticRouteDelete(lrsr *LogicalRouterStaticRoute)
+	OnLogicalRouterStaticRouteCreate(*libovsdb.LogicalRouterStaticRoute)
+	OnLogicalRouterStaticRouteDelete(*libovsdb.LogicalRouterStaticRoute)
 
-	OnACLCreate(acl *ACL)
-	OnACLDelete(acl *ACL)
+	OnACLCreate(*libovsdb.ACL)
+	OnACLDelete(*libovsdb.ACL)
 
-	OnDHCPOptionsCreate(dhcp *DHCPOptions)
-	OnDHCPOptionsDelete(dhcp *DHCPOptions)
+	OnDHCPOptionsCreate(*libovsdb.DHCPOptions)
+	OnDHCPOptionsDelete(*libovsdb.DHCPOptions)
 
-	OnQoSCreate(qos *QoS)
-	OnQoSDelete(qos *QoS)
+	OnQoSCreate(*libovsdb.QoS)
+	OnQoSDelete(*libovsdb.QoS)
 
-	OnLoadBalancerCreate(ls *LoadBalancer)
-	OnLoadBalancerDelete(ls *LoadBalancer)
+	OnLoadBalancerCreate(*libovsdb.LoadBalancer)
+	OnLoadBalancerDelete(*libovsdb.LoadBalancer)
 }
 
 // OVNNotifier ovnnb notifier

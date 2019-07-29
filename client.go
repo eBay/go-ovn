@@ -23,182 +23,191 @@ import (
 )
 
 // Client ovnnb client
-type Client interface {
-	// Get logical switch by name
-	LSGet(ls string) ([]*LogicalSwitch, error)
+type Client struct {
+	ovndb *ovndb
+	/*
+		// Get logical switch by name
+		LSGet(ls string) ([]*LogicalSwitch, error)
+	*/
 	// Create ls named SWITCH
-	LSAdd(ls string) (*OvnCommand, error)
-	// Del ls and all its ports
-	LSDel(ls string) (*OvnCommand, error)
-	// Get all logical switches
-	LSList() ([]*LogicalSwitch, error)
-	// Add external_ids to logical switch
-	LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
-	// Del external_ids from logical_switch
-	LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
+	LogicalSwitch LogicalSwitch
+	/*
+		// Del ls and all its ports
+		LSDel(ls string) (*OvnCommand, error)
+		// Get all logical switches
+		LSList() ([]*LogicalSwitch, error)
+		// Add external_ids to logical switch
+		LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
+		// Del external_ids from logical_switch
+		LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
 
-	// Add logical port PORT on SWITCH
-	LSPAdd(ls string, lsp string) (*OvnCommand, error)
-	// Delete PORT from its attached switch
-	LSPDel(lsp string) (*OvnCommand, error)
-	// Set addressset per lport
-	LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
-	// Set port security per lport
-	LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
-	// Get all lport by lswitch
-	LSPList(ls string) ([]*LogicalSwitchPort, error)
+		// Add logical port PORT on SWITCH
+		LSPAdd(ls string, lsp string) (*OvnCommand, error)
+		// Delete PORT from its attached switch
+		LSPDel(lsp string) (*OvnCommand, error)
+		// Set addressset per lport
+		LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
+		// Set port security per lport
+		LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
+		// Get all lport by lswitch
+		LSPList(ls string) ([]*LogicalSwitchPort, error)
 
-	// Add LB to LSW
-	LSLBAdd(ls string, lb string) (*OvnCommand, error)
-	// Delete LB from LSW
-	LSLBDel(ls string, lb string) (*OvnCommand, error)
-	// List Load balancers for a LSW
-	LSLBList(ls string) ([]*LoadBalancer, error)
+		// Add LB to LSW
+		LSLBAdd(ls string, lb string) (*OvnCommand, error)
+		// Delete LB from LSW
+		LSLBDel(ls string, lb string) (*OvnCommand, error)
+		// List Load balancers for a LSW
+		LSLBList(ls string) ([]*LoadBalancer, error)
 
-	// Add ACL
-	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
-	// Delete acl
-	ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
-	// Get all acl by lswitch
-	ACLList(ls string) ([]*ACL, error)
+		// Add ACL
+		ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
+		// Delete acl
+		ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
+		// Get all acl by lswitch
+		ACLList(ls string) ([]*ACL, error)
 
-	// Get AS
-	ASGet(name string) (*AddressSet, error)
-	// Update address set
-	ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
-	// Add addressset
-	ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
-	// Delete addressset
-	ASDel(name string) (*OvnCommand, error)
-	// Get all AS
-	ASList() ([]*AddressSet, error)
+		// Get AS
+		ASGet(name string) (*AddressSet, error)
+		// Update address set
+		ASUpdate(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
+		// Add addressset
+		ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error)
+		// Delete addressset
+		ASDel(name string) (*OvnCommand, error)
+		// Get all AS
+		ASList() ([]*AddressSet, error)
 
-	// Get LR with given name
-	LRGet(name string) ([]*LogicalRouter, error)
-	// Add LR with given name
-	LRAdd(name string, external_ids map[string]string) (*OvnCommand, error)
-	// Delete LR with given name
-	LRDel(name string) (*OvnCommand, error)
-	// Get LRs
-	LRList() ([]*LogicalRouter, error)
+		// Get LR with given name
+		LRGet(name string) ([]*LogicalRouter, error)
+		// Add LR with given name
+		LRAdd(name string, external_ids map[string]string) (*OvnCommand, error)
+		// Delete LR with given name
+		LRDel(name string) (*OvnCommand, error)
+		// Get LRs
+		LRList() ([]*LogicalRouter, error)
 
-	// Add LRP with given name on given lr
-	LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error)
-	// Delete LRP with given name on given lr
-	LRPDel(lr string, lrp string) (*OvnCommand, error)
-	// Get all lrp by lr
-	LRPList(lr string) ([]*LogicalRouterPort, error)
+		// Add LRP with given name on given lr
+		LRPAdd(lr string, lrp string, mac string, network []string, peer string, external_ids map[string]string) (*OvnCommand, error)
+		// Delete LRP with given name on given lr
+		LRPDel(lr string, lrp string) (*OvnCommand, error)
+		// Get all lrp by lr
+		LRPList(lr string) ([]*LogicalRouterPort, error)
 
-	// Add LRSR with given ip_prefix on given lr
-	LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
-	// Delete LRSR with given ip_prefix on given lr
-	LRSRDel(lr string, ip_prefix string) (*OvnCommand, error)
-	// Get all LRSRs by lr
-	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
+		// Add LRSR with given ip_prefix on given lr
+		LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
+		// Delete LRSR with given ip_prefix on given lr
+		LRSRDel(lr string, ip_prefix string) (*OvnCommand, error)
+		// Get all LRSRs by lr
+		LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
 
-	// Add LB to LR
-	LRLBAdd(lr string, lb string) (*OvnCommand, error)
-	// Delete LB from LR
-	LRLBDel(lr string, lb string) (*OvnCommand, error)
-	// List Load balancers for a LR
-	LRLBList(lr string) ([]*LoadBalancer, error)
+		// Add LB to LR
+		LRLBAdd(lr string, lb string) (*OvnCommand, error)
+		// Delete LB from LR
+		LRLBDel(lr string, lb string) (*OvnCommand, error)
+		// List Load balancers for a LR
+		LRLBList(lr string) ([]*LoadBalancer, error)
 
-	// Get LB with given name
-	LBGet(name string) ([]*LoadBalancer, error)
-	// Add LB
-	LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
-	// Delete LB with given name
-	LBDel(name string) (*OvnCommand, error)
-	// Update existing LB
-	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+		// Get LB with given name
+		LBGet(name string) ([]*LoadBalancer, error)
+		// Add LB
+		LBAdd(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+		// Delete LB with given name
+		LBDel(name string) (*OvnCommand, error)
+		// Update existing LB
+		LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 
-	// Set dhcp4_options uuid on lsp
-	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
-	// Get dhcp4_options from lsp
-	LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error)
-	// Set dhcp6_options uuid on lsp
-	LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error)
-	// Get dhcp6_options from lsp
-	LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
-	// Set options in LSP
-	LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error)
+		// Set dhcp4_options uuid on lsp
+		LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
+		// Get dhcp4_options from lsp
+		LSPGetDHCPv4Options(lsp string) (*DHCPOptions, error)
+		// Set dhcp6_options uuid on lsp
+		LSPSetDHCPv6Options(lsp string, options string) (*OvnCommand, error)
+		// Get dhcp6_options from lsp
+		LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
+		// Set options in LSP
+		LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error)
 
-	// Add dhcp options for cidr and provided external_ids
-	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
-	// Set dhcp options and set external_ids for specific uuid
-	DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
-	// Del dhcp options via provided external_ids
-	DHCPOptionsDel(uuid string) (*OvnCommand, error)
-	// Get single dhcp via provided uuid
-	DHCPOptionsGet(uuid string) (*DHCPOptions, error)
-	// List dhcp options
-	DHCPOptionsList() ([]*DHCPOptions, error)
+		// Add dhcp options for cidr and provided external_ids
+		DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+		// Set dhcp options and set external_ids for specific uuid
+		DHCPOptionsSet(uuid string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+		// Del dhcp options via provided external_ids
+		DHCPOptionsDel(uuid string) (*OvnCommand, error)
+		// Get single dhcp via provided uuid
+		DHCPOptionsGet(uuid string) (*DHCPOptions, error)
+		// List dhcp options
+		DHCPOptionsList() ([]*DHCPOptions, error)
 
-	// Add qos rule
-	QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error)
-	// Del qos rule, to delete wildcard specify priority -1 and string options as ""
-	QoSDel(ls string, direction string, priority int, match string) (*OvnCommand, error)
-	// Get qos rules by logical switch
-	QoSList(ls string) ([]*QoS, error)
+		// Add qos rule
+		QoSAdd(ls string, direction string, priority int, match string, action map[string]int, bandwidth map[string]int, external_ids map[string]string) (*OvnCommand, error)
+		// Del qos rule, to delete wildcard specify priority -1 and string options as ""
+		QoSDel(ls string, direction string, priority int, match string) (*OvnCommand, error)
+		// Get qos rules by logical switch
+		QoSList(ls string) ([]*QoS, error)
 
-	//Add NAT to Logical Router
-	LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error)
-	//Del NAT from Logical Router
-	LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
-	// Get NAT List by Logical Router
-	LRNATList(lr string) ([]*NAT, error)
-
+		//Add NAT to Logical Router
+		LRNATAdd(lr string, ntype string, externalIp string, logicalIp string, external_ids map[string]string, logicalPortAndExternalMac ...string) (*OvnCommand, error)
+		//Del NAT from Logical Router
+		LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
+		// Get NAT List by Logical Router
+		LRNATList(lr string) ([]*NAT, error)
+	*/
 	// Exec command, support mul-commands in one transaction.
-	Execute(cmds ...*OvnCommand) error
+	//Execute(...*OvnCommand) error
 
 	// Close connection to OVN
-	Close() error
+	//Close() error
 }
 
 type ovndb struct {
 	client       *libovsdb.OvsdbClient
-	cache        map[string]map[string]libovsdb.Row
+	cache        map[string]map[string]interface{}
 	cachemutex   sync.RWMutex
 	tranmutex    sync.Mutex
 	signalCB     OVNSignal
 	disconnectCB OVNDisconnectedCallback
 }
 
-func NewClient(cfg *Config) (Client, error) {
-	imp := &ovndb{
-		cache:        make(map[string]map[string]libovsdb.Row),
+func (c *Client) Close() error {
+	c.ovndb.client.Disconnect()
+	return nil
+}
+
+func (c *Client) Execute(cmds ...*OvnCommand) error {
+	return c.ovndb.execute(cmds...)
+}
+
+func NewClient(cfg *Config) (*Client, error) {
+	odbi := &ovndb{
+		cache:        make(map[string]map[string]interface{}),
 		signalCB:     cfg.SignalCB,
 		disconnectCB: cfg.DisconnectCB,
 	}
 
-	c, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)
+	ovncli, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)
 	if err != nil {
 		return nil, err
 	}
-	imp.client = c
+	odbi.client = ovncli
 
-	initial, err := imp.client.MonitorAll(dbNB, "")
+	initial, err := odbi.client.MonitorAll(dbNB, "")
 	if err != nil {
 		return nil, err
 	}
 
-	imp.populateCache(*initial)
-	notifier := ovnNotifier{imp}
-	imp.client.Register(notifier)
+	odbi.populateCache(*initial)
+	notifier := ovnNotifier{odbi}
+	odbi.client.Register(notifier)
 
-	return imp, nil
+	cli := &Client{
+		ovndb:         odbi,
+		LogicalSwitch: &lsImp{odbi: odbi},
+	}
+
+	return cli, nil
 }
 
-// TODO return proper error
-func (c *ovndb) Close() error {
-	c.client.Disconnect()
-	return nil
-}
-
-func (c *ovndb) LSAdd(ls string) (*OvnCommand, error) {
-	return c.lsAddImp(ls)
-}
-
+/*
 func (c *ovndb) LSDel(ls string) (*OvnCommand, error) {
 	return c.lsDelImp(ls)
 }
@@ -354,11 +363,12 @@ func (c *ovndb) QoSDel(ls string, direction string, priority int, match string) 
 func (c *ovndb) QoSList(ls string) ([]*QoS, error) {
 	return c.qosListImp(ls)
 }
-
+*/
 func (c *ovndb) Execute(cmds ...*OvnCommand) error {
 	return c.execute(cmds...)
 }
 
+/*
 func (c *ovndb) LSGet(ls string) ([]*LogicalSwitch, error) {
 	return c.lsGetImp(ls)
 }
@@ -417,4 +427,9 @@ func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, er
 
 func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
 	return c.lrNatListImp(lr)
+}
+*/
+
+func newRow() OVNRow {
+	return make(OVNRow)
 }

@@ -19,8 +19,6 @@ package goovn
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/ebay/libovsdb"
 )
@@ -39,6 +37,7 @@ var (
 // OVNRow ovnnb row
 type OVNRow map[string]interface{}
 
+/*
 func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
 	var uuids []string
 	var wildcard bool
@@ -79,7 +78,8 @@ func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
 
 	return uuids
 }
-
+*/
+/*
 func (odbi *ovndb) getRowUUID(table string, row OVNRow) string {
 	uuids := odbi.getRowUUIDs(table, row)
 	if len(uuids) > 0 {
@@ -87,7 +87,7 @@ func (odbi *ovndb) getRowUUID(table string, row OVNRow) string {
 	}
 	return ""
 }
-
+*/
 //test if map s contains t
 //This function is not both s and t are nil at same time
 func (odbi *ovndb) oMapContians(s, t map[interface{}]interface{}) bool {
@@ -105,6 +105,7 @@ func (odbi *ovndb) oMapContians(s, t map[interface{}]interface{}) bool {
 	return true
 }
 
+/*
 func (odbi *ovndb) getRowUUIDContainsUUID(table, field, uuid string) (string, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
@@ -138,6 +139,7 @@ func (odbi *ovndb) getRowsMatchingUUID(table, field, uuid string) ([]string, err
 	}
 	return uuids, nil
 }
+*/
 
 func (odbi *ovndb) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
 	// Only support one trans at same time now.
@@ -189,8 +191,6 @@ func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
 }
 
 func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
-	empty := libovsdb.Row{}
-
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 
@@ -201,44 +201,31 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 		}
 
 		if _, ok := odbi.cache[table]; !ok {
-			odbi.cache[table] = make(map[string]libovsdb.Row)
+			odbi.cache[table] = make(map[string]interface{})
 		}
 		for uuid, row := range tableUpdate.Rows {
-			// TODO: this is a workaround for the problem of
-			// missing json number conversion in libovsdb
-			odbi.float64_to_int(row.New)
-
-			if !reflect.DeepEqual(row.New, empty) {
+			if row.New != nil {
 				odbi.cache[table][uuid] = row.New
 				if odbi.signalCB != nil {
 					switch table {
 					case tableLogicalRouter:
-						lr := odbi.rowToLogicalRouter(uuid)
-						odbi.signalCB.OnLogicalRouterCreate(lr)
+						odbi.signalCB.OnLogicalRouterCreate(row.New.(*libovsdb.LogicalRouter))
 					case tableLogicalRouterPort:
-						lrp := odbi.rowToLogicalRouterPort(uuid)
-						odbi.signalCB.OnLogicalRouterPortCreate(lrp)
+						odbi.signalCB.OnLogicalRouterPortCreate(row.New.(*libovsdb.LogicalRouterPort))
 					case tableLogicalRouterStaticRoute:
-						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
-						odbi.signalCB.OnLogicalRouterStaticRouteCreate(lrsr)
+						odbi.signalCB.OnLogicalRouterStaticRouteCreate(row.New.(*libovsdb.LogicalRouterStaticRoute))
 					case tableLogicalSwitch:
-						ls := odbi.rowToLogicalSwitch(uuid)
-						odbi.signalCB.OnLogicalSwitchCreate(ls)
+						odbi.signalCB.OnLogicalSwitchCreate(row.New.(*libovsdb.LogicalSwitch))
 					case tableLogicalSwitchPort:
-						lp := odbi.rowToLogicalPort(uuid)
-						odbi.signalCB.OnLogicalPortCreate(lp)
+						odbi.signalCB.OnLogicalSwitchPortCreate(row.New.(*libovsdb.LogicalSwitchPort))
 					case tableACL:
-						acl := odbi.rowToACL(uuid)
-						odbi.signalCB.OnACLCreate(acl)
+						odbi.signalCB.OnACLCreate(row.New.(*libovsdb.ACL))
 					case tableDHCPOptions:
-						dhcp := odbi.rowToDHCPOptions(uuid)
-						odbi.signalCB.OnDHCPOptionsCreate(dhcp)
+						odbi.signalCB.OnDHCPOptionsCreate(row.New.(*libovsdb.DHCPOptions))
 					case tableQoS:
-						qos := odbi.rowToQoS(uuid)
-						odbi.signalCB.OnQoSCreate(qos)
+						odbi.signalCB.OnQoSCreate(row.New.(*libovsdb.QoS))
 					case tableLoadBalancer:
-						lb, _ := odbi.rowToLB(uuid)
-						odbi.signalCB.OnLoadBalancerCreate(lb)
+						odbi.signalCB.OnLoadBalancerCreate(row.New.(*libovsdb.LoadBalancer))
 					}
 				}
 			} else {
@@ -248,32 +235,23 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					defer func(table, uuid string) {
 						switch table {
 						case tableLogicalRouter:
-							lr := odbi.rowToLogicalRouter(uuid)
-							odbi.signalCB.OnLogicalRouterDelete(lr)
+							odbi.signalCB.OnLogicalRouterDelete(row.Old.(*libovsdb.LogicalRouter))
 						case tableLogicalRouterPort:
-							lrp := odbi.rowToLogicalRouterPort(uuid)
-							odbi.signalCB.OnLogicalRouterPortDelete(lrp)
+							odbi.signalCB.OnLogicalRouterPortDelete(row.Old.(*libovsdb.LogicalRouterPort))
 						case tableLogicalRouterStaticRoute:
-							lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
-							odbi.signalCB.OnLogicalRouterStaticRouteDelete(lrsr)
+							odbi.signalCB.OnLogicalRouterStaticRouteDelete(row.Old.(*libovsdb.LogicalRouterStaticRoute))
 						case tableLogicalSwitch:
-							ls := odbi.rowToLogicalSwitch(uuid)
-							odbi.signalCB.OnLogicalSwitchDelete(ls)
+							odbi.signalCB.OnLogicalSwitchDelete(row.Old.(*libovsdb.LogicalSwitch))
 						case tableLogicalSwitchPort:
-							lp := odbi.rowToLogicalPort(uuid)
-							odbi.signalCB.OnLogicalPortDelete(lp)
+							odbi.signalCB.OnLogicalSwitchPortDelete(row.Old.(*libovsdb.LogicalSwitchPort))
 						case tableACL:
-							acl := odbi.rowToACL(uuid)
-							odbi.signalCB.OnACLDelete(acl)
+							odbi.signalCB.OnACLDelete(row.Old.(*libovsdb.ACL))
 						case tableDHCPOptions:
-							dhcp := odbi.rowToDHCPOptions(uuid)
-							odbi.signalCB.OnDHCPOptionsDelete(dhcp)
+							odbi.signalCB.OnDHCPOptionsDelete(row.Old.(*libovsdb.DHCPOptions))
 						case tableQoS:
-							qos := odbi.rowToQoS(uuid)
-							odbi.signalCB.OnQoSDelete(qos)
+							odbi.signalCB.OnQoSDelete(row.Old.(*libovsdb.QoS))
 						case tableLoadBalancer:
-							lb, _ := odbi.rowToLB(uuid)
-							odbi.signalCB.OnLoadBalancerDelete(lb)
+							odbi.signalCB.OnLoadBalancerDelete(row.Old.(*libovsdb.LoadBalancer))
 						}
 					}(table, uuid)
 				}
@@ -295,4 +273,61 @@ func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 
 func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
+}
+
+func (odbi *ovndb) getRow(table string, lrow OVNRow) (interface{}, error) {
+	ifaces, err := odbi.getRows(table, lrow)
+	if err != nil {
+		return nil, err
+	}
+	if len(ifaces) > 1 {
+		return nil, ErrorOption
+	}
+	return ifaces[0], nil
+}
+
+func (odbi *ovndb) getRows(table string, lrow OVNRow) ([]interface{}, error) {
+	odbi.cachemutex.Lock()
+	defer odbi.cachemutex.Unlock()
+
+	cacheTable, ok := odbi.cache[table]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	var rows []interface{}
+
+	// list lookup
+	if lrow == nil || len(lrow) == 0 {
+		for _, iface := range cacheTable {
+			rows = append(rows, iface)
+		}
+		return rows, nil
+	}
+
+	// direct lookup by uuid if it specified
+	if uuid, ok := lrow["_uuid"]; ok {
+		if iface, ok := cacheTable[uuid.(string)]; ok {
+			rows = append(rows, iface)
+			return rows, nil
+		}
+		return nil, ErrorNotFound
+	}
+
+	// lookup by other fields
+	for _, iface := range cacheTable {
+		crow, err := structToMap(iface)
+		if err != nil {
+			return nil, err
+		}
+		if cmpRows(crow, lrow) {
+			rows = append(rows, iface)
+		}
+	}
+
+	if len(rows) == 0 {
+		return nil, ErrorNotFound
+	}
+
+	return rows, nil
 }

@@ -18,8 +18,6 @@ package goovn
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -30,6 +28,54 @@ const (
 	BAR             = "bar"
 )
 
+func TestLogicalSwitchAdd(t *testing.T) {
+	cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(LS3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lsList, err := ovndbapi.LogicalSwitch.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lsList) != 1 {
+		t.Fatalf("invalid ls cound found %#v\n", lsList)
+	}
+}
+
+func TestLogicalSwitchGet(t *testing.T) {
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ls.Name != LS3 {
+		t.Fatalf("logical switch %s not found: %v", LS3, ls)
+	}
+}
+
+func TestLogicalSwitchDel(t *testing.T) {
+	cmd, err := ovndbapi.LogicalSwitch.Del(LogicalSwitchName(LS3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lsList, err := ovndbapi.LogicalSwitch.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lsList) != 0 {
+		t.Fatalf("invalid ls cound found %#v\n", lsList)
+	}
+}
+
+/*
 func TestLSwitchExtIds(t *testing.T) {
 	// create Switch
 	t.Logf("Adding  %s to OVN", LS3)
@@ -124,3 +170,4 @@ func TestLSwitchExtIds(t *testing.T) {
 	}
 
 }
+*/
