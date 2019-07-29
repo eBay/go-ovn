@@ -239,6 +239,12 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					case tableLoadBalancer:
 						lb, _ := odbi.rowToLB(uuid)
 						odbi.signalCB.OnLoadBalancerCreate(lb)
+					case tableMeter:
+						meter:=odbi.rowToMeter(uuid)
+						odbi.signalCB.onMeterCreate(meter)
+					case tableMeterBand:
+						band,_ := odbi.rowToMeterBand(uuid)
+						odbi.signalCB.onMeterBandCreate(band)
 					}
 				}
 			} else {
@@ -274,6 +280,12 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						case tableLoadBalancer:
 							lb, _ := odbi.rowToLB(uuid)
 							odbi.signalCB.OnLoadBalancerDelete(lb)
+						case tableMeter:
+							meter:=odbi.rowToMeter(uuid)
+							odbi.signalCB.onMeterDelete(meter)
+						case tableMeterBand:
+							band,_ := odbi.rowToMeterBand(uuid)
+							odbi.signalCB.onMeterBandDelete(band)
 						}
 					}(table, uuid)
 				}

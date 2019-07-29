@@ -69,6 +69,12 @@ type OVNSignal interface {
 
 	OnLoadBalancerCreate(ls *LoadBalancer)
 	OnLoadBalancerDelete(ls *LoadBalancer)
+
+	onMeterCreate(meter *Meter)
+	onMeterDelete(meter *Meter)
+
+	onMeterBandCreate(band *MeterBand)
+	onMeterBandDelete(band *MeterBand)
 }
 
 // OVNNotifier ovnnb notifier
