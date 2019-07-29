@@ -33,7 +33,6 @@ func structToMap(iface interface{}) (map[string]interface{}, error) {
 
 func cmpRows(crow map[string]interface{}, lrow map[string]interface{}) bool {
 	var found bool
-
 	for lk, lv := range lrow {
 		switch lk {
 		case "external_ids":

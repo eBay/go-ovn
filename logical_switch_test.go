@@ -31,6 +31,7 @@ const (
 )
 
 func TestLogicalSwitchAdd(t *testing.T) {
+	t.Logf("Add LogicalSwitch")
 	cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(LS3))
 	if err != nil {
 		t.Fatal(err)
@@ -40,16 +41,18 @@ func TestLogicalSwitchAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	t.Logf("List LogicalSwitch")
 	lsList, err := ovndbapi.LogicalSwitch.List()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(lsList) != 1 {
-		t.Fatalf("invalid ls cound found %#v\n", lsList)
+		t.Fatalf("invalid ls count found %#v\n", lsList)
 	}
 }
 
 func TestLogicalSwitchGet(t *testing.T) {
+	t.Logf("Get LogicalSwitch")
 	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
 	if err != nil {
 		t.Fatal(err)
@@ -60,6 +63,7 @@ func TestLogicalSwitchGet(t *testing.T) {
 }
 
 func TestLogicalSwitchSetExternalIDs(t *testing.T) {
+	t.Logf("SetExternalIDs LogicalSwitch")
 	cmd, err := ovndbapi.LogicalSwitch.SetExternalIDs(
 		LogicalSwitchName(LS3),
 		LogicalSwitchExternalIDs(map[string]string{NEUTRON_NETWORK: DUMMY, FOO: BAR}))
@@ -94,7 +98,8 @@ func TestLogicalSwitchSetExternalIDs(t *testing.T) {
 
 }
 
-func TestLogicalSwitchDetExternalIDs(t *testing.T) {
+func TestLogicalSwitchDelExternalIDs(t *testing.T) {
+	t.Logf("DelExternalIDs LogicalSwitch")
 	//delete external_id from LS3
 	cmd, err := ovndbapi.LogicalSwitch.DelExternalIDs(
 		LogicalSwitchName(LS3),
@@ -130,6 +135,8 @@ func TestLogicalSwitchDetExternalIDs(t *testing.T) {
 }
 
 func TestLogicalSwitchDel(t *testing.T) {
+	//t.Skip()
+	t.Logf("Del LogicalSwitch")
 	cmd, err := ovndbapi.LogicalSwitch.Del(LogicalSwitchName(LS3))
 	if err != nil {
 		t.Fatal(err)
@@ -143,6 +150,6 @@ func TestLogicalSwitchDel(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(lsList) != 0 {
-		t.Fatalf("invalid ls cound found %#v\n", lsList)
+		t.Fatalf("invalid ls count found %#v\n", lsList)
 	}
 }

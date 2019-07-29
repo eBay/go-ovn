@@ -24,23 +24,10 @@ import (
 
 // Client ovnnb client
 type Client struct {
-	ovndb *ovndb
-	/*
-		// Get logical switch by name
-		LSGet(ls string) ([]*LogicalSwitch, error)
-	*/
-	// Create ls named SWITCH
+	ovndb         *ovndb
 	LogicalSwitch LogicalSwitch
+	LoadBalancer  LoadBalancer
 	/*
-		// Del ls and all its ports
-		LSDel(ls string) (*OvnCommand, error)
-		// Get all logical switches
-		LSList() ([]*LogicalSwitch, error)
-		// Add external_ids to logical switch
-		LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
-		// Del external_ids from logical_switch
-		LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
-
 		// Add logical port PORT on SWITCH
 		LSPAdd(ls string, lsp string) (*OvnCommand, error)
 		// Delete PORT from its attached switch
@@ -152,11 +139,6 @@ type Client struct {
 		// Get NAT List by Logical Router
 		LRNATList(lr string) ([]*NAT, error)
 	*/
-	// Exec command, support mul-commands in one transaction.
-	//Execute(...*OvnCommand) error
-
-	// Close connection to OVN
-	//Close() error
 }
 
 type ovndb struct {
@@ -202,6 +184,7 @@ func NewClient(cfg *Config) (*Client, error) {
 	cli := &Client{
 		ovndb:         odbi,
 		LogicalSwitch: &lsImp{odbi: odbi},
+		LoadBalancer:  &lbImp{odbi: odbi},
 	}
 
 	return cli, nil

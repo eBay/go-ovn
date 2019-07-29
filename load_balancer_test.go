@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 eBay Inc.
+ * Copyright (c) 2019 eBay Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,14 @@ import (
 
 const LB1 = "lb1"
 
-func TestLoadBalancer(t *testing.T) {
-	t.Logf("Adding LB to OVN")
-	ocmd, err := ovndbapi.LBAdd(LB1, "192.168.0.19:80", "tcp", []string{"10.0.0.11:80", "10.0.0.12:80"})
+func TestLoadBalancerAdd(t *testing.T) {
+	t.Logf("Add LoadBalancer")
+	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
+	ocmd, err := ovndbapi.LoadBalancer.Add(
+		LoadBalancerName(LB1),
+		LoadBalancerVIP("192.168.0.19:80"),
+		LoadBalancerProtocol("tcp"),
+		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,10 +37,13 @@ func TestLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Adding LB OVN failed with err %v", err)
 	}
-	t.Logf("Adding LB to OVN Done")
 
-	t.Logf("Updating LB to OVN")
-	ocmd, err = ovndbapi.LBUpdate(LB1, "192.168.0.10:80", "tcp", []string{"10.10.10.127:8080", "10.10.10.120:8080"})
+	t.Logf("Add LoadBalancer new VIP")
+	ocmd, err = ovndbapi.LoadBalancer.Add(
+		LoadBalancerName(LB1),
+		LoadBalancerVIP("192.168.0.10:80"),
+		LoadBalancerProtocol("tcp"),
+		LoadBalancerIP([]string{"10.10.10.127:8080", "10.10.10.120:8080"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,20 +51,18 @@ func TestLoadBalancer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Updating LB OVN failed with err %v", err)
 	}
-	t.Logf("Updating LB to OVN done")
 
-	t.Logf("Gettting LB by name")
-	lb, err := ovndbapi.LBGet(LB1)
+	t.Logf("Get LoadBalancer")
+	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lb) != 1 {
-		t.Fatalf("err getting lbs, total:%v", len(lb))
+	if lb.Name != LB1 {
+		t.Fatalf("no load balancer: %v\n", lb)
 	}
-	t.Logf("Lb found:%+v", lb[0])
 
-	t.Logf("Deleting LB")
-	ocmd, err = ovndbapi.LBDel(LB1)
+	t.Logf("Del LoadBalancer")
+	ocmd, err = ovndbapi.LoadBalancer.Del(LoadBalancerName(LB1))
 	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
 	}
@@ -65,13 +71,8 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 
-	// Verify deletion
-	lb, err = ovndbapi.LBGet(LB1)
-	if err != nil {
-		t.Fatal(err)
+	lb, err = ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	if err == nil {
+		t.Fatalf("load balancer not deleted: %v", lb)
 	}
-	if len(lb) != 0 {
-		t.Fatalf("error: lb deletion not done, total:%v", len(lb))
-	}
-	t.Logf("LB deletion done")
 }

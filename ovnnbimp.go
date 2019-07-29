@@ -312,7 +312,6 @@ func (odbi *ovndb) getRows(table string, lrow OVNRow) ([]interface{}, error) {
 	// list lookup
 	if lrow == nil || len(lrow) == 0 {
 		for _, iface := range cacheTable {
-			//			log.Printf("AAA %#+v\n", cacheTable)
 			rows = append(rows, iface)
 		}
 		return rows, nil
