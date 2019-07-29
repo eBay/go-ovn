@@ -56,7 +56,7 @@ type Client interface {
 	LSLBList(ls string) ([]*LoadBalancer, error)
 
 	// Add ACL
-	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error)
+	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error)
 	// Delete acl
 	ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
 	// Get all acl by lswitch
@@ -147,7 +147,14 @@ type Client interface {
 	LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, error)
 	// Get NAT List by Logical Router
 	LRNATList(lr string) ([]*NAT, error)
-
+	// Add Meter with a Meter Band
+	MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst ...int) (*OvnCommand, error)
+	// Deletes meters
+	MeterDel(name ...string) (*OvnCommand, error)
+	// List Meters
+	MeterList() ([]*Meter, error)
+	// List Meter Bands
+	MeterBandsList() ([]*MeterBand, error)
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
@@ -323,8 +330,8 @@ func (c *ovndb) LBDel(name string) (*OvnCommand, error) {
 	return c.lbDelImp(name)
 }
 
-func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
-	return c.aclAddImp(ls, direct, match, action, priority, external_ids, logflag, meter)
+func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
+	return c.aclAddImp(ls, direct, match, action, priority, external_ids, logflag, meter, severity)
 }
 
 func (c *ovndb) ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
@@ -417,4 +424,20 @@ func (c *ovndb) LRNATDel(lr string, ntype string, ip ...string) (*OvnCommand, er
 
 func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
 	return c.lrNatListImp(lr)
+}
+
+func (c *ovndb) MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst ...int) (*OvnCommand, error) {
+	return c.meterAddImp(name, action, rate, unit, external_ids, burst...)
+}
+
+func (c *ovndb) MeterDel(name ...string) (*OvnCommand, error) {
+	return c.meterDelImp(name...)
+}
+
+func (c *ovndb) MeterList() ([]*Meter, error) {
+	return c.meterListImp()
+}
+
+func (c *ovndb) MeterBandsList() ([]*MeterBand, error) {
+	return c.meterBandsListImp()
 }

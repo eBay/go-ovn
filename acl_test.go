@@ -51,6 +51,11 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 	cmds = append(cmds, cmd)
+	cmd, err = ovndbapi.MeterAdd("meter1", "drop", 101, "kbps", nil, 300)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmds = append(cmds, cmd)
 
 	// execute to create lsw and lsp
 	err = ovndbapi.Execute(cmds...)
@@ -60,7 +65,7 @@ func TestACLs(t *testing.T) {
 
 	// nil cmds for next batch
 	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "meter1", "alert")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,16 +115,16 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
-		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true, "test[%s] %s", "add acl", acls[0])
+		acls[0].Action == "drop" && acls[0].Priority == 1001 && acls[0].Log == true && acls[0].Meter[0] == "meter1" && acls[0].Severity == "alert", "test[%s] %s", "add acl", acls[0])
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "", "")
 	// ACLAdd must return error
 	assert.Equal(t, true, nil != err, "test[%s]", "add same acl twice, should only one added.")
 	// cmd is nil, so this is noop
 	err = ovndbapi.Execute(cmd)
 	assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +139,7 @@ func TestACLs(t *testing.T) {
 	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
-	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,5 +240,12 @@ func TestACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	cmd, err = ovndbapi.MeterDel("meter1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

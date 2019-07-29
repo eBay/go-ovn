@@ -28,6 +28,8 @@ type ACL struct {
 	Match      string
 	Priority   int
 	Log        bool
+	Meter      []string
+	Severity   string
 	ExternalID map[interface{}]interface{}
 }
 
@@ -132,7 +134,7 @@ func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error
 	return "", ErrorNotFound
 }
 
-func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string) (*OvnCommand, error) {
+func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -162,8 +164,29 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 
 	row["action"] = action
 	row["log"] = logflag
-	if logflag && len(meter) > 0 {
-		row["meter"] = meter
+	if logflag {
+		if meter != "" {
+			meterList, _ := odbi.meterListImp()
+			var flag = 0
+			for _, a := range meterList {
+				if meter == a.Name {
+					flag = 1
+				}
+			}
+			if flag == 0 {
+				return nil, ErrorNotFound
+			}
+			row["meter"] = meter
+		}
+		if severity != "" {
+			switch severity {
+			case "alert", "debug", "info", "notice", "warning":
+				row["severity"] = severity
+			default:
+				return nil, ErrorOption
+			}
+		}
+
 	}
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
@@ -248,6 +271,28 @@ func (odbi *ovndb) rowToACL(uuid string) *ACL {
 		return nil
 	}
 
+	var meter []string
+	switch cacheACL.Fields["meter"].(type) {
+	case string:
+		meter = []string{cacheACL.Fields["meter"].(string)}
+	case libovsdb.OvsSet:
+		for _, a := range cacheACL.Fields["meter"].(libovsdb.OvsSet).GoSet {
+			meter = append(meter, a.(string))
+		}
+	default:
+	}
+
+	severity := ""
+	switch cacheACL.Fields["severity"].(type) {
+	case string:
+		severity = cacheACL.Fields["severity"].(string)
+	case libovsdb.OvsSet:
+		for _, a := range cacheACL.Fields["meter"].(libovsdb.OvsSet).GoSet {
+			severity = a.(string)
+		}
+	default:
+	}
+
 	acl := &ACL{
 		UUID:       uuid,
 		Action:     cacheACL.Fields["action"].(string),
@@ -255,6 +300,8 @@ func (odbi *ovndb) rowToACL(uuid string) *ACL {
 		Match:      cacheACL.Fields["match"].(string),
 		Priority:   cacheACL.Fields["priority"].(int),
 		Log:        cacheACL.Fields["log"].(bool),
+		Meter:      meter,
+		Severity:   severity,
 		ExternalID: cacheACL.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
