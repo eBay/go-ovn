@@ -19,6 +19,7 @@ package goovn
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/ebay/libovsdb"
 )
@@ -30,6 +31,8 @@ var (
 	ErrorSchema = errors.New("table schema error")
 	// ErrorNotFound used when object not found in ovnnb
 	ErrorNotFound = errors.New("object not found")
+	// ErrorMultiple used when multiple object found, but needs only one
+	ErrorMultiple = errors.New("multiple objects exists")
 	// ErrorExist used when object already exists in ovnnb
 	ErrorExist = errors.New("object exist")
 )
@@ -276,70 +279,83 @@ func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
 
-func (odbi *ovndb) getRowByName(table string, lrow OVNRow) (interface{}, error) {
-	if name, ok := lrow["name"]; ok {
-		row := newRow()
-		row["name"] = name
-		return odbi.getRow(table, row)
-	}
-	return nil, ErrorNotFound
+func (odbi *ovndb) getRowByUUID(table string, uuid string, iface interface{}) error {
+	row := newRow()
+	row["uuid"] = uuid
+	return odbi.getRow(table, row, iface)
 }
 
-func (odbi *ovndb) getRow(table string, lrow OVNRow) (interface{}, error) {
-	ifaces, err := odbi.getRows(table, lrow)
+func (odbi *ovndb) getRowByName(table string, name string, iface interface{}) error {
+	row := newRow()
+	row["name"] = name
+	return odbi.getRow(table, row, iface)
+}
+
+func (odbi *ovndb) getRow(table string, lrow OVNRow, iface interface{}) error {
+	var ifaces []interface{}
+
+	err := odbi.getRows(table, lrow, &ifaces)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(ifaces) > 1 {
-		return nil, ErrorOption
+		return ErrorMultiple
 	}
 
-	return ifaces[0], nil
+	valuePtr := reflect.ValueOf(iface)
+	value := valuePtr.Elem()
+	value.Set(reflect.ValueOf(ifaces[0]))
+
+	return nil
 }
 
-func (odbi *ovndb) getRows(table string, lrow OVNRow) ([]interface{}, error) {
+func (odbi *ovndb) getRows(table string, lrow OVNRow, ifaces interface{}) error {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 
 	cacheTable, ok := odbi.cache[table]
 	if !ok {
-		return nil, ErrorNotFound
+		return ErrorNotFound
 	}
 
-	var rows []interface{}
+	valuePtr := reflect.ValueOf(ifaces)
+	value := valuePtr.Elem()
 
 	// list lookup
 	if lrow == nil || len(lrow) == 0 {
 		for _, iface := range cacheTable {
-			rows = append(rows, iface)
+			value.Set(reflect.Append(value, reflect.ValueOf(iface)))
+			//			ifaces = append(ifaces, iface)
 		}
-		return rows, nil
+		return nil
 	}
 
 	// direct lookup by uuid if it specified
-	if uuid, ok := lrow["_uuid"]; ok {
+	if uuid, ok := lrow["uuid"]; ok {
 		if iface, ok := cacheTable[uuid.(string)]; ok {
-			rows = append(rows, iface)
-			return rows, nil
+			value.Set(reflect.Append(value, reflect.ValueOf(iface)))
+			//			ifaces = append(ifaces, iface)
+			return nil
 		}
-		return nil, ErrorNotFound
+		return ErrorNotFound
 	}
 
 	// lookup by other fields
 	for _, iface := range cacheTable {
 		crow, err := structToMap(iface)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if cmpRows(crow, lrow) {
-			rows = append(rows, iface)
+			value.Set(reflect.Append(value, reflect.ValueOf(iface)))
+			//ifaces = append(ifaces, iface)
 		}
 	}
 
-	if len(rows) == 0 {
-		return nil, ErrorNotFound
+	if value.Len() == 0 {
+		return ErrorNotFound
 	}
 
-	return rows, nil
+	return nil
 }

@@ -37,9 +37,22 @@ func TestLoadBalancerAdd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Adding LB OVN failed with err %v", err)
 	}
+}
 
+func TestLoadBalancerGet(t *testing.T) {
+	t.Logf("Get LoadBalancer")
+	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lb == nil || lb.Name != LB1 {
+		t.Fatalf("no load balancer: %v\n", lb)
+	}
+}
+
+func TestLoadBalancerAddVIP(t *testing.T) {
 	t.Logf("Add LoadBalancer new VIP")
-	ocmd, err = ovndbapi.LoadBalancer.Add(
+	ocmd, err := ovndbapi.LoadBalancer.Set(
 		LoadBalancerName(LB1),
 		LoadBalancerVIP("192.168.0.10:80"),
 		LoadBalancerProtocol("tcp"),
@@ -53,16 +66,25 @@ func TestLoadBalancerAdd(t *testing.T) {
 	}
 
 	t.Logf("Get LoadBalancer")
-	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	lb, err := ovndbapi.LoadBalancer.Get(
+		LoadBalancerName(LB1),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lb.Name != LB1 {
+	if lb == nil || lb.Name != LB1 {
 		t.Fatalf("no load balancer: %v\n", lb)
 	}
+}
 
+func TestLoadBalancerDel(t *testing.T) {
 	t.Logf("Del LoadBalancer")
-	ocmd, err = ovndbapi.LoadBalancer.Del(LoadBalancerName(LB1))
+	ocmd, err := ovndbapi.LoadBalancer.Del(
+		LoadBalancerName(LB1),
+		LoadBalancerVIP("192.168.0.19:80"),
+		LoadBalancerProtocol("tcp"),
+		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}),
+	)
 	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
 	}
@@ -71,7 +93,21 @@ func TestLoadBalancerAdd(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 
-	lb, err = ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	ocmd, err = ovndbapi.LoadBalancer.Del(
+		LoadBalancerName(LB1),
+		LoadBalancerVIP("192.168.0.10:80"),
+		LoadBalancerProtocol("tcp"),
+		LoadBalancerIP([]string{"10.10.10.127:8080", "10.10.10.120:8080"}),
+	)
+	if err != nil && err != ErrorNotFound {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("err executing command:%v", err)
+	}
+
+	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
 	if err == nil {
 		t.Fatalf("load balancer not deleted: %v", lb)
 	}

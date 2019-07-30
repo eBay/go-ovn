@@ -57,7 +57,7 @@ func TestLogicalSwitchGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ls.Name != LS3 {
+	if ls == nil || ls.Name != LS3 {
 		t.Fatalf("logical switch %s not found: %v", LS3, ls)
 	}
 }
