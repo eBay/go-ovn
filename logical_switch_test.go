@@ -17,6 +17,7 @@
 package goovn
 
 import (
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -98,6 +99,57 @@ func TestLogicalSwitchSetExternalIDs(t *testing.T) {
 
 }
 
+func TestLogicalSwitchLBAdd(t *testing.T) {
+	t.Logf("Add LoadBalancer")
+	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
+	ocmd, err := ovndbapi.LoadBalancer.Add(
+		LoadBalancerName("LS_LB"),
+		LoadBalancerVIP("192.192.192.192:80"),
+		LoadBalancerProtocol("tcp"),
+		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Adding LB OVN failed with err %v", err)
+	}
+
+	t.Logf("Add LoadBalancer to LogicalSwitch")
+	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
+	ocmd, err = ovndbapi.LogicalSwitch.LBAdd(
+		LogicalSwitchName(LS3),
+		LoadBalancerName("LS_LB"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Adding LB to LS failed with err %v", err)
+	}
+
+}
+
+func TestLogicalSwitchLBList(t *testing.T) {
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
+	if err != nil {
+		t.Fatal(err)
+	}
+	log.Printf("%#+v\n", ls)
+	t.Logf("Get LoadBalancer from LogicalSwitch")
+	lbList, err := ovndbapi.LogicalSwitch.LBList(
+		LogicalSwitchName(LS3),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lbList) == 0 {
+		t.Fatalf("Failed to get LB from LS: %v", lbList)
+	}
+	log.Printf("%#+v\n", lbList[0])
+}
+
 func TestLogicalSwitchDelExternalIDs(t *testing.T) {
 	t.Logf("DelExternalIDs LogicalSwitch")
 	//delete external_id from LS3
@@ -135,7 +187,6 @@ func TestLogicalSwitchDelExternalIDs(t *testing.T) {
 }
 
 func TestLogicalSwitchDel(t *testing.T) {
-	//t.Skip()
 	t.Logf("Del LogicalSwitch")
 	cmd, err := ovndbapi.LogicalSwitch.Del(LogicalSwitchName(LS3))
 	if err != nil {

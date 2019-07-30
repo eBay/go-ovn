@@ -36,8 +36,12 @@ type LogicalSwitch interface {
 	SetExternalIDs(...LogicalSwitchOpt) (*OvnCommand, error)
 	// DelExternalIDs logical switch with LogicalSwitchName or LogicalSwitchUUID
 	DelExternalIDs(...LogicalSwitchOpt) (*OvnCommand, error)
-	// LBAdd add LoadBalancer to switch
+	// LBAdd add load balancer to switch
 	LBAdd(LogicalSwitchOpt, LoadBalancerOpt) (*OvnCommand, error)
+	// LBDel delete load balancer or all LoadBalancers from logical switch
+	LBDel(LogicalSwitchOpt, LoadBalancerOpt) (*OvnCommand, error)
+	// LBList list load balancers from logical switch
+	LBList(LogicalSwitchOpt) ([]*libovsdb.LoadBalancer, error)
 }
 
 type lsImp struct {
@@ -219,10 +223,10 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 
 	mutateUUID = []libovsdb.UUID{stringToGoUUID(lbUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
-	mutation := libovsdb.NewMutation("load_balancer", opInsert, mutateSet)
 	if err != nil {
 		return nil, err
 	}
+	mutation := libovsdb.NewMutation("load_balancer", opInsert, mutateSet)
 
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
@@ -234,88 +238,96 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-/*
-func (odbi *ovndb) lslbDelImp(lswitch string, lb string) (*OvnCommand, error) {
+func (imp *lsImp) LBDel(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
-	row := make(OVNRow)
-	row["name"] = lb
-	lbuuid := odbi.getRowUUID(tableLoadBalancer, row)
-	if len(lbuuid) == 0 {
-		return nil, ErrorNotFound
+
+	optLSRow := newRow()
+	if err := ls(optLSRow); err != nil {
+		return nil, err
 	}
-	row = make(OVNRow)
-	row["name"] = lswitch
-	lsuuid := odbi.getRowUUID(tableLogicalSwitch, row)
-	if len(lsuuid) == 0 {
-		return nil, ErrorNotFound
+
+	optLBRow := newRow()
+	if lb != nil {
+		if err := lb(optLBRow); err != nil {
+			return nil, err
+		}
 	}
-	mutateUUID := []libovsdb.UUID{stringToGoUUID(lbuuid)}
+
+	var lbUUIDs []string
+	if lb != nil {
+		if uuid, ok := optLBRow["uuid"]; ok {
+			lbUUIDs = append(lbUUIDs, uuid.(string))
+		} else {
+			var lb *libovsdb.LoadBalancer
+			if err := imp.odbi.getRowByName(tableLoadBalancer, optLBRow["name"].(string), &lb); err != nil {
+				return nil, err
+			}
+			lbUUIDs = append(lbUUIDs, lb.UUID)
+		}
+	}
+
+	var lsUUID string
+	if uuid, ok := optLSRow["uuid"]; ok {
+		lsUUID = uuid.(string)
+	} else {
+		var ls *libovsdb.LogicalSwitch
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, optLSRow["name"].(string), &ls); err != nil {
+			return nil, err
+		}
+		lsUUID = ls.UUID
+		if len(lbUUIDs) == 0 {
+			lbUUIDs = append(lbUUIDs, ls.LoadBalancer...)
+		}
+	}
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(lsUUID))
+
+	mutateUUID := make([]libovsdb.UUID, len(lbUUIDs))
+	for i, lbUUID := range lbUUIDs {
+		mutateUUID[i] = stringToGoUUID(lbUUID)
+	}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
 		return nil, err
 	}
 	mutation := libovsdb.NewMutation("load_balancer", opDelete, mutateSet)
 	// mutate  lswitch for the corresponding load_balancer
-	mucondition := libovsdb.NewCondition("name", "==", lswitch)
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
 		Table:     tableLogicalSwitch,
 		Mutations: []interface{}{mutation},
-		Where:     []interface{}{mucondition},
+		Where:     []interface{}{condition},
 	}
 	operations = append(operations, mutateOp)
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) lslbListImp(lswitch string) ([]*LoadBalancer, error) {
-	var listLB []*LoadBalancer
-	odbi.cachemutex.RLock()
-	defer odbi.cachemutex.RUnlock()
+func (imp *lsImp) LBList(opt LogicalSwitchOpt) ([]*libovsdb.LoadBalancer, error) {
+	var err error
 
-	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
-	if !ok {
-		return nil, ErrorSchema
+	optLSRow := newRow()
+	if err = opt(optLSRow); err != nil {
+		return nil, err
 	}
 
-	for _, drows := range cacheLogicalSwitch {
-		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lswitch {
-			lbs := drows.Fields["load_balancer"]
-			if lbs != nil {
-				switch lbs.(type) {
-				case libovsdb.OvsSet:
-					if lb, ok := lbs.(libovsdb.OvsSet); ok {
-						for _, l := range lb.GoSet {
-							if lb, ok := l.(libovsdb.UUID); ok {
-								lb, err := odbi.rowToLB(lb.GoUUID)
-								if err != nil {
-									return nil, err
-								}
-								listLB = append(listLB, lb)
-							}
-						}
-					} else {
-						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
-					}
-				case libovsdb.UUID:
-					if lb, ok := lbs.(libovsdb.UUID); ok {
-						lb, err := odbi.rowToLB(lb.GoUUID)
-						if err != nil {
-							return nil, err
-						}
-						listLB = append(listLB, lb)
-					} else {
-						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
-					}
-				default:
-					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
-				}
-			}
-			break
+	var ls *libovsdb.LogicalSwitch
+	if err = imp.odbi.getRow(tableLogicalSwitch, optLSRow, &ls); err != nil {
+		return nil, err
+	}
+
+	lbList := make([]*libovsdb.LoadBalancer, len(ls.LoadBalancer))
+
+	for i := 0; i < len(ls.LoadBalancer); i++ {
+		if err = imp.odbi.getRowByUUID(tableLoadBalancer, ls.LoadBalancer[i], &lbList[i]); err != nil {
+			return nil, err
 		}
 	}
-	return listLB, nil
+
+	if len(lbList) == 0 {
+		return nil, ErrorNotFound
+	}
+
+	return lbList, nil
 }
-*/
 
 func (imp *lsImp) SetExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
