@@ -17,141 +17,109 @@
 package goovn
 
 import (
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	aclLS = "acl_ls"
+	aclTestLS    string = "testeb3109af-eb44-4b0b-b7a4-dcf439f21a33"
+	aclTestMatch        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 )
 
 func TestACLAdd(t *testing.T) {
-	var cmd *OvnCommand
-	var err error
-	_ = cmd
-	/*
-		cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(aclLS))
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = ovndbapi.Execute(cmd)
-			if err != nil {
-				t.Fatal(err)
-			}
+	lsUUID := newUUID(t)
 
-			cmd, err = ovndbapi.ACL.Add(
-				ACLEntityName(aclLS),
-				ACLDirection("to-lport"),
-				ACLMatch(MATCH),
-				ACLAction("drop"),
-				ACLPriority(1001),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = ovndbapi.Execute(cmd)
-			if err != nil {
-				t.Fatal(err)
-			}
-	*/
-	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(aclLS))
+	aclTestLS = "test" + lsUUID
+
+	cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(aclTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = ls
-	acls, err := ovndbapi.ACL.List(ACLEntityName(aclLS))
+	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == MATCH &&
+
+	cmd, err = ovndbapi.ACL.Add(
+		ACLEntityName(aclTestLS),
+		ACLDirection("to-lport"),
+		ACLMatch(aclTestMatch),
+		ACLAction("drop"),
+		ACLPriority(1001),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(aclTestLS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ls.ACLs) != 1 {
+		t.Fatalf("acl not added to %s", aclTestLS)
+	}
+
+	acls, err := ovndbapi.ACL.List(ACLEntityName(aclTestLS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 1 && acls[0].Match == aclTestMatch &&
 		acls[0].Action == "drop" && acls[0].Priority == 1001, "test[%s] %s", "add acl", acls[0])
+}
+
+func TestACLAddDup(t *testing.T) {
+	cmd, err := ovndbapi.ACL.Add(
+		ACLEntityName(aclTestLS),
+		ACLDirection("to-lport"),
+		ACLMatch(aclTestMatch),
+		ACLAction("drop"),
+		ACLPriority(1001),
+	)
+	if err == nil {
+		t.Fatal("the same acl must be added only one")
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestACLDel(t *testing.T) {
+	cmd, err := ovndbapi.ACL.Del(
+		ACLEntityName(aclTestLS),
+		ACLDirection("to-lport"),
+		ACLMatch(aclTestMatch),
+		ACLAction("drop"),
+		ACLPriority(1001),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(aclTestLS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	log.Printf("EEE %#+v\n", ls)
+	acls, err := ovndbapi.ACL.List(ACLEntityName(aclTestLS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 0, "fail remove %v", acls[0])
 
 	/*
-		cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH, "drop", 1001, nil, true, "")
-		// ACLAdd must return error
-		assert.Equal(t, true, nil != err, "test[%s]", "add same acl twice, should only one added.")
-		// cmd is nil, so this is noop
-		err = ovndbapi.Execute(cmd)
-		assert.Equal(t, true, nil == err, "test[%s]", "add same acl twice, should only one added.")
-
-		cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		acls, err = ovndbapi.ACLList(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
-
-		cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		acls, err = ovndbapi.ACLList(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
-
-		cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		acls, err = ovndbapi.ACLList(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
-
-		cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		acls, err = ovndbapi.ACLList(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
-
-		cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		acls, err = ovndbapi.ACLList(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
-
-		cmd, err = ovndbapi.LSDel(LSW)
+		cmd, err = ovndbapi.LogicalSwitch.Del(LogicalSwitchName(aclTestLS))
 		if err != nil {
 			t.Fatal(err)
 		}
