@@ -20,13 +20,17 @@ import (
 	"testing"
 )
 
-const LB1 = "lb1"
+var (
+	lbTestLB string
+)
 
 func TestLoadBalancerAdd(t *testing.T) {
-	t.Logf("Add LoadBalancer")
+	lbUUID := newUUID(t)
+
+	lbTestLB = "test" + lbUUID
 	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
 	ocmd, err := ovndbapi.LoadBalancer.Add(
-		LoadBalancerName(LB1),
+		LoadBalancerName(lbTestLB),
 		LoadBalancerVIP("192.168.0.19:80"),
 		LoadBalancerProtocol("tcp"),
 		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}))
@@ -35,25 +39,23 @@ func TestLoadBalancerAdd(t *testing.T) {
 	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
-		t.Fatalf("Adding LB OVN failed with err %v", err)
+		t.Fatal(err)
 	}
 }
 
 func TestLoadBalancerGet(t *testing.T) {
-	t.Logf("Get LoadBalancer")
-	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(lbTestLB))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lb == nil || lb.Name != LB1 {
-		t.Fatalf("no load balancer: %v\n", lb)
+	if lb.Name != lbTestLB {
+		t.Fatalf("failed to get load balancer: %v", lb)
 	}
 }
 
 func TestLoadBalancerAddVIP(t *testing.T) {
-	t.Logf("Add LoadBalancer new VIP")
 	ocmd, err := ovndbapi.LoadBalancer.Set(
-		LoadBalancerName(LB1),
+		LoadBalancerName(lbTestLB),
 		LoadBalancerVIP("192.168.0.10:80"),
 		LoadBalancerProtocol("tcp"),
 		LoadBalancerIP([]string{"10.10.10.127:8080", "10.10.10.120:8080"}))
@@ -62,25 +64,23 @@ func TestLoadBalancerAddVIP(t *testing.T) {
 	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
-		t.Fatalf("Updating LB OVN failed with err %v", err)
+		t.Fatalf("update vip in lb failed %v", err)
 	}
 
-	t.Logf("Get LoadBalancer")
 	lb, err := ovndbapi.LoadBalancer.Get(
-		LoadBalancerName(LB1),
+		LoadBalancerName(lbTestLB),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lb == nil || lb.Name != LB1 {
-		t.Fatalf("no load balancer: %v\n", lb)
+	if lb.Name != lbTestLB {
+		t.Fatalf("no load balancer %s found: %v", lbTestLB, lb)
 	}
 }
 
 func TestLoadBalancerDel(t *testing.T) {
-	t.Logf("Del LoadBalancer")
 	ocmd, err := ovndbapi.LoadBalancer.Del(
-		LoadBalancerName(LB1),
+		LoadBalancerName(lbTestLB),
 		LoadBalancerVIP("192.168.0.19:80"),
 		LoadBalancerProtocol("tcp"),
 		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}),
@@ -94,20 +94,20 @@ func TestLoadBalancerDel(t *testing.T) {
 	}
 
 	ocmd, err = ovndbapi.LoadBalancer.Del(
-		LoadBalancerName(LB1),
+		LoadBalancerName(lbTestLB),
 		LoadBalancerVIP("192.168.0.10:80"),
 		LoadBalancerProtocol("tcp"),
 		LoadBalancerIP([]string{"10.10.10.127:8080", "10.10.10.120:8080"}),
 	)
-	if err != nil && err != ErrorNotFound {
+	if err != nil {
 		t.Fatal(err)
 	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
-		t.Fatalf("err executing command:%v", err)
+		t.Fatal(err)
 	}
 
-	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(LB1))
+	lb, err := ovndbapi.LoadBalancer.Get(LoadBalancerName(lbTestLB))
 	if err == nil {
 		t.Fatalf("load balancer not deleted: %v", lb)
 	}

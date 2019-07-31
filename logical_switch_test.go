@@ -39,7 +39,9 @@ func TestLogicalSwitchAdd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestLogicalSwitchList(t *testing.T) {
 	lsList, err := ovndbapi.LogicalSwitch.List()
 	if err != nil {
 		t.Fatal(err)
@@ -150,6 +152,29 @@ func TestLogicalSwitchLBList(t *testing.T) {
 
 	if !found {
 		t.Fatal("logical switch load balancer list fail")
+	}
+}
+
+func TestLogicalSwitchLBDel(t *testing.T) {
+	// alternative can be specified via map[string]string{"192.168.0.
+	ocmd, err := ovndbapi.LogicalSwitch.LBDel(
+		LogicalSwitchName(lsTestLS),
+		LoadBalancerName(lsTestLB),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(lsTestLS))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ls.LoadBalancer) != 0 {
+		t.Fatal("load balancer not deleted from logical switch")
 	}
 }
 
