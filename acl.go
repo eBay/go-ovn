@@ -387,6 +387,7 @@ forLoop:
 		Where: aclCondition,
 	}
 
+	// TODO extend this to support delete multiple acls
 	mutateUUID := []libovsdb.UUID{stringToGoUUID(aclUUID)}
 	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
 	if err != nil {
@@ -394,7 +395,7 @@ forLoop:
 	}
 
 	mutation := libovsdb.NewMutation("acls", opDelete, mutateSet)
-	lsCondition := libovsdb.NewCondition("_uuid", "==", ls.UUID)
+	lsCondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(ls.UUID))
 
 	// Simple mutate operation
 	mutateOp := libovsdb.Operation{
