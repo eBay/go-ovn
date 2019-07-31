@@ -113,7 +113,7 @@ func (imp *lsImp) Del(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
 		lsUUID = uuid.(string)
 	} else {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, optRow["name"].(string), &ls); err != nil {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, optRow["name"], &ls); err != nil {
 			return nil, err
 		}
 		lsUUID = ls.UUID
@@ -179,7 +179,7 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 		lsUUID = uuid.(string)
 	} else {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, optLSRow["name"].(string), &ls); err != nil {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, optLSRow["name"], &ls); err != nil {
 			return nil, err
 		}
 		lsUUID = ls.UUID
@@ -194,7 +194,7 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 		lbUUID = uuid.(string)
 	} else {
 		var lb *LoadBalancer
-		if err := imp.odbi.getRowByName(tableLoadBalancer, optLBRow["name"].(string), &lb); err != nil {
+		if err := imp.odbi.getRowByName(tableLoadBalancer, optLBRow["name"], &lb); err != nil {
 			return nil, err
 		}
 		lbUUID = lb.UUID
@@ -238,7 +238,7 @@ func (imp *lsImp) LBDel(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 			lbUUIDs = append(lbUUIDs, uuid.(string))
 		} else {
 			var lb *LoadBalancer
-			if err := imp.odbi.getRowByName(tableLoadBalancer, optLBRow["name"].(string), &lb); err != nil {
+			if err := imp.odbi.getRowByName(tableLoadBalancer, optLBRow["name"], &lb); err != nil {
 				return nil, err
 			}
 			lbUUIDs = append(lbUUIDs, lb.UUID)
@@ -250,7 +250,7 @@ func (imp *lsImp) LBDel(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 		lsUUID = uuid.(string)
 	} else {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, optLSRow["name"].(string), &ls); err != nil {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, optLSRow["name"], &ls); err != nil {
 			return nil, err
 		}
 		lsUUID = ls.UUID
@@ -335,7 +335,7 @@ func (imp *lsImp) SetExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) 
 		lsUUID = uuid.(string)
 	} else {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, optRow["name"].(string), &ls); err != nil {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, optRow["name"], &ls); err != nil {
 			return nil, err
 		}
 		lsUUID = ls.UUID

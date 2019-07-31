@@ -217,11 +217,11 @@ func (imp *aclImp) Add(opts ...ACLOpt) (*OvnCommand, error) {
 
 	var ls *LogicalSwitch
 	if uuid, ok := optRow["entity_uuid"]; ok {
-		if err := imp.odbi.getRowByUUID(tableLogicalSwitch, uuid.(string), &ls); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByUUID(tableLogicalSwitch, uuid, &ls); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 	} else if name, ok := optRow["entity_name"]; ok {
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, name.(string), &ls); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, name, &ls); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 	} else {
@@ -230,11 +230,11 @@ func (imp *aclImp) Add(opts ...ACLOpt) (*OvnCommand, error) {
 
 	var pg *PortGroup
 	if uuid, ok := optRow["entity_uuid"]; ok {
-		if err := imp.odbi.getRowByUUID(tablePortGroup, uuid.(string), &pg); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByUUID(tablePortGroup, uuid, &pg); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 	} else if name, ok := optRow["entity_name"]; ok {
-		if err := imp.odbi.getRowByName(tablePortGroup, name.(string), &pg); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByName(tablePortGroup, name, &pg); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 	} else {
@@ -374,11 +374,11 @@ func (imp *aclImp) List(opt ACLOpt) ([]*ACL, error) {
 	var aclUUIDs []string
 	if uuid, ok := optLSRow["entity_uuid"]; ok {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByUUID(tableLogicalSwitch, uuid.(string), &ls); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByUUID(tableLogicalSwitch, uuid, &ls); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 		var pg *PortGroup
-		if err := imp.odbi.getRowByUUID(tablePortGroup, uuid.(string), &pg); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByUUID(tablePortGroup, uuid, &pg); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 		if ls == nil && pg == nil {
@@ -392,11 +392,11 @@ func (imp *aclImp) List(opt ACLOpt) ([]*ACL, error) {
 		}
 	} else if name, ok := optLSRow["entity_name"]; ok {
 		var ls *LogicalSwitch
-		if err := imp.odbi.getRowByName(tableLogicalSwitch, name.(string), &ls); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByName(tableLogicalSwitch, name, &ls); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 		var pg *PortGroup
-		if err := imp.odbi.getRowByName(tablePortGroup, name.(string), &pg); err != nil && err != ErrorNotFound {
+		if err := imp.odbi.getRowByName(tablePortGroup, name, &pg); err != nil && err != ErrorNotFound {
 			return nil, err
 		}
 		if ls == nil && pg == nil {

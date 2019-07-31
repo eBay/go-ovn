@@ -309,7 +309,7 @@ func (imp *lbImp) Set(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 		lbUUID = uuid.(string)
 	} else {
 		var lb *LoadBalancer
-		if err := imp.odbi.getRowByName(tableLoadBalancer, optRow["name"].(string), &lb); err != nil {
+		if err := imp.odbi.getRowByName(tableLoadBalancer, optRow["name"], &lb); err != nil {
 			return nil, err
 		}
 		lbUUID = lb.UUID

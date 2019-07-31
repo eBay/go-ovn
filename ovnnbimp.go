@@ -163,13 +163,13 @@ func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
 
-func (odbi *ovndb) getRowByUUID(table string, uuid string, iface interface{}) error {
+func (odbi *ovndb) getRowByUUID(table string, uuid interface{}, iface interface{}) error {
 	row := newRow()
 	row["uuid"] = uuid
 	return odbi.getRow(table, row, iface)
 }
 
-func (odbi *ovndb) getRowByName(table string, name string, iface interface{}) error {
+func (odbi *ovndb) getRowByName(table string, name interface{}, iface interface{}) error {
 	row := newRow()
 	row["name"] = name
 	return odbi.getRow(table, row, iface)
