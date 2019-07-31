@@ -17,23 +17,21 @@
 package goovn
 
 import (
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	LS3             = "LS3"
-	NEUTRON_NETWORK = "neutron:network"
-	DUMMY           = "dummy"
-	FOO             = "foo"
-	BAR             = "bar"
+var (
+	lsTestLS string
+	lsTestLB string
 )
 
 func TestLogicalSwitchAdd(t *testing.T) {
-	t.Logf("Add LogicalSwitch")
-	cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(LS3))
+	lsUUID := newUUID(t)
+
+	lsTestLS = "test" + lsUUID
+	cmd, err := ovndbapi.LogicalSwitch.Add(LogicalSwitchName(lsTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,32 +40,37 @@ func TestLogicalSwitchAdd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("List LogicalSwitch")
 	lsList, err := ovndbapi.LogicalSwitch.List()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lsList) != 1 {
-		t.Fatalf("invalid ls count found %#v\n", lsList)
+
+	var found bool
+	for _, ls := range lsList {
+		if ls.Name == lsTestLS {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Fatal("logical switch add fail")
 	}
 }
 
 func TestLogicalSwitchGet(t *testing.T) {
-	t.Logf("Get LogicalSwitch")
-	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(lsTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ls == nil || ls.Name != LS3 {
-		t.Fatalf("logical switch %s not found: %v", LS3, ls)
+	if ls == nil || ls.Name != lsTestLS {
+		t.Fatalf("logical switch get fail: %s not found: %v", lsTestLS, ls)
 	}
 }
 
 func TestLogicalSwitchSetExternalIDs(t *testing.T) {
-	t.Logf("SetExternalIDs LogicalSwitch")
 	cmd, err := ovndbapi.LogicalSwitch.SetExternalIDs(
-		LogicalSwitchName(LS3),
-		LogicalSwitchExternalIDs(map[string]string{NEUTRON_NETWORK: DUMMY, FOO: BAR}))
+		LogicalSwitchName(lsTestLS),
+		LogicalSwitchExternalIDs(map[string]string{"test": "true", "foo": "bar"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,22 +78,18 @@ func TestLogicalSwitchSetExternalIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Get LS3 and get external_id NEUTRON_NETWORK
-	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(lsTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for key, val := range ls.ExternalIDs {
-		if key == NEUTRON_NETWORK {
-			assert.Equal(t, true, val == DUMMY, "Got external ID dummy")
-			t.Logf("Successfully validated external_id key NEUTRON_NETWORK to LS3")
+		if key == "test" {
+			assert.Equal(t, true, val == "true", "external_ids test")
 		}
 	}
-	// Add empty external_ids to LS3
-	cmd, err = ovndbapi.LogicalSwitch.SetExternalIDs(LogicalSwitchName(LS3))
+	cmd, err = ovndbapi.LogicalSwitch.SetExternalIDs(LogicalSwitchName(lsTestLS))
 	if err != nil {
-		assert.Errorf(t, err, "Cannot update lswitch with empty ext_id")
-		t.Logf("Adding empty external_id for LS3 validation is ok")
+		assert.Errorf(t, err, "cannot update %s with empty external_ids", lsTestLS)
 	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
@@ -100,10 +99,12 @@ func TestLogicalSwitchSetExternalIDs(t *testing.T) {
 }
 
 func TestLogicalSwitchLBAdd(t *testing.T) {
-	t.Logf("Add LoadBalancer")
+	lbUUID := newUUID(t)
+
+	lsTestLB = "test" + lbUUID
 	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
 	ocmd, err := ovndbapi.LoadBalancer.Add(
-		LoadBalancerName("LS_LB"),
+		LoadBalancerName(lsTestLB),
 		LoadBalancerVIP("192.192.192.192:80"),
 		LoadBalancerProtocol("tcp"),
 		LoadBalancerIP([]string{"10.0.0.11:80", "10.0.0.12:80"}))
@@ -112,50 +113,50 @@ func TestLogicalSwitchLBAdd(t *testing.T) {
 	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
-		t.Fatalf("Adding LB OVN failed with err %v", err)
+		t.Fatal(err)
 	}
 
-	t.Logf("Add LoadBalancer to LogicalSwitch")
 	// alternative can be specified via map[string]string{"192.168.0.19:80":"10.0.0.11:80,10.0.0.12:80"}
 	ocmd, err = ovndbapi.LogicalSwitch.LBAdd(
-		LogicalSwitchName(LS3),
-		LoadBalancerName("LS_LB"),
+		LogicalSwitchName(lsTestLS),
+		LoadBalancerName(lsTestLB),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = ovndbapi.Execute(ocmd)
 	if err != nil {
-		t.Fatalf("Adding LB to LS failed with err %v", err)
+		t.Fatal(err)
 	}
-
 }
 
 func TestLogicalSwitchLBList(t *testing.T) {
-	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
-	if err != nil {
-		t.Fatal(err)
-	}
-	log.Printf("%#+v\n", ls)
-	t.Logf("Get LoadBalancer from LogicalSwitch")
 	lbList, err := ovndbapi.LogicalSwitch.LBList(
-		LogicalSwitchName(LS3),
+		LogicalSwitchName(lsTestLS),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(lbList) == 0 {
-		t.Fatalf("Failed to get LB from LS: %v", lbList)
+		t.Fatalf("lb list empty")
 	}
-	log.Printf("%#+v\n", lbList[0])
+
+	var found bool
+	for _, lb := range lbList {
+		if lb.Name == lsTestLB {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Fatal("logical switch load balancer list fail")
+	}
 }
 
 func TestLogicalSwitchDelExternalIDs(t *testing.T) {
-	t.Logf("DelExternalIDs LogicalSwitch")
-	//delete external_id from LS3
 	cmd, err := ovndbapi.LogicalSwitch.DelExternalIDs(
-		LogicalSwitchName(LS3),
-		LogicalSwitchExternalIDs(map[string]string{"neutron:network": "dummy"}))
+		LogicalSwitchName(lsTestLS),
+		LogicalSwitchExternalIDs(map[string]string{"test": "true"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,22 +164,18 @@ func TestLogicalSwitchDelExternalIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Get LS3 and get external_id
-	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(LS3))
+	ls, err := ovndbapi.LogicalSwitch.Get(LogicalSwitchName(lsTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for key, val := range ls.ExternalIDs {
-		if key == FOO {
-			assert.Equal(t, true, val == BAR, "Externel id with value dummy deleted")
-			t.Logf("Deleted external_id key NEUTRON_NETWORK from LS3")
+		if key == "foo" {
+			assert.Equal(t, true, val == "bar", "remove external_ids test:true")
 		}
 	}
-	// Delete empty external_ids from LS3
-	cmd, err = ovndbapi.LogicalSwitch.DelExternalIDs(LogicalSwitchName(LS3))
+	cmd, err = ovndbapi.LogicalSwitch.DelExternalIDs(LogicalSwitchName(lsTestLS))
 	if err != nil {
-		assert.Errorf(t, err, "Cannot update lswitch with empty ext_id")
-		t.Logf("Deleting empty external_id from LS3 validation is ok")
+		assert.Errorf(t, err, "unable to delete empty external_ids")
 	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
@@ -187,8 +184,7 @@ func TestLogicalSwitchDelExternalIDs(t *testing.T) {
 }
 
 func TestLogicalSwitchDel(t *testing.T) {
-	t.Logf("Del LogicalSwitch")
-	cmd, err := ovndbapi.LogicalSwitch.Del(LogicalSwitchName(LS3))
+	cmd, err := ovndbapi.LogicalSwitch.Del(LogicalSwitchName(lsTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +196,15 @@ func TestLogicalSwitchDel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lsList) != 0 {
-		t.Fatalf("invalid ls count found %#v\n", lsList)
+
+	var found bool
+	for _, ls := range lsList {
+		if ls.Name == lsTestLS {
+			found = true
+		}
+	}
+
+	if found {
+		t.Fatalf("logical switch %s not deleted", lsTestLS)
 	}
 }
