@@ -22,17 +22,8 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
-type LoadBalancer interface {
-	// Add load balancer with options
-	Add(...LoadBalancerOpt) (*OvnCommand, error)
-	// Del load balancer with LoadBalancerName and optional LoadBalancerVIP
-	Del(...LoadBalancerOpt) (*OvnCommand, error)
-	// Get load balancer with LoadBalancerName or LoadBalancerUUID
-	Get(...LoadBalancerOpt) (*libovsdb.LoadBalancer, error)
-	// Set load balancer with LoadBalancerName or LoadBalancerUUID and other opts
-	Set(...LoadBalancerOpt) (*OvnCommand, error)
-	// List load balancers
-	List() ([]*libovsdb.LoadBalancer, error)
+type lbImp struct {
+	odbi *ovndb
 }
 
 type LoadBalancerOpt func(OVNRow) error
@@ -86,8 +77,21 @@ func LoadBalancerProtocol(p string) LoadBalancerOpt {
 	}
 }
 
-type lbImp struct {
-	odbi *ovndb
+// LoadBalancerExternalIDs pass external_ids for load balancer
+func LoadBalancerExternalIDs(m map[string]string) LoadBalancerOpt {
+	return func(o OVNRow) error {
+		if m == nil || len(m) == 0 {
+			return ErrorOption
+		}
+
+		mp := make(map[string]string)
+		for k, v := range m {
+			mp[k] = v
+		}
+
+		o["external_ids"] = mp
+		return nil
+	}
 }
 
 func (imp *lbImp) Add(opts ...LoadBalancerOpt) (*OvnCommand, error) {
@@ -179,7 +183,7 @@ func (imp *lbImp) Del(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 		row["name"] = name
 	}
 
-	var lb *libovsdb.LoadBalancer
+	var lb *LoadBalancer
 	if err := imp.odbi.getRow(tableLoadBalancer, row, &lb); err != nil {
 		return nil, err
 	}
@@ -199,7 +203,7 @@ func (imp *lbImp) Del(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 	}
 	mutation := libovsdb.NewMutation("load_balancer", opDelete, mutateSet)
 
-	var lsList []*libovsdb.LogicalSwitch
+	var lsList []*LogicalSwitch
 	err = imp.odbi.getRows(tableLogicalSwitch, map[string]interface{}{"load_balancer": []string{lb.UUID}}, &lsList)
 	if err != nil && err != ErrorNotFound {
 		return nil, err
@@ -220,7 +224,7 @@ func (imp *lbImp) Del(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (imp *lbImp) Get(opts ...LoadBalancerOpt) (*libovsdb.LoadBalancer, error) {
+func (imp *lbImp) Get(opts ...LoadBalancerOpt) (*LoadBalancer, error) {
 	optRow := newRow()
 
 	if len(opts) == 0 {
@@ -253,7 +257,7 @@ func (imp *lbImp) Get(opts ...LoadBalancerOpt) (*libovsdb.LoadBalancer, error) {
 		row["name"] = name
 	}
 
-	var lb *libovsdb.LoadBalancer
+	var lb *LoadBalancer
 	if err := imp.odbi.getRow(tableLoadBalancer, row, &lb); err != nil {
 		return nil, err
 	}
@@ -261,7 +265,7 @@ func (imp *lbImp) Get(opts ...LoadBalancerOpt) (*libovsdb.LoadBalancer, error) {
 	return lb, nil
 }
 
-func (imp *lbImp) List() ([]*libovsdb.LoadBalancer, error) {
+func (imp *lbImp) List() ([]*LoadBalancer, error) {
 	return nil, nil
 }
 
@@ -304,7 +308,7 @@ func (imp *lbImp) Set(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 	if uuid, ok := optRow["uuid"]; ok {
 		lbUUID = uuid.(string)
 	} else {
-		var lb *libovsdb.LoadBalancer
+		var lb *LoadBalancer
 		if err := imp.odbi.getRowByName(tableLoadBalancer, optRow["name"].(string), &lb); err != nil {
 			return nil, err
 		}

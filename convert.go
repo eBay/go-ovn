@@ -3,33 +3,9 @@ package goovn
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/ebay/libovsdb"
 )
-
-func structToMap(iface interface{}) (map[string]interface{}, error) {
-	out := make(map[string]interface{})
-
-	v := reflect.ValueOf(iface)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	// we only accept structs
-	if v.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("structToMap only accepts structs; got %T", v)
-	}
-
-	typ := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		// gets us a StructField
-		fi := typ.Field(i)
-		if tagv := fi.Tag.Get("ovn"); len(tagv) > 0 {
-			// set key of map to value in struct field
-			out[tagv] = v.Field(i).Interface()
-		}
-	}
-
-	return out, nil
-}
 
 func cmpRows(crow map[string]interface{}, lrow map[string]interface{}) bool {
 	var found bool
@@ -74,4 +50,58 @@ func cmpRows(crow map[string]interface{}, lrow map[string]interface{}) bool {
 	}
 
 	return found
+}
+
+func rowUpdateToStruct(table string, uuid string, raw interface{}) (interface{}, error) {
+	var row interface{}
+	switch table {
+	case "NB_Global":
+		row = &NBGlobal{UUID: uuid}
+	case "ACL":
+		row = &ACL{UUID: uuid}
+	case "Logical_Switch":
+		row = &LogicalSwitch{UUID: uuid}
+	case "Address_Set":
+		row = &AddressSet{UUID: uuid}
+	case "Port_Group":
+		row = &PortGroup{UUID: uuid}
+	case "Load_Balancer":
+		row = &LoadBalancer{UUID: uuid}
+	case "Logical_Router":
+		row = &LogicalRouter{UUID: uuid}
+	case "QoS":
+		row = &QoS{UUID: uuid}
+	case "Meter":
+		row = &Meter{UUID: uuid}
+	case "Meter_Band":
+		row = &MeterBand{UUID: uuid}
+	case "Logical_Router_Port":
+		row = &LogicalRouterPort{UUID: uuid}
+	case "Logical_Router_Static_Router":
+		row = &LogicalRouterStaticRoute{UUID: uuid}
+	case "NAT":
+		row = &NAT{UUID: uuid}
+	case "DHCP_Options":
+		row = &DHCPOptions{UUID: uuid}
+	case "Connection":
+		row = &Connection{UUID: uuid}
+	case "DNS":
+		row = &DNS{UUID: uuid}
+	case "SSL":
+		row = &SSL{UUID: uuid}
+	case "Gateway_Chassis":
+		row = &GatewayChassis{UUID: uuid}
+	default:
+		return nil, fmt.Errorf("unsupported table %v update: %v", table, raw)
+	}
+
+	mp, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unsupported data %v", raw)
+	}
+	if err := libovsdb.MapToStruct(mp, "ovn", row); err != nil {
+		return nil, err
+	}
+
+	return row, nil
 }

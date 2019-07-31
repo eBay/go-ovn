@@ -25,8 +25,9 @@ import (
 // Client ovnnb client
 type Client struct {
 	ovndb         *ovndb
-	LogicalSwitch LogicalSwitch
-	LoadBalancer  LoadBalancer
+	LogicalSwitch *lsImp
+	LoadBalancer  *lbImp
+	ACL           *aclImp
 }
 
 type ovndb struct {
@@ -73,6 +74,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		ovndb:         odbi,
 		LogicalSwitch: &lsImp{odbi: odbi},
 		LoadBalancer:  &lbImp{odbi: odbi},
+		ACL:           &aclImp{odbi: odbi},
 	}
 
 	return cli, nil

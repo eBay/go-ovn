@@ -41,8 +41,8 @@ const (
 	defaultClientCACert  = "/etc/openvswitch/client_ca_cert.pem"
 	defaultClientPrivKey = "/etc/openvswitch/ovnnb-privkey.pem"
 	SKIP_TLS_VERIFY      = true
-	SSL                  = "ssl"
-	UNIX                 = "unix"
+	ProtoSSL             = "ssl"
+	ProtoUNIX            = "unix"
 )
 
 var ovndbapi *Client
@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 	}
 	var ovn_nb_db = os.Getenv("OVN_NB_DB")
 	if ovn_nb_db == "" {
-		cfg.Addr = UNIX + ":" + ovs_rundir + "/" + OVNNB_SOCKET
+		cfg.Addr = ProtoUNIX + ":" + ovs_rundir + "/" + OVNNB_SOCKET
 		api, err = NewClient(cfg)
 		if err != nil {
 			log.Fatal(err)
@@ -69,7 +69,7 @@ func TestMain(m *testing.M) {
 			log.Fatal("Unexpected format of $OVN_NB_DB")
 		}
 		if len(strs) == 2 {
-			cfg.Addr = UNIX + ":" + ovs_rundir + "/" + strs[1]
+			cfg.Addr = ProtoUNIX + ":" + ovs_rundir + "/" + strs[1]
 			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
@@ -77,7 +77,7 @@ func TestMain(m *testing.M) {
 		} else {
 			port, _ := strconv.Atoi(strs[2])
 			protocol := strs[0]
-			if protocol == SSL {
+			if protocol == ProtoSSL {
 				clientCACert := os.Getenv("CLIENT_CERT_CA_CERT")
 				if clientCACert == "" {
 					clientCACert = defaultClientCACert
