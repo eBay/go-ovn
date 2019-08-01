@@ -27,6 +27,7 @@ type Client struct {
 	ovndb         *ovndb
 	LogicalSwitch *lsImp
 	LoadBalancer  *lbImp
+	LogicalRouter *lrImp
 	ACL           *aclImp
 }
 
@@ -74,6 +75,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		ovndb:         odbi,
 		LogicalSwitch: &lsImp{odbi: odbi},
 		LoadBalancer:  &lbImp{odbi: odbi},
+		LogicalRouter: &lrImp{odbi: odbi},
 		ACL:           &aclImp{odbi: odbi},
 	}
 

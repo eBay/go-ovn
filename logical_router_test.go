@@ -2,22 +2,54 @@ package goovn
 
 import "testing"
 
-func TestLogicalRouter(t *testing.T) {
-	var cmds []*OvnCommand
-	var cmd *OvnCommand
-	var err error
+var (
+	lrTestLR string
+)
 
-	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.LRAdd(LR, nil)
+func TestLogicalRouterAdd(t *testing.T) {
+	lrUUID := newUUID(t)
+
+	lrTestLR = "test" + lrUUID
+	cmd, err := ovndbapi.LogicalRouter.Add(LogicalRouterName(lrTestLR))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmds = append(cmds, cmd)
-	err = ovndbapi.Execute(cmds...)
+	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
 	}
+}
 
+func TestLogicalRouterGet(t *testing.T) {
+	lr, err := ovndbapi.LogicalRouter.Get(LogicalRouterName(lrTestLR))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lr.Name != lrTestLR {
+		t.Fatal("test lr not found")
+	}
+}
+
+func TestLogicalRouterDel(t *testing.T) {
+	cmd, err := ovndbapi.LogicalRouter.Del(LogicalRouterName(lrTestLR))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lr, err := ovndbapi.LogicalRouter.Get(LogicalRouterName(lrTestLR))
+	if err != nil && err != ErrorNotFound {
+		t.Fatal(err)
+	}
+
+	if lr != nil {
+		t.Fatal("test lr not found")
+	}
+}
+
+/*
 	lrs, err := ovndbapi.LRList()
 	if err != nil {
 		t.Fatal(err)
@@ -127,3 +159,4 @@ func TestLogicalRouter(t *testing.T) {
 	}
 
 }
+*/

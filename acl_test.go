@@ -23,7 +23,6 @@ import (
 )
 
 var (
-	//aclTestLS    string = "test79d7d5f7-9c67-40d0-9b39-18b2974a327c"
 	aclTestLS    string
 	aclTestMatch = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 )
