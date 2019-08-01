@@ -17,15 +17,15 @@
 package goovn
 
 import (
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	aclTestLS    string = "testeb3109af-eb44-4b0b-b7a4-dcf439f21a33"
-	aclTestMatch        = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
+	//aclTestLS    string = "test79d7d5f7-9c67-40d0-9b39-18b2974a327c"
+	aclTestLS    string
+	aclTestMatch = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 )
 
 func TestACLAdd(t *testing.T) {
@@ -111,21 +111,17 @@ func TestACLDel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Printf("EEE %#+v\n", ls)
-	acls, err := ovndbapi.ACL.List(ACLEntityName(aclTestLS))
+
+	if len(ls.ACLs) != 0 {
+		t.Fatal("acl not deleted")
+	}
+
+	cmd, err = ovndbapi.LogicalSwitch.Del(LogicalSwitchName(aclTestLS))
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, true, len(acls) == 0, "fail remove %v", acls[0])
-
-	/*
-		cmd, err = ovndbapi.LogicalSwitch.Del(LogicalSwitchName(aclTestLS))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-	*/
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

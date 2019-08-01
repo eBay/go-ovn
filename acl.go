@@ -380,29 +380,23 @@ forLoop:
 		}
 	}
 
-	aclCondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(aclUUID))
+	// TODO fix deleting multiple acls
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(aclUUID))
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
 		Table: tableACL,
-		Where: aclCondition,
+		Where: []interface{}{condition},
 	}
 
-	// TODO extend this to support delete multiple acls
-	mutateUUID := []libovsdb.UUID{stringToGoUUID(aclUUID)}
-	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
-	if err != nil {
-		return nil, err
-	}
-
-	mutation := libovsdb.NewMutation("acls", opDelete, mutateSet)
-	lsCondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(ls.UUID))
+	mutation := libovsdb.NewMutation("acls", opDelete, stringToGoUUID(aclUUID))
+	condition = libovsdb.NewCondition("_uuid", "==", stringToGoUUID(ls.UUID))
 
 	// Simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
 		Table:     tableLogicalSwitch,
 		Mutations: []interface{}{mutation},
-		Where:     []interface{}{lsCondition},
+		Where:     []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{mutateOp, deleteOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil

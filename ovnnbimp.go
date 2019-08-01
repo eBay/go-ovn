@@ -214,7 +214,6 @@ func (odbi *ovndb) getRows(table string, lrow OVNRow, ifaces interface{}) error 
 		}
 		return nil
 	}
-
 	// direct lookup by uuid if it specified
 	if uuid, ok := lrow["uuid"]; ok {
 		if iface, ok := cacheTable[uuid.(string)]; ok {
