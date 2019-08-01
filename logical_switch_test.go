@@ -51,6 +51,7 @@ func TestLogicalSwitchList(t *testing.T) {
 	for _, ls := range lsList {
 		if ls.Name == lsTestLS {
 			found = true
+			break
 		}
 	}
 
@@ -147,6 +148,7 @@ func TestLogicalSwitchLBList(t *testing.T) {
 	for _, lb := range lbList {
 		if lb.Name == lsTestLB {
 			found = true
+			break
 		}
 	}
 
@@ -226,6 +228,7 @@ func TestLogicalSwitchDel(t *testing.T) {
 	for _, ls := range lsList {
 		if ls.Name == lsTestLS {
 			found = true
+			break
 		}
 	}
 

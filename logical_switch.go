@@ -197,8 +197,6 @@ func (imp *lsImp) List() ([]*LogicalSwitch, error) {
 }
 
 func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, error) {
-	var operations []libovsdb.Operation
-
 	optLSRow := newRow()
 	if err := ls(optLSRow); err != nil {
 		return nil, err
@@ -252,13 +250,11 @@ func (imp *lsImp) LBAdd(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
-	operations = append(operations, mutateOp)
+	operations := []libovsdb.Operation{mutateOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
 func (imp *lsImp) LBDel(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, error) {
-	var operations []libovsdb.Operation
-
 	optLSRow := newRow()
 	if err := ls(optLSRow); err != nil {
 		return nil, err
@@ -322,7 +318,7 @@ func (imp *lsImp) LBDel(ls LogicalSwitchOpt, lb LoadBalancerOpt) (*OvnCommand, e
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
-	operations = append(operations, mutateOp)
+	operations := []libovsdb.Operation{mutateOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
@@ -364,8 +360,6 @@ func (imp *lsImp) LBList(opt LogicalSwitchOpt) ([]*LoadBalancer, error) {
 }
 
 func (imp *lsImp) SetExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
-	var operations []libovsdb.Operation
-
 	optLSRow := newRow()
 
 	if len(opts) == 0 {
@@ -411,13 +405,11 @@ func (imp *lsImp) SetExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) 
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
-	operations = append(operations, mutateOp)
+	operations := []libovsdb.Operation{mutateOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
 func (imp *lsImp) DelExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) {
-	var operations []libovsdb.Operation
-
 	optLSRow := newRow()
 
 	if len(opts) == 0 {
@@ -463,6 +455,6 @@ func (imp *lsImp) DelExternalIDs(opts ...LogicalSwitchOpt) (*OvnCommand, error) 
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
-	operations = append(operations, mutateOp)
+	operations := []libovsdb.Operation{mutateOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }

@@ -112,7 +112,6 @@ func (imp *lbImp) Add(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 		return nil, ErrorOption
 	}
 
-	var operations []libovsdb.Operation
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -144,7 +143,7 @@ func (imp *lbImp) Add(opts ...LoadBalancerOpt) (*OvnCommand, error) {
 		Row:      row,
 		UUIDName: namedUUID,
 	}
-	operations = append(operations, insertOp)
+	operations := []libovsdb.Operation{insertOp}
 	return &OvnCommand{operations, imp.odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
