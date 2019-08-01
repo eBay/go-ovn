@@ -16,15 +16,16 @@
 package goovn
 
 import (
-	"github.com/ebay/libovsdb"
 	"math"
 	"strings"
+
+	"github.com/ebay/libovsdb"
 )
 
 type Meter struct {
 	UUID        string
 	Name        string                      `json:"name"`
-	Uint        string                      `json:"uint"`
+	Unit        string                      `json:"unit"`
 	Bands       []string                    `json:"bands"`
 	ExternalIds map[interface{}]interface{} `json:"external_ids"`
 }
@@ -59,7 +60,7 @@ func (odbi *ovndb) rowToMeter(uuid string) *Meter {
 	meter := &Meter{
 		UUID:        uuid,
 		Name:        cacheMeter.Fields["name"].(string),
-		Uint:        cacheMeter.Fields["unit"].(string),
+		Unit:        cacheMeter.Fields["unit"].(string),
 		Bands:       []string{cacheMeter.Fields["bands"].(libovsdb.UUID).GoUUID},
 		ExternalIds: cacheMeter.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
@@ -120,7 +121,7 @@ func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, exter
 		return nil, ErrorExist
 	}
 
-	mRow["bands"] = libovsdb.UUID{GoUUID:MeterBandUUID}
+	mRow["bands"] = libovsdb.UUID{GoUUID: MeterBandUUID}
 
 	switch unit {
 	case "kbps", "pktps":
@@ -178,12 +179,12 @@ func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, exter
 meter-del [name]
 Deletes meters. By default, all meters are deleted. If  name  is
 supplied, only the meter with that name will be deleted.
- */
+*/
 func (odbi *ovndb) meterDelImp(name ...string) (*OvnCommand, error) {
 	var operations []libovsdb.Operation
 	var err error
 
-	switch len(name){
+	switch len(name) {
 	case 0:
 		for uuid := range odbi.cache[tableMeter] {
 			name := odbi.cache[tableMeter][uuid].Fields["name"].(string)
@@ -198,7 +199,7 @@ func (odbi *ovndb) meterDelImp(name ...string) (*OvnCommand, error) {
 			return nil, err
 		}
 	default:
-		return nil,ErrorOption
+		return nil, ErrorOption
 	}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 
@@ -230,12 +231,12 @@ func (odbi *ovndb) meterBandsListImp() ([]*MeterBand, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-	for uuid :=range cacheMeterBands{
-		meterBand,err := odbi.rowToMeterBand(uuid)
-		if err !=nil{
+	for uuid := range cacheMeterBands {
+		meterBand, err := odbi.rowToMeterBand(uuid)
+		if err != nil {
 			return nil, ErrorNotFound
 		}
-		ListMeterBands = append(ListMeterBands,meterBand)
+		ListMeterBands = append(ListMeterBands, meterBand)
 	}
 	return ListMeterBands, nil
 }
