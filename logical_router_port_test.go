@@ -2,13 +2,15 @@ package goovn
 
 import "testing"
 
+const LR4 = "lr4"
+
 func TestLogicalRouterPort(t *testing.T) {
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
 
 	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.LRAdd(LR, nil)
+	cmd, err = ovndbapi.LRAdd(LR4, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,12 +24,12 @@ func TestLogicalRouterPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lrs) != 1 {
+	if len(lrs) == 0 {
 		t.Fatalf("lr not created %v", lrs)
 	}
 
 	// lr string, lrp string, mac string, network []string, peer string
-	cmd, err = ovndbapi.LRPAdd(LR, LRP, "54:54:54:54:54:54", []string{"192.168.0.1/24"}, "lrp2", nil)
+	cmd, err = ovndbapi.LRPAdd(LR4, LRP, "54:54:54:54:54:54", []string{"192.168.0.1/24"}, "lrp2", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +38,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrps, err := ovndbapi.LRPList(LR)
+	lrps, err := ovndbapi.LRPList(LR4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +47,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatalf("lrp not created %v", lrps)
 	}
 
-	cmd, err = ovndbapi.LRPDel(LR, LRP)
+	cmd, err = ovndbapi.LRPDel(LR4, LRP)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +56,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lrps, err = ovndbapi.LRPList(LR)
+	lrps, err = ovndbapi.LRPList(LR4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +64,7 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Fatalf("lrp not created %v", lrps)
 	}
 
-	cmd, err = ovndbapi.LRDel(LR)
+	cmd, err = ovndbapi.LRDel(LR4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,8 +77,15 @@ func TestLogicalRouterPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lrs) != 0 {
-		t.Fatalf("lr not deleted %v", lrs)
+	if len(lrs) > 0 {
+		for _, lr := range lrs {
+			if lr.Name == LR4 {
+				t.Fatalf("lr not deleted %v", LR4)
+				break
+			}
+		}
+	} else {
+		t.Logf("Successfully deleted router %s", LR4)
 	}
 
 }

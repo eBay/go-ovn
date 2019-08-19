@@ -71,11 +71,12 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws, err := ovndbapi.LSList()
+	lsws, err := ovndbapi.LSGet(LSW)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lsws) != 1 {
+
+	if len(lsws) == 0 {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 

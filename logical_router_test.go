@@ -1,6 +1,11 @@
 package goovn
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+const LB4 = "lb4"
 
 func TestLogicalRouter(t *testing.T) {
 	var cmds []*OvnCommand
@@ -22,7 +27,7 @@ func TestLogicalRouter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lrs) != 1 {
+	if len(lrs) == 0 {
 		t.Fatalf("lr not created %v", lrs)
 	}
 
@@ -39,9 +44,17 @@ func TestLogicalRouter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lrs) != 0 {
-		t.Fatalf("lr not deleted %v", lrs)
+	if len(lrs) > 0 {
+		for _, lr := range lrs {
+			if lr.Name == LR {
+				t.Fatalf("lr not deleted %v", LR)
+				break
+			}
+		}
+	} else {
+		t.Logf("Successfully deleted router %s", LR)
 	}
+
 
 	cmd, err = ovndbapi.LRAdd(LR, nil)
 	if err != nil {
@@ -52,7 +65,7 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd, err = ovndbapi.LBAdd(LB2, "192.168.0.20:80", "tcp", []string{"10.0.0.21:80", "10.0.0.22:80"})
+	cmd, err = ovndbapi.LBAdd(LB4, "192.168.0.20:80", "tcp", []string{"10.0.0.21:80", "10.0.0.22:80"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +74,7 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd, err = ovndbapi.LRLBAdd(LR, LB2)
+	cmd, err = ovndbapi.LRLBAdd(LR, LB4)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,15 +120,41 @@ func TestLogicalRouter(t *testing.T) {
 			t.Fatal("Get StaticRouter Fail")
 		}
 	}
-
-	cmd, err = ovndbapi.LBDel(LB2)
+	// Delete LB from router
+	t.Logf("Delete LB from LRouter %s", LR)
+	cmd, err = ovndbapi.LRLBDel(LR, LB4)
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
+		t.Fatalf("Deleting LB lb2 from LRouter failed with err %v", err)
+	}
+	t.Logf("Deleting LB lb2 to LRouter %s Done", LR)
+	// verify lb delete from lr
+	lbs, err := ovndbapi.LRLBList(LB4)
+	if err != nil {
 		t.Fatal(err)
 	}
+	assert.Equal(t, true, len(lbs) == 0, "Deleted lb from lr")
+	//Delete LB
+	cmd, err = ovndbapi.LBDel(LB4)
+	if err != nil && err != ErrorNotFound {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatalf("err executing command:%v", err)
+	}
+	// Verify deletion
+	lb, err := ovndbapi.LBGet(LB4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lb) != 0 {
+		t.Fatalf("error: lb deletion not done, total:%v", len(lb))
+	}
+	t.Logf("LB lb4 deleted")
 
 	cmd, err = ovndbapi.LRDel(LR)
 	if err != nil {

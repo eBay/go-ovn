@@ -20,11 +20,13 @@ import (
 	"testing"
 )
 
+const LSW3 = "TEST_LSW3"
+
 func TestQoS(t *testing.T) {
 	var cmd *OvnCommand
 	var err error
 
-	cmd, err = ovndbapi.LSAdd(LSW)
+	cmd, err = ovndbapi.LSAdd(LSW3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +35,7 @@ func TestQoS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd, err = ovndbapi.QoSAdd(LSW, "to-lport", 1001, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	cmd, err = ovndbapi.QoSAdd(LSW3, "to-lport", 1001, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +43,7 @@ func TestQoS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd, err = ovndbapi.QoSAdd(LSW, "from-lport", 1002, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	cmd, err = ovndbapi.QoSAdd(LSW3, "from-lport", 1002, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +51,7 @@ func TestQoS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd, err = ovndbapi.QoSAdd(LSW, "to-lport", 1003, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
+	cmd, err = ovndbapi.QoSAdd(LSW3, "to-lport", 1003, `inport=="lp3"`, nil, map[string]int{"rate": 1234, "burst": 12345}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +60,7 @@ func TestQoS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qosrules, err := ovndbapi.QoSList(LSW)
+	qosrules, err := ovndbapi.QoSList(LSW3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +73,7 @@ func TestQoS(t *testing.T) {
 		}
 	}
 
-	cmd, err = ovndbapi.QoSDel(LSW, "to-lport", -1, "")
+	cmd, err = ovndbapi.QoSDel(LSW3, "to-lport", -1, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +82,7 @@ func TestQoS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qosrules, err = ovndbapi.QoSList(LSW)
+	qosrules, err = ovndbapi.QoSList(LSW3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,14 +97,12 @@ func TestQoS(t *testing.T) {
 		t.Fatalf("invalid qos rule deleted %#+v\n", qosrules[0])
 	}
 
-	/*
-		cmd, err = ovndbapi.LSWDel(LSW)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = ovndbapi.Execute(cmd)
-		if err != nil {
-			t.Fatal(err)
-		}
-	*/
+	cmd, err = ovndbapi.LSDel(LSW3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

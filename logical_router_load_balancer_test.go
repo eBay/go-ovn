@@ -71,11 +71,11 @@ func TestLRLoadBalancer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(lbs) == 0 {
-		t.Fatalf("lbs not created in %s", LSW1)
+		t.Fatalf("lbs not created in %s", LR1)
 	}
 	assert.Equal(t, true, lbs[0].Name == LB2, "Added lb to lr")
 	// Delete LB from router
-	t.Logf("Delete LB to LRouter %s", LR1)
+	t.Logf("Delete LB from LRouter %s", LR1)
 	cmd, err = ovndbapi.LRLBDel(LR1, LB2)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +86,7 @@ func TestLRLoadBalancer(t *testing.T) {
 	}
 	t.Logf("Deleting LB lb2 to LRouter %s Done", LR1)
 	// verify lb delete from lr
-	lbs, err = ovndbapi.LSLBList(LSW1)
+	lbs, err = ovndbapi.LRLBList(LB2)
 	if err != nil {
 		t.Fatal(err)
 	}

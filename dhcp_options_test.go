@@ -23,12 +23,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	LSW2 = "TEST_LSW2"
+	LSP2 = "TEST_LSP"
+)
+
 func TestDHCPOptions(t *testing.T) {
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
 	defer func() {
-		cmd, err = ovndbapi.LSDel(LSW)
+		cmd, err = ovndbapi.LSDel(LSW2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,19 +59,19 @@ func TestDHCPOptions(t *testing.T) {
 		}
 	}()
 	cmds = make([]*OvnCommand, 0)
-	cmd, err = ovndbapi.LSAdd(LSW)
+	cmd, err = ovndbapi.LSAdd(LSW2)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmds = append(cmds, cmd)
 
-	cmd, err = ovndbapi.LSPAdd(LSW, LSP)
+	cmd, err = ovndbapi.LSPAdd(LSW2, LSP2)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmds = append(cmds, cmd)
 
-	cmd, err = ovndbapi.LSPSetPortSecurity(LSP, ADDR)
+	cmd, err = ovndbapi.LSPSetPortSecurity(LSP2, ADDR)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,12 +96,12 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsws, err := ovndbapi.LSList()
+	lsws, err := ovndbapi.LSGet(LSW2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(lsws) != 1 {
+	if len(lsws) == 0 {
 		t.Fatalf("ls not created %d", len(lsws))
 	}
 
@@ -143,7 +148,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal("get single dhcp options fail")
 	}
 
-	cmd, err = ovndbapi.LSPSetDHCPv4Options(LSP, dhcp_opts[0].UUID)
+	cmd, err = ovndbapi.LSPSetDHCPv4Options(LSP2, dhcp_opts[0].UUID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +157,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err := ovndbapi.LSPList(LSW)
+	lsps, err := ovndbapi.LSPList(LSW2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +165,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatalf("lsp not created %d", len(lsps))
 	}
 
-	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP, "test[%s]: %v", "added port", lsps)
+	assert.Equal(t, true, len(lsps) == 1 && lsps[0].Name == LSP2, "test[%s]: %v", "added port", lsps)
 	assert.Equal(t, true, len(lsps) == 1 && lsps[0].DHCPv4Options != "", "test[%s]", "setted dhcpv4_options")
 
 	cmd, err = ovndbapi.DHCPOptionsDel(dhcp_opts[0].UUID)
@@ -181,7 +186,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatalf("dhcp options not deleted %#+v", dhcp_opts[0])
 	}
 
-	cmd, err = ovndbapi.LSPDel(LSP)
+	cmd, err = ovndbapi.LSPDel(LSP2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +195,7 @@ func TestDHCPOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lsps, err = ovndbapi.LSPList(LSW)
+	lsps, err = ovndbapi.LSPList(LSW2)
 	if err != nil {
 		t.Fatal(err)
 	}
