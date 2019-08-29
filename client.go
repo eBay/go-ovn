@@ -148,7 +148,7 @@ type Client interface {
 	// Get NAT List by Logical Router
 	LRNATList(lr string) ([]*NAT, error)
 	// Add Meter with a Meter Band
-	MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst ...int) (*OvnCommand, error)
+	MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst int) (*OvnCommand, error)
 	// Deletes meters
 	MeterDel(name ...string) (*OvnCommand, error)
 	// List Meters
@@ -426,8 +426,8 @@ func (c *ovndb) LRNATList(lr string) ([]*NAT, error) {
 	return c.lrNatListImp(lr)
 }
 
-func (c *ovndb) MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst ...int) (*OvnCommand, error) {
-	return c.meterAddImp(name, action, rate, unit, external_ids, burst...)
+func (c *ovndb) MeterAdd(name, action string, rate int, unit string, external_ids map[string]string, burst int) (*OvnCommand, error) {
+	return c.meterAddImp(name, action, rate, unit, external_ids, burst)
 }
 
 func (c *ovndb) MeterDel(name ...string) (*OvnCommand, error) {

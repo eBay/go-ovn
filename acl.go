@@ -165,28 +165,14 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 	row["action"] = action
 	row["log"] = logflag
 	if logflag {
-		if meter != "" {
-			meterList, _ := odbi.meterListImp()
-			var flag = 0
-			for _, a := range meterList {
-				if meter == a.Name {
-					flag = 1
-				}
-			}
-			if flag == 0 {
-				return nil, ErrorNotFound
-			}
+		ok := odbi.meterFind(meter)
+		if ok {
 			row["meter"] = meter
 		}
-		if severity != "" {
-			switch severity {
-			case "alert", "debug", "info", "notice", "warning":
-				row["severity"] = severity
-			default:
-				return nil, ErrorOption
-			}
+		switch severity {
+		case "alert", "debug", "info", "notice", "warning":
+			row["severity"] = severity
 		}
-
 	}
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,

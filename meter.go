@@ -1,18 +1,3 @@
-/**
- * Copyright (c) 2019 eBay Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
 package goovn
 
 import (
@@ -37,20 +22,6 @@ type MeterBand struct {
 	BurstSize   int                         `json:"burst_size"`
 	ExternalIds map[interface{}]interface{} `json:"external_ids"`
 }
-
-/*
-The unit specifies the unit for the rate argument; valid  values
-are  kbps and pktps for kilobits per second and packets per sec‐
-ond, respectively. The burst option configures the maximum burst
-allowed for the band in kilobits or packets depending on whether
-the unit chosen was kbps or pktps, respectively. If a  burst  is
-not supplied, the switch is free to select some reasonable value
-depending on its configuration.
-
-ovn-nbctl only supports adding a meter with a single  band,  but
-the other commands support meters with multiple bands.
-
-*/
 
 func (odbi *ovndb) rowToMeter(uuid string) *Meter {
 	cacheMeter, ok := odbi.cache[tableMeter][uuid]
@@ -82,25 +53,16 @@ func (odbi *ovndb) rowToMeterBand(uuid string) (*MeterBand, error) {
 	return meterBand, nil
 }
 
-/*
-ovn-nbctl only supports adding a meter with a single  band,  but
-the other commands support meters with multiple bands.
-
-meter-add name action rate unit [burst]
-Adds the specified meter. name must be a unique name to identify
-this  meter.  The  action  argument specifies what should happen
-when this meter is exceeded.
-*/
-func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, external_ids map[string]string, burst ...int) (*OvnCommand, error) {
+func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, external_ids map[string]string, burst int) (*OvnCommand, error) {
 
 	//Names  that  start  with "__" (two underscores) are reserved for
-	//internal use by OVN, so ovn-nbctl does not allow adding them.
+	//internal use by OVN.
 	if strings.HasPrefix(name, "__") {
 		return nil, ErrorOption
 	}
 
 	// The only supported action is drop.
-	// If add with wrong option , libovsdb won't accept but doesn't have any feedback. So add some judgment is necessary.
+	// If add with wrong option , ovsdb-server won't accept but doesn't have any feedback. So add some judgment is necessary.
 	if action != "drop" {
 		return nil, ErrorOption
 	}
@@ -141,12 +103,9 @@ func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, exter
 	}
 	mbRow["rate"] = rate
 
-	if len(burst) != 0 {
-		//burst must be in the range 0...4294967295
-		if burst[0] < 0 || burst[0] > math.MaxInt32 {
-			return nil, ErrorSchema
-		}
-		mbRow["burst_size"] = burst[0]
+	//burst must be in the range 0...4294967295
+	if burst > 0 && burst < math.MaxInt32 {
+		mbRow["burst_size"] = burst
 	}
 
 	if external_ids != nil {
@@ -193,13 +152,13 @@ func (odbi *ovndb) meterDelImp(name ...string) (*OvnCommand, error) {
 				return nil, err
 			}
 		}
-	case 1:
-		operations, err = odbi.singleMeterDel(name[0], operations)
-		if err != nil {
-			return nil, err
-		}
 	default:
-		return nil, ErrorOption
+		for i := 0; i < len(name); i++ {
+			operations, err = odbi.singleMeterDel(name[i], operations)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 
@@ -239,6 +198,18 @@ func (odbi *ovndb) meterBandsListImp() ([]*MeterBand, error) {
 		ListMeterBands = append(ListMeterBands, meterBand)
 	}
 	return ListMeterBands, nil
+}
+
+func (odbi *ovndb) meterFind(name string) bool {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+	row := make(OVNRow)
+	row["name"] = name
+	meterUUID := odbi.getRowUUID(tableMeter, row)
+	if len(meterUUID) == 0 {
+		return false
+	}
+	return true
 }
 
 func (odbi *ovndb) singleMeterDel(name string, operations []libovsdb.Operation) ([]libovsdb.Operation, error) {
