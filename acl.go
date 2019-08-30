@@ -172,6 +172,10 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 		switch severity {
 		case "alert", "debug", "info", "notice", "warning":
 			row["severity"] = severity
+		case "":
+			row["severity"] = "info"
+		default:
+			return nil, ErrorOption
 		}
 	}
 	insertOp := libovsdb.Operation{
