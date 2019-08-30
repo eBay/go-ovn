@@ -62,7 +62,6 @@ func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, exter
 	}
 
 	// The only supported action is drop.
-	// If add with wrong option , ovsdb-server won't accept but doesn't have any feedback. So add some judgment is necessary.
 	if action != "drop" {
 		return nil, ErrorOption
 	}
@@ -98,13 +97,13 @@ func (odbi *ovndb) meterAddImp(name, action string, rate int, unit string, exter
 	mbRow["action"] = action
 
 	//rate must be in the range 1...4294967295
-	if rate < 0 || rate > math.MaxInt32 {
-		return nil, ErrorSchema
+	if rate < 1 || rate > math.MaxInt32 {
+		return nil, ErrorOption
 	}
 	mbRow["rate"] = rate
 
 	//burst must be in the range 0...4294967295
-	if burst > 0 && burst < math.MaxInt32 {
+	if burst >= 0 && burst <= math.MaxInt32 {
 		mbRow["burst_size"] = burst
 	}
 

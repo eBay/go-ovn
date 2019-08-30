@@ -4,19 +4,25 @@ import (
 	"testing"
 )
 
+const (
+	METER1 = "testMeter1"
+	METER2 = "testMeter2"
+	METER3 = "testMeter3"
+)
+
 func TestMeter(t *testing.T) {
 	var cmds []*OvnCommand
-	cmd, err := ovndbapi.MeterAdd("meter1", "drop", 101, "kbps", nil, 300)
+	cmd, err := ovndbapi.MeterAdd(METER1, "drop", 101, "kbps", nil, 300)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmds = append(cmds, cmd)
-	cmd, err = ovndbapi.MeterAdd("meter2", "drop", 101, "kbps", nil, 300)
+	cmd, err = ovndbapi.MeterAdd(METER2, "drop", 101, "kbps", nil, 300)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmds = append(cmds, cmd)
-	cmd, err = ovndbapi.MeterAdd("meter3", "drop", 101, "kbps", nil, 300)
+	cmd, err = ovndbapi.MeterAdd(METER3, "drop", 101, "kbps", nil, 300)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +36,7 @@ func TestMeter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(meter) != 3 {
+	if len(meter) < 3 {
 		t.Fatal("Meter add Fail")
 	}
 
@@ -38,37 +44,43 @@ func TestMeter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(meterBands) != 3 {
+	if len(meterBands) < 3 {
 		t.Fatal("Meter bands shows Fail")
 	}
 
-	cmd, err = ovndbapi.MeterDel("meter1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-	meter, err = ovndbapi.MeterList()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(meter) != 2 {
-		t.Fatal("Delete single Meter Error")
-	}
+	defer func() {
+		cmd, err = ovndbapi.MeterDel()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = ovndbapi.Execute(cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		meter, err = ovndbapi.MeterList()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(meter) != 0 {
+			t.Fatal("Delete All Meter Fail")
+		}
+	}()
 
-	cmd, err = ovndbapi.MeterDel()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-	meter, err = ovndbapi.MeterList()
-	if len(meter) != 0 {
-		t.Fatal("Delete All Meter Fail")
-	}
-
+	defer func() {
+		cmd, err = ovndbapi.MeterDel(METER1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = ovndbapi.Execute(cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		meter, err = ovndbapi.MeterList()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(meter) < 2 {
+			t.Fatal("Delete single Meter Error")
+		}
+	}()
 }
