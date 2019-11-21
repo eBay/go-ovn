@@ -1,7 +1,7 @@
 #!/bin/sh -ex
 
 rm -rf ovs
-git clone --depth 1 https://github.com/openvswitch/ovs.git
+git clone --depth 1 -b branch-2.12 https://github.com/openvswitch/ovs.git
 cd ovs
 ./boot.sh && ./configure --enable-silent-rules
 make -j4
