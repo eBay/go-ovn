@@ -39,6 +39,8 @@ type Client interface {
 
 	// Add logical port PORT on SWITCH
 	LSPAdd(ls string, lsp string) (*OvnCommand, error)
+	// Link logical port to router
+	LSPLinkToRouter(ls string, lsp, lrp string) (*OvnCommand, error)
 	// Delete PORT from its attached switch
 	LSPDel(lsp string) (*OvnCommand, error)
 	// Set addressset per lport
@@ -224,6 +226,10 @@ func (c *ovndb) LSExtIdsDel(ls string, external_ids map[string]string) (*OvnComm
 
 func (c *ovndb) LSPAdd(ls string, lsp string) (*OvnCommand, error) {
 	return c.lspAddImp(ls, lsp)
+}
+
+func (c *ovndb) LSPLinkToRouter(ls string, lsp, lrp string) (*OvnCommand, error) {
+	return c.lspLinkToRouterImp(ls, lsp, lrp)
 }
 
 func (c *ovndb) LSPDel(lsp string) (*OvnCommand, error) {

@@ -73,6 +73,58 @@ func (odbi *ovndb) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+func (odbi *ovndb) lspLinkToRouterImp(lsw, lsp, lrp string) (*OvnCommand, error) {
+	namedUUID, err := newRowUUID()
+	if err != nil {
+		return nil, err
+	}
+	port := make(OVNRow)
+	port["name"] = lsp
+	port["type"] = "router"
+	port["addresses"] = "router"
+
+	if uuid := odbi.getRowUUID(tableLogicalSwitchPort, port); len(uuid) > 0 {
+		return nil, ErrorExist
+	}
+
+	insertOp := libovsdb.Operation{
+		Op:       opInsert,
+		Table:    tableLogicalSwitchPort,
+		Row:      port,
+		UUIDName: namedUUID,
+	}
+
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(namedUUID)}
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	mutation := libovsdb.NewMutation("ports", opInsert, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", lsw)
+
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitch,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+
+	options := make(map[string]string)
+	options["router-port"] = lrp
+	optMap, _ := libovsdb.NewOvsMap(options)
+	// set options
+	setOptionsOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitchPort,
+		Mutations: []interface{}{libovsdb.NewMutation("options", opInsert, optMap)},
+		Where:     []interface{}{libovsdb.NewCondition("name", "==", lsp)},
+	}
+
+	operations := []libovsdb.Operation{insertOp, mutateOp, setOptionsOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 func (odbi *ovndb) lspDelImp(lsp string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = lsp
