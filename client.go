@@ -36,6 +36,8 @@ type Client interface {
 	LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
 	// Del external_ids from logical_switch
 	LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
+	// Link logical switch to router
+	LinkSwitchToRouter(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error)
 
 	// Add logical port PORT on SWITCH
 	LSPAdd(ls string, lsp string) (*OvnCommand, error)
@@ -224,6 +226,10 @@ func (c *ovndb) LSExtIdsDel(ls string, external_ids map[string]string) (*OvnComm
 
 func (c *ovndb) LSPAdd(ls string, lsp string) (*OvnCommand, error) {
 	return c.lspAddImp(ls, lsp)
+}
+
+func (c *ovndb) LinkSwitchToRouter(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error) {
+	return c.linkSwitchToRouterImp(lsw, lsp, lr, lrp, lrpMac, networks, externalIds)
 }
 
 func (c *ovndb) LSPDel(lsp string) (*OvnCommand, error) {

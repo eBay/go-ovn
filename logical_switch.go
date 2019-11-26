@@ -331,3 +331,99 @@ func (odbi *ovndb) lsExtIdsDelImp(ls string, external_ids map[string]string) (*O
 	operations = append(operations, mutateOp)
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
+
+func (odbi *ovndb) linkSwitchToRouterImp(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error) {
+	// validate logical switch
+	row := make(OVNRow)
+	row["name"] = lsw
+	lswUUID := odbi.getRowUUID(tableLogicalSwitch, row)
+	if len(lswUUID) == 0 {
+		return nil, fmt.Errorf("logical switch %s not found", lsw)
+	}
+	// add logical router port
+	strLrpUUID, err := newRowUUID()
+	if err != nil {
+		return nil, err
+	}
+	row = make(OVNRow)
+	row["name"] = lrp
+	row["mac"] = lrpMac
+	// validate
+	if uuid := odbi.getRowUUID(tableLogicalRouterPort, row); len(uuid) > 0 {
+		return nil, fmt.Errorf("logical router port %s already existed", lrp)
+	}
+	networkSet, err := libovsdb.NewOvsSet(networks)
+	if err != nil {
+		return nil, err
+	}
+	row["networks"] = networkSet
+	if externalIds != nil {
+		oMap, err := libovsdb.NewOvsMap(externalIds)
+		if err != nil {
+			return nil, err
+		}
+		row["external_ids"] = oMap
+	}
+	addLrpOp := libovsdb.Operation{
+		Op:       opInsert,
+		Table:    tableLogicalRouterPort,
+		Row:      row,
+		UUIDName: strLrpUUID,
+	}
+
+	// add lrp to lr
+	objLrpUUID := []libovsdb.UUID{stringToGoUUID(strLrpUUID)}
+	lrpSet, err := libovsdb.NewOvsSet(objLrpUUID)
+	if err != nil {
+		return nil, err
+	}
+	lrPortChange := libovsdb.NewMutation("ports", opInsert, lrpSet)
+	lrCondition := libovsdb.NewCondition("name", "==", lr)
+	addLrpToLrOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalRouter,
+		Mutations: []interface{}{lrPortChange},
+		Where:     []interface{}{lrCondition},
+	}
+
+	// add logical switch port
+	strLspUUID, err := newRowUUID()
+	if err != nil {
+		return nil, err
+	}
+	port := make(OVNRow)
+	port["name"] = lsp
+	port["type"] = "router"
+	port["addresses"] = "router"
+	options := make(map[string]string)
+	options["router-port"] = lrp
+	optMap, _ := libovsdb.NewOvsMap(options)
+	port["options"] = optMap
+	if uuid := odbi.getRowUUID(tableLogicalSwitchPort, port); len(uuid) > 0 {
+		return nil, ErrorExist
+	}
+	addLspOp := libovsdb.Operation{
+		Op:       opInsert,
+		Table:    tableLogicalSwitchPort,
+		Row:      port,
+		UUIDName: strLspUUID,
+	}
+
+	// add logical switch port to switch
+	objLspUUID := []libovsdb.UUID{stringToGoUUID(strLspUUID)}
+	lspSet, err := libovsdb.NewOvsSet(objLspUUID)
+	if err != nil {
+		return nil, err
+	}
+	lsPortChange := libovsdb.NewMutation("ports", opInsert, lspSet)
+	lsCondition := libovsdb.NewCondition("name", "==", lsw)
+	addLspToLsOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitch,
+		Mutations: []interface{}{lsPortChange},
+		Where:     []interface{}{lsCondition},
+	}
+
+	operations := []libovsdb.Operation{addLrpOp, addLrpToLrOp, addLspOp, addLspToLsOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
