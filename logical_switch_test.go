@@ -28,6 +28,10 @@ const (
 	DUMMY           = "dummy"
 	FOO             = "foo"
 	BAR             = "bar"
+	LS5             = "LS5"
+	LR5             = "LR5"
+	LSP5            = "ls5-lr5"
+	LRP5            = "lr5-ls5"
 )
 
 func TestLSwitchExtIds(t *testing.T) {
@@ -123,4 +127,55 @@ func TestLSwitchExtIds(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 
+}
+
+func TestLinkSwitchToRouter(t *testing.T) {
+	// create Switch
+	t.Logf("Adding %s to OVN", LS5)
+	cmd, err := ovndbapi.LSAdd(LS5)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	cmd, err = ovndbapi.LRAdd(LR5, nil)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	lrpMac := "12:34:56:78:90:ab"
+	cmd, err = ovndbapi.LinkSwitchToRouter(LS5, LSP5, LR5, LRP5, lrpMac, []string{"10.10.10.0/24"}, nil)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	ports, err := ovndbapi.LRPList(LR5)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	found := false
+	for _, port := range ports {
+		if port.Name == LRP5 {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("logical router port %s wasn't created", LRP5)
+	}
 }
