@@ -178,4 +178,28 @@ func TestLinkSwitchToRouter(t *testing.T) {
 	if !found {
 		t.Fatalf("logical router port %s wasn't created", LRP5)
 	}
+	//Cleanup lswitch
+	t.Logf("Remove %s from OVN", LS5)
+	cmd, err = ovndbapi.LSDel(LS5)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	// Cleanup router
+	t.Logf("Remove %s from OVN", LR5)
+	cmd, err = ovndbapi.LRDel(LR5)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
 }
