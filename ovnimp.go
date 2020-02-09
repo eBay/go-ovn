@@ -36,7 +36,7 @@ var (
 	ErrorExist = errors.New("object exist")
 )
 
-// OVNRow ovnnb row
+// OVNRow ovn nb/sb row
 type OVNRow map[string]interface{}
 
 func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
@@ -139,11 +139,11 @@ func (odbi *ovndb) getRowsMatchingUUID(table, field, uuid string) ([]string, err
 	return uuids, nil
 }
 
-func (odbi *ovndb) transact(ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
+func (odbi *ovndb) transact(db string, ops ...libovsdb.Operation) ([]libovsdb.OperationResult, error) {
 	// Only support one trans at same time now.
 	odbi.tranmutex.Lock()
 	defer odbi.tranmutex.Unlock()
-	reply, err := odbi.client.Transact(dbNB, ops...)
+	reply, err := odbi.client.Transact(db, ops...)
 
 	if err != nil {
 		return reply, err
@@ -170,7 +170,8 @@ func (odbi *ovndb) execute(cmds ...*OvnCommand) error {
 			ops = append(ops, cmd.Operations...)
 		}
 	}
-	_, err := odbi.transact(ops...)
+
+	_, err := odbi.transact(db, ops...)
 	if err != nil {
 		return err
 	}
@@ -240,11 +241,14 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						lb, _ := odbi.rowToLB(uuid)
 						odbi.signalCB.OnLoadBalancerCreate(lb)
 					case tableMeter:
-						meter:=odbi.rowToMeter(uuid)
+						meter := odbi.rowToMeter(uuid)
 						odbi.signalCB.onMeterCreate(meter)
 					case tableMeterBand:
-						band,_ := odbi.rowToMeterBand(uuid)
+						band, _ := odbi.rowToMeterBand(uuid)
 						odbi.signalCB.onMeterBandCreate(band)
+					case tableChassis:
+						chassis, _ := odbi.rowToChassis(uuid)
+						odbi.signalCB.onChassisCreate(chassis)
 					}
 				}
 			} else {
@@ -281,11 +285,14 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 							lb, _ := odbi.rowToLB(uuid)
 							odbi.signalCB.OnLoadBalancerDelete(lb)
 						case tableMeter:
-							meter:=odbi.rowToMeter(uuid)
+							meter := odbi.rowToMeter(uuid)
 							odbi.signalCB.onMeterDelete(meter)
 						case tableMeterBand:
-							band,_ := odbi.rowToMeterBand(uuid)
+							band, _ := odbi.rowToMeterBand(uuid)
 							odbi.signalCB.onMeterBandDelete(band)
+						case tableChassis:
+							chassis, _ := odbi.rowToChassis(uuid)
+							odbi.signalCB.onChassisDelete(chassis)
 						}
 					}(table, uuid)
 				}

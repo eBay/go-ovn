@@ -13,6 +13,10 @@ const (
 )
 
 func TestLogicalRouterStaticRoute(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running lr static route test againts sb db")
+	}
 	cmd, err := ovndbapi.LRAdd(LR2, nil)
 	if err != nil {
 		t.Fatal(err)

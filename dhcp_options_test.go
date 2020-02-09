@@ -29,6 +29,10 @@ const (
 )
 
 func TestDHCPOptions(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running dhcp test againts sb db")
+	}
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error

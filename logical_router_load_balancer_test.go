@@ -28,6 +28,10 @@ const (
 )
 
 func TestLRLoadBalancer(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running lr lb test againts sb db")
+	}
 	// Add LR
 	cmd, err := ovndbapi.LRAdd(LR1, nil)
 	if err != nil {

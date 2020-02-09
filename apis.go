@@ -75,9 +75,12 @@ type OVNSignal interface {
 
 	onMeterBandCreate(band *MeterBand)
 	onMeterBandDelete(band *MeterBand)
+
+	onChassisCreate(ch *Chassis)
+	onChassisDelete(ch *Chassis)
 }
 
-// OVNNotifier ovnnb notifier
+// OVNNotifier ovnnb and ovnsb notifier
 type OVNNotifier interface {
 	Update(context interface{}, tableUpdates libovsdb.TableUpdates)
 	Locked([]interface{})

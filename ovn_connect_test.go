@@ -30,6 +30,7 @@ import (
 const (
 	OVS_RUNDIR           = "/var/run/openvswitch"
 	OVNNB_SOCKET         = "nb1.ovsdb"
+	OVNSB_SOCKET         = "sb1.ovsdb"
 	LR                   = "TEST_LR"
 	LRP                  = "TEST_LRP"
 	LSW                  = "TEST_LSW"
@@ -45,32 +46,50 @@ const (
 	UNIX                 = "unix"
 )
 
-var ovndbapi Client
+var (
+	ovndbapi   Client
+	ovn_db     string
+	ovn_socket string
+)
+
+// Default connect to ovn nb db
+func getOVNDB() (db string) {
+	ovn_db = os.Getenv("OVN_SB_DB")
+	if ovn_db != "" {
+		ovn_socket = OVNSB_SOCKET
+		return dbSB
+	}
+	ovn_db = os.Getenv("OVN_NB_DB")
+	ovn_socket = OVNNB_SOCKET
+	return dbNB
+}
 
 func TestMain(m *testing.M) {
 	var api Client
 	var err error
-
+	db = getOVNDB()
 	cfg := &Config{}
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
 	}
-	var ovn_nb_db = os.Getenv("OVN_NB_DB")
-	if ovn_nb_db == "" {
-		cfg.Addr = UNIX + ":" + ovs_rundir + "/" + OVNNB_SOCKET
-		api, err = NewClient(cfg)
+
+	if ovn_db == "" {
+		cfg.Addr = UNIX + ":" + ovs_rundir + "/" + ovn_socket
+
+		api, err = NewClient(cfg, db)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		strs := strings.Split(ovn_nb_db, ":")
+		strs := strings.Split(ovn_db, ":")
+		fmt.Println(strs)
 		if len(strs) < 2 || len(strs) > 3 {
-			log.Fatal("Unexpected format of $OVN_NB_DB")
+			log.Fatal("Unexpected format of $OVN_NB/SB_DB")
 		}
 		if len(strs) == 2 {
 			cfg.Addr = UNIX + ":" + ovs_rundir + "/" + strs[1]
-			api, err = NewClient(cfg)
+			api, err = NewClient(cfg, db)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -108,7 +127,7 @@ func TestMain(m *testing.M) {
 			}
 
 			cfg.Addr = fmt.Sprintf("%s:%s:%d", strs[0], strs[1], port)
-			api, err = NewClient(cfg)
+			api, err = NewClient(cfg, db)
 			if err != nil {
 				log.Fatal(err)
 			}
