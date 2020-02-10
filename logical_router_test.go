@@ -8,6 +8,10 @@ import (
 const LB4 = "lb4"
 
 func TestLogicalRouter(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running lr test againts sb db")
+	}
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
@@ -54,7 +58,6 @@ func TestLogicalRouter(t *testing.T) {
 	} else {
 		t.Logf("Successfully deleted router %s", LR)
 	}
-
 
 	cmd, err = ovndbapi.LRAdd(LR, nil)
 	if err != nil {

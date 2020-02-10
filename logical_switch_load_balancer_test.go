@@ -28,6 +28,10 @@ const (
 )
 
 func TestLSLoadBalancer(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running ls lb test againts sb db")
+	}
 	// create Switch
 	t.Logf("Adding  %s to OVN", LSW1)
 	cmd, err := ovndbapi.LSAdd(LSW1)

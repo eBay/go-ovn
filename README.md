@@ -17,7 +17,7 @@ It's defined in [RFC 7047](http://tools.ietf.org/html/rfc7047).
 
 ## Why native OVSDB protocol?
 
-There are projects accessing OVN DB based on the ovn-nbctl CLI, which has some
+There are projects accessing OVN DB based on the ovn-nbctl/sbctl CLI, which has some
 problems. Here are the majors ones and how native OVSDB protocol based approach
 solves them:
 

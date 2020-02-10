@@ -17,12 +17,14 @@
 package goovn
 
 import (
-	"sync"
-
 	"github.com/ebay/libovsdb"
+	"sync"
 )
 
-// Client ovnnb client
+var db string
+
+// Client ovnnb/sb client
+// Note: We can create different clients for ovn nb and sb each in future.
 type Client interface {
 	// Get logical switch by name
 	LSGet(ls string) ([]*LogicalSwitch, error)
@@ -160,6 +162,13 @@ type Client interface {
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
 
+	// Add chassis with given name
+	ChassisAdd(name string, hostname string, etype string, ip string) (*OvnCommand, error)
+	// Delete chassis with given name
+	ChassisDel(chName string) (*OvnCommand, error)
+	// Get chassis by hostname
+	ChassisGet(chHostname string) ([]*Chassis, error)
+
 	// Close connection to OVN
 	Close() error
 }
@@ -173,7 +182,7 @@ type ovndb struct {
 	disconnectCB OVNDisconnectedCallback
 }
 
-func NewClient(cfg *Config) (Client, error) {
+func NewClient(cfg *Config, db string) (Client, error) {
 	imp := &ovndb{
 		cache:        make(map[string]map[string]libovsdb.Row),
 		signalCB:     cfg.SignalCB,
@@ -186,7 +195,7 @@ func NewClient(cfg *Config) (Client, error) {
 	}
 	imp.client = c
 
-	initial, err := imp.client.MonitorAll(dbNB, "")
+	initial, err := imp.client.MonitorAll(db, "")
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +211,18 @@ func NewClient(cfg *Config) (Client, error) {
 func (c *ovndb) Close() error {
 	c.client.Disconnect()
 	return nil
+}
+
+func (c *ovndb) ChassisGet(hostname string) ([]*Chassis, error) {
+	return c.chassisGetImp(hostname)
+}
+
+func (c *ovndb) ChassisAdd(name string, hostname string, etype string, ip string) (*OvnCommand, error) {
+	return c.chassisAddImp(name, hostname, etype, ip)
+}
+
+func (c *ovndb) ChassisDel(name string) (*OvnCommand, error) {
+	return c.chassisDelImp(name)
 }
 
 func (c *ovndb) LSAdd(ls string) (*OvnCommand, error) {

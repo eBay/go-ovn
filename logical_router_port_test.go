@@ -5,6 +5,10 @@ import "testing"
 const LR4 = "lr4"
 
 func TestLogicalRouterPort(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running lr port test againts sb db")
+	}
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error

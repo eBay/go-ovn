@@ -61,6 +61,10 @@ func addressSetCmp(asname string, targetvalue []string) bool {
 }
 
 func TestAddressSet(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running addressset test againts sb db")
+	}
 	addressList := []string{"127.0.0.1"}
 	var cmd *OvnCommand
 	var err error

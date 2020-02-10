@@ -23,6 +23,10 @@ import (
 )
 
 func TestACLs(t *testing.T) {
+	db = getOVNDB()
+	if db == dbSB {
+		t.Skip("Skip running acl test against sb db")
+	}
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
