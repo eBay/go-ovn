@@ -17,19 +17,12 @@
 package goovn
 
 import (
+	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 )
 
-const (
-	CHASSIS_HOSTNAME = "fakehost"
-	CHASSIS_NAME     = "fakechassis"
-	IP               = "10.0.0.11"
-)
-
-// can be one or many encap_types similar to chassis-add of sbctl
-var ENCAP_TYPES = []string{"stt", "geneve", "vxlan"}
-
-func TestChassis(t *testing.T) {
+func TestEncaps(t *testing.T) {
 	db = getOVNDB()
 	if db == dbNB {
 		t.Skip("Skip running chassis test against nb db")
@@ -54,9 +47,29 @@ func TestChassis(t *testing.T) {
 		t.Fatalf("err getting chassis, total:%v", len(chassis))
 	}
 	chName := chassis[0].Name
+	ChEnCaps := chassis[0].Encaps
 	t.Logf("Chassis found:%+v", chName)
 
-	t.Logf("Deleting Chassis:%v", chName)
+	// Verify if encaps are created
+	t.Logf("Gettting Encaps by chassis name")
+	encaps, err := ovndbapi.EncapList(CHASSIS_NAME)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(encaps) != 3 {
+		t.Fatalf("err getting encaps, total:%v", len(chassis))
+	}
+
+	assert.Equal(t, true, len(encaps) == 3, "Encaps exist")
+
+	// verify if chassis have the encaps too
+	var encapsUid []string
+	for _, v := range encaps {
+		encapsUid = append(encapsUid, v.UUID)
+	}
+	assert.Equal(t, true, reflect.DeepEqual(encapsUid, ChEnCaps), "Same encaps exists in chassis too")
+
+	t.Logf("Deleting Chassis: %v", chName)
 	ocmd, err = ovndbapi.ChassisDel(chName)
 	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
@@ -68,50 +81,6 @@ func TestChassis(t *testing.T) {
 
 	// Verify deletion
 	chassis, err = ovndbapi.ChassisGet(CHASSIS_HOSTNAME)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(chassis) != 0 {
-		t.Fatalf("error: Chassis deletion not done, total:%v", len(chassis))
-	}
-	t.Logf("Chassis %s deleted", chName)
-
-	t.Logf("Adding Chassis with empty hostname to OVN SB DB")
-	ocmd, err = ovndbapi.ChassisAdd(CHASSIS_NAME, "", ENCAP_TYPES, IP, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(ocmd)
-	if err != nil {
-		t.Fatalf("Adding Chassis with empty hostname failed with err %v", err)
-	}
-	t.Logf("Adding Chassis with empty hostname to OVN Done")
-
-	// verify addition
-	t.Logf("Gettting Chassis by name")
-	chassis, err = ovndbapi.ChassisGet(CHASSIS_NAME)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(chassis) != 1 {
-		t.Fatalf("err getting chassis, total:%v", len(chassis))
-	}
-	chName = chassis[0].Name
-	t.Logf("Chassis found:%+v", chName)
-
-	// delete chassis
-	t.Logf("Deleting Chassis:%v", chName)
-	ocmd, err = ovndbapi.ChassisDel(chName)
-	if err != nil && err != ErrorNotFound {
-		t.Fatal(err)
-	}
-	err = ovndbapi.Execute(ocmd)
-	if err != nil {
-		t.Fatalf("err executing command:%v", err)
-	}
-
-	//verify deletion
-	chassis, err = ovndbapi.ChassisGet(CHASSIS_NAME)
 	if err != nil {
 		t.Fatal(err)
 	}
