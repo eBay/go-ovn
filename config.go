@@ -20,8 +20,9 @@ import (
 	"crypto/tls"
 )
 
-// Config ovnnb client config
+// Config ovn nb and sb db client config
 type Config struct {
+	db           string
 	Addr         string
 	TLSConfig    *tls.Config
 	SignalCB     OVNSignal

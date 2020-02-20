@@ -7,10 +7,7 @@ import (
 const LR3 = "lr3"
 
 func TestNAT(t *testing.T) {
-	db = getOVNDB()
-	if db == dbSB {
-		t.Skip("Skip running meter test againts sb db")
-	}
+	ovndbapi := getOVNClient(dbNB)
 	var cmd *OvnCommand
 	var err error
 	defer func() {

@@ -171,7 +171,7 @@ func (odbi *ovndb) execute(cmds ...*OvnCommand) error {
 		}
 	}
 
-	_, err := odbi.transact(db, ops...)
+	_, err := odbi.transact(odbi.db, ops...)
 	if err != nil {
 		return err
 	}
