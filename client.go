@@ -187,7 +187,7 @@ type ovndb struct {
 }
 
 func NewClient(cfg *Config) (Client, error) {
-	db := cfg.db
+	db := cfg.Db
 	// db string should strictly be OVN_Northbound or OVN_Southbound
 	if db == "" {
 		// default to OVN_Northbound
