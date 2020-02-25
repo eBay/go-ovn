@@ -23,10 +23,7 @@ import (
 const LSW3 = "TEST_LSW3"
 
 func TestQoS(t *testing.T) {
-	db = getOVNDB()
-	if db == dbSB {
-		t.Skip("Skip running qos test againts sb db")
-	}
+	ovndbapi := getOVNClient(dbNB)
 	var cmd *OvnCommand
 	var err error
 

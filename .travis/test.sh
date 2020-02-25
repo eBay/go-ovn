@@ -105,14 +105,12 @@ The backup database file is sandbox/${db}2.db
 }
 
 ovn_start_db nb standalone 1 $srcdir/ovn/ovn-nb.ovsschema
+ovn_start_db sb standalone 1 $srcdir/ovn/ovn-sb.ovsschema
 export GO111MODULE=on
 cd ../
 go get -v ./...
 go test -v
 
-# Run ovn sb db tests
-ovn_start_db sb standalone 1 $srcdir/ovn/ovn-sb.ovsschema
-go test -v
 
 pkill ovsdb-server
 rm -rf ovs

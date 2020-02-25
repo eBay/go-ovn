@@ -35,10 +35,7 @@ const (
 )
 
 func TestLSwitchExtIds(t *testing.T) {
-	db = getOVNDB()
-	if db == dbSB {
-		t.Skip("Skip running ls extid test againts sb db")
-	}
+	ovndbapi := getOVNClient(dbNB)
 	// create Switch
 	t.Logf("Adding  %s to OVN", LS3)
 	cmd, err := ovndbapi.LSAdd(LS3)
@@ -134,9 +131,7 @@ func TestLSwitchExtIds(t *testing.T) {
 }
 
 func TestLinkSwitchToRouter(t *testing.T) {
-	if db == dbSB {
-		t.Skip("Skip running link ls to lr test againts sb db")
-	}
+	ovndbapi := getOVNClient(dbNB)
 	// create Switch
 	t.Logf("Adding %s to OVN", LS5)
 	cmd, err := ovndbapi.LSAdd(LS5)

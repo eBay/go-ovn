@@ -24,7 +24,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"testing"
 )
 
 const (
@@ -47,28 +46,23 @@ const (
 )
 
 var (
-	ovndbapi   Client
 	ovn_db     string
 	ovn_socket string
 )
 
-// Default connect to ovn nb db
-func getOVNDB() (db string) {
-	ovn_db = os.Getenv("OVN_SB_DB")
-	if ovn_db != "" {
-		ovn_socket = OVNSB_SOCKET
-		return dbSB
-	}
-	ovn_db = os.Getenv("OVN_NB_DB")
-	ovn_socket = OVNNB_SOCKET
-	return dbNB
-}
-
-func TestMain(m *testing.M) {
+func getOVNClient(db string) (ovndbapi Client) {
 	var api Client
 	var err error
-	db = getOVNDB()
 	cfg := &Config{}
+	if db == dbNB || db == "" {
+		ovn_db = os.Getenv("OVN_NB_DB")
+		ovn_socket = OVNNB_SOCKET
+	} else {
+		ovn_db = os.Getenv("OVN_SB_DB")
+		ovn_socket = OVNSB_SOCKET
+	}
+
+	cfg.db = db
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR
@@ -77,7 +71,7 @@ func TestMain(m *testing.M) {
 	if ovn_db == "" {
 		cfg.Addr = UNIX + ":" + ovs_rundir + "/" + ovn_socket
 
-		api, err = NewClient(cfg, db)
+		api, err = NewClient(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -89,7 +83,7 @@ func TestMain(m *testing.M) {
 		}
 		if len(strs) == 2 {
 			cfg.Addr = UNIX + ":" + ovs_rundir + "/" + strs[1]
-			api, err = NewClient(cfg, db)
+			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -127,12 +121,11 @@ func TestMain(m *testing.M) {
 			}
 
 			cfg.Addr = fmt.Sprintf("%s:%s:%d", strs[0], strs[1], port)
-			api, err = NewClient(cfg, db)
+			api, err = NewClient(cfg)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
-	ovndbapi = api
-	os.Exit(m.Run())
+	return api
 }

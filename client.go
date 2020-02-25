@@ -17,11 +17,10 @@
 package goovn
 
 import (
+	"fmt"
 	"github.com/ebay/libovsdb"
 	"sync"
 )
-
-var db string
 
 // Client ovnnb/sb client
 // Note: We can create different clients for ovn nb and sb each in future.
@@ -184,13 +183,24 @@ type ovndb struct {
 	tranmutex    sync.Mutex
 	signalCB     OVNSignal
 	disconnectCB OVNDisconnectedCallback
+	db           string
 }
 
-func NewClient(cfg *Config, db string) (Client, error) {
+func NewClient(cfg *Config) (Client, error) {
+	db := cfg.db
+	// db string should strictly be OVN_Northbound or OVN_Southbound
+	if db == "" {
+		// default to OVN_Northbound
+		db = dbNB
+	} else if !(db == dbNB || db == dbSB) {
+		return nil, fmt.Errorf("Valid db names are: %s and %s", dbNB, dbSB)
+	}
+
 	imp := &ovndb{
 		cache:        make(map[string]map[string]libovsdb.Row),
 		signalCB:     cfg.SignalCB,
 		disconnectCB: cfg.DisconnectCB,
+		db:           db,
 	}
 
 	c, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)

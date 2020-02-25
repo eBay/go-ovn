@@ -8,10 +8,7 @@ import (
 const LB4 = "lb4"
 
 func TestLogicalRouter(t *testing.T) {
-	db = getOVNDB()
-	if db == dbSB {
-		t.Skip("Skip running lr test againts sb db")
-	}
+	ovndbapi := getOVNClient(dbNB)
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
