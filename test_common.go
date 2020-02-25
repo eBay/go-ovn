@@ -62,7 +62,7 @@ func getOVNClient(db string) (ovndbapi Client) {
 		ovn_socket = OVNSB_SOCKET
 	}
 
-	cfg.db = db
+	cfg.Db = db
 	var ovs_rundir = os.Getenv("OVS_RUNDIR")
 	if ovs_rundir == "" {
 		ovs_rundir = OVS_RUNDIR

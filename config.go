@@ -22,7 +22,7 @@ import (
 
 // Config ovn nb and sb db client config
 type Config struct {
-	db           string
+	Db           string
 	Addr         string
 	TLSConfig    *tls.Config
 	SignalCB     OVNSignal
