@@ -163,11 +163,15 @@ type Client interface {
 	Execute(cmds ...*OvnCommand) error
 
 	// Add chassis with given name
-	ChassisAdd(name string, hostname string, etype string, ip string) (*OvnCommand, error)
+	ChassisAdd(name string, hostname string, etype []string, ip string, external_ids map[string]string,
+		transport_zones []string, vtep_lswitches []string) (*OvnCommand, error)
 	// Delete chassis with given name
 	ChassisDel(chName string) (*OvnCommand, error)
-	// Get chassis by hostname
-	ChassisGet(chHostname string) ([]*Chassis, error)
+	// Get chassis by hostname or name
+	ChassisGet(chname string) ([]*Chassis, error)
+
+	// Get encaps by chassis name
+	EncapList(chname string) ([]*Encap, error)
 
 	// Close connection to OVN
 	Close() error
@@ -213,12 +217,17 @@ func (c *ovndb) Close() error {
 	return nil
 }
 
-func (c *ovndb) ChassisGet(hostname string) ([]*Chassis, error) {
-	return c.chassisGetImp(hostname)
+func (c *ovndb) EncapList(chname string) ([]*Encap, error) {
+	return c.encapListImp(chname)
 }
 
-func (c *ovndb) ChassisAdd(name string, hostname string, etype string, ip string) (*OvnCommand, error) {
-	return c.chassisAddImp(name, hostname, etype, ip)
+func (c *ovndb) ChassisGet(name string) ([]*Chassis, error) {
+	return c.chassisGetImp(name)
+}
+
+func (c *ovndb) ChassisAdd(name string, hostname string, etype []string, ip string,
+	external_ids map[string]string, transport_zones []string, vtep_lswitches []string) (*OvnCommand, error) {
+	return c.chassisAddImp(name, hostname, etype, ip, external_ids, transport_zones, vtep_lswitches)
 }
 
 func (c *ovndb) ChassisDel(name string) (*OvnCommand, error) {

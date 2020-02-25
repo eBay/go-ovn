@@ -249,6 +249,9 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 					case tableChassis:
 						chassis, _ := odbi.rowToChassis(uuid)
 						odbi.signalCB.onChassisCreate(chassis)
+					case tableEncap:
+						encap, _ := odbi.rowToEncap(uuid)
+						odbi.signalCB.onEncapCreate(encap)
 					}
 				}
 			} else {
@@ -293,6 +296,9 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						case tableChassis:
 							chassis, _ := odbi.rowToChassis(uuid)
 							odbi.signalCB.onChassisDelete(chassis)
+						case tableEncap:
+							encap, _ := odbi.rowToEncap(uuid)
+							odbi.signalCB.onEncapDelete(encap)
 						}
 					}(table, uuid)
 				}

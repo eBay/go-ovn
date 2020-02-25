@@ -76,8 +76,13 @@ type OVNSignal interface {
 	onMeterBandCreate(band *MeterBand)
 	onMeterBandDelete(band *MeterBand)
 
+	// Create/delete chassis from south bound db
 	onChassisCreate(ch *Chassis)
 	onChassisDelete(ch *Chassis)
+
+	// Create/delete encap from south bound db
+	onEncapCreate(ch *Encap)
+	onEncapDelete(ch *Encap)
 }
 
 // OVNNotifier ovnnb and ovnsb notifier
