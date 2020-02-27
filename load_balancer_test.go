@@ -23,7 +23,7 @@ import (
 const LB1 = "lb1"
 
 func TestLoadBalancer(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	t.Logf("Adding LB to OVN")
 	ocmd, err := ovndbapi.LBAdd(LB1, "192.168.0.19:80", "tcp", []string{"10.0.0.11:80", "10.0.0.12:80"})
 	if err != nil {

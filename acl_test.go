@@ -23,7 +23,7 @@ import (
 )
 
 func TestACLs(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error

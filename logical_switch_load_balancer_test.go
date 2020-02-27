@@ -28,7 +28,7 @@ const (
 )
 
 func TestLSLoadBalancer(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	// create Switch
 	t.Logf("Adding  %s to OVN", LSW1)
 	cmd, err := ovndbapi.LSAdd(LSW1)

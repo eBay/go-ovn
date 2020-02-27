@@ -5,7 +5,7 @@ import "testing"
 const LR4 = "lr4"
 
 func TestLogicalRouterPort(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error

@@ -13,7 +13,7 @@ const (
 )
 
 func TestLogicalRouterStaticRoute(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	cmd, err := ovndbapi.LRAdd(LR2, nil)
 	if err != nil {
 		t.Fatal(err)

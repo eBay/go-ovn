@@ -11,7 +11,7 @@ const (
 )
 
 func TestMeter(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmds []*OvnCommand
 	cmd, err := ovndbapi.MeterAdd(METER1, "drop", 101, "kbps", nil, 300)
 	if err != nil {

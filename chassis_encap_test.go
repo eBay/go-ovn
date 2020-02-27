@@ -23,7 +23,7 @@ import (
 )
 
 func TestEncaps(t *testing.T) {
-	ovndbapi := getOVNClient(dbSB)
+	ovndbapi := getOVNClient(DBSB)
 	t.Logf("Adding Chassis to OVN SB DB")
 	ocmd, err := ovndbapi.ChassisAdd(CHASSIS_NAME, CHASSIS_HOSTNAME, ENCAP_TYPES, IP, nil, nil, nil)
 	if err != nil {

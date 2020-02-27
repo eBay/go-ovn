@@ -28,7 +28,7 @@ const (
 )
 
 func TestLRLoadBalancer(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	// Add LR
 	cmd, err := ovndbapi.LRAdd(LR1, nil)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 const LR3 = "lr3"
 
 func TestNAT(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmd *OvnCommand
 	var err error
 	defer func() {
