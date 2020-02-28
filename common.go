@@ -25,8 +25,8 @@ const (
 )
 
 const (
-	dbNB string = "OVN_Northbound"
-	dbSB string = "OVN_Southbound"
+	DBNB string = "OVN_Northbound"
+	DBSB string = "OVN_Southbound"
 )
 
 const (

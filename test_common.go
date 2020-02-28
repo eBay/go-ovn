@@ -54,7 +54,7 @@ func getOVNClient(db string) (ovndbapi Client) {
 	var api Client
 	var err error
 	cfg := &Config{}
-	if db == dbNB || db == "" {
+	if db == DBNB || db == "" {
 		ovn_db = os.Getenv("OVN_NB_DB")
 		ovn_socket = OVNNB_SOCKET
 	} else {

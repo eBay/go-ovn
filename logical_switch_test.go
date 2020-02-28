@@ -35,7 +35,7 @@ const (
 )
 
 func TestLSwitchExtIds(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	// create Switch
 	t.Logf("Adding  %s to OVN", LS3)
 	cmd, err := ovndbapi.LSAdd(LS3)
@@ -131,7 +131,7 @@ func TestLSwitchExtIds(t *testing.T) {
 }
 
 func TestLinkSwitchToRouter(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	// create Switch
 	t.Logf("Adding %s to OVN", LS5)
 	cmd, err := ovndbapi.LSAdd(LS5)

@@ -23,7 +23,7 @@ import (
 const LSW3 = "TEST_LSW3"
 
 func TestQoS(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmd *OvnCommand
 	var err error
 

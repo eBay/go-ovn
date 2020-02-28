@@ -8,7 +8,7 @@ import (
 const LB4 = "lb4"
 
 func TestLogicalRouter(t *testing.T) {
-	ovndbapi := getOVNClient(dbNB)
+	ovndbapi := getOVNClient(DBNB)
 	var cmds []*OvnCommand
 	var cmd *OvnCommand
 	var err error
