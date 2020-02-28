@@ -189,10 +189,12 @@ type ovndb struct {
 func NewClient(cfg *Config) (Client, error) {
 	db := cfg.Db
 	// db string should strictly be OVN_Northbound or OVN_Southbound
-	if db == "" {
-		// default to OVN_Northbound
+	switch db {
+	case DBNB, DBSB:
+		break
+	case "":
 		db = DBNB
-	} else if !(db == DBNB || db == DBSB) {
+	default:
 		return nil, fmt.Errorf("Valid db names are: %s and %s", DBNB, DBSB)
 	}
 
