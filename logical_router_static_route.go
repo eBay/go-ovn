@@ -18,7 +18,6 @@ package goovn
 
 import (
 	"fmt"
-
 	"github.com/ebay/libovsdb"
 )
 
@@ -157,7 +156,7 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-
+	var lrFound bool
 	for _, drows := range cacheLogicalRouter {
 		if rlr, ok := drows.Fields["name"].(string); ok && rlr == lr {
 			staticRoutes := drows.Fields["static_routes"]
@@ -185,8 +184,13 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
+			lrFound = true
 			break
 		}
+	}
+
+	if !lrFound {
+		return nil, ErrorNotFound
 	}
 	return listLRSR, nil
 }

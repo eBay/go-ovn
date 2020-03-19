@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	LR2      = "lr2"
-	IPPREFIX = "10.0.0.1/24"
-	NEXTHOP  = "10.3.0.1"
+	LR2          = "lr2"
+	IPPREFIX     = "10.0.0.1/24"
+	NEXTHOP      = "10.3.0.1"
+	FAKENOROUTER = "fakenorouter"
 )
 
 func TestLogicalRouterStaticRoute(t *testing.T) {
@@ -94,4 +95,9 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("lr not deleted %v", lrs)
 	}
 
+	// verify static route list for non-existing routers
+	lrsr, err = ovndbapi.LRSRList(FAKENOROUTER)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }
