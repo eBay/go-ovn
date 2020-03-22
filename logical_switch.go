@@ -238,7 +238,7 @@ func (odbi *ovndb) lslbListImp(lswitch string) ([]*LoadBalancer, error) {
 	if !ok {
 		return nil, ErrorSchema
 	}
-
+	var lsFound bool
 	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lswitch {
 			lbs := drows.Fields["load_balancer"]
@@ -272,8 +272,12 @@ func (odbi *ovndb) lslbListImp(lswitch string) ([]*LoadBalancer, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
+			lsFound = true
 			break
 		}
+	}
+	if !lsFound {
+		return nil, ErrorNotFound
 	}
 	return listLB, nil
 }

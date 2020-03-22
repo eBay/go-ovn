@@ -41,6 +41,7 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 	}
 
 	var encaps []*Encap
+	var chFound bool
 	for _, drows := range cacheChassis {
 		if ch, ok := drows.Fields["name"].(string); ok && ch == chassisName {
 			if enc, ok := drows.Fields["encaps"]; ok {
@@ -71,7 +72,12 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 					}
 				}
 			}
+			chFound = true
+			break
 		}
+	}
+	if !chFound {
+		return nil, ErrorNotFound
 	}
 	return encaps, nil
 

@@ -182,7 +182,7 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-
+	var lsFound bool
 	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == ls {
 			qosrules := drows.Fields["qos_rules"]
@@ -210,8 +210,12 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
+			lsFound = true
 			break
 		}
+	}
+	if !lsFound {
+		return nil, ErrorNotFound
 	}
 	return listQoS, nil
 }

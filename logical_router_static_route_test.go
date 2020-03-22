@@ -7,10 +7,9 @@ import (
 )
 
 const (
-	LR2          = "lr2"
-	IPPREFIX     = "10.0.0.1/24"
-	NEXTHOP      = "10.3.0.1"
-	FAKENOROUTER = "fakenorouter"
+	LR2      = "lr2"
+	IPPREFIX = "10.0.0.1/24"
+	NEXTHOP  = "10.3.0.1"
 )
 
 func TestLogicalRouterStaticRoute(t *testing.T) {

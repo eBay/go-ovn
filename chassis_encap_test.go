@@ -85,4 +85,10 @@ func TestEncaps(t *testing.T) {
 		t.Fatalf("error: Chassis deletion not done, total:%v", len(chassis))
 	}
 	t.Logf("Chassis %s deleted", chName)
+
+	// verify encap list for non-existing chassis
+	_, err = ovndbapi.EncapList(FAKENOCHASSIS)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

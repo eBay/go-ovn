@@ -43,6 +43,9 @@ const (
 	SKIP_TLS_VERIFY      = true
 	SSL                  = "ssl"
 	UNIX                 = "unix"
+	FAKENOCHASSIS        = "fakenochassis"
+	FAKENOSWITCH         = "fakenoswitch"
+	FAKENOROUTER         = "fakenorouter"
 )
 
 var (
