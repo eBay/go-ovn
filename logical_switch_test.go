@@ -204,4 +204,10 @@ func TestLinkSwitchToRouter(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
+
+	// verify logical port list for non-existing switch
+	_, err = ovndbapi.LSPList(FAKENOSWITCH)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

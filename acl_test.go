@@ -250,4 +250,9 @@ func TestACLs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// verify ACL list for non-existing switch
+	_, err = ovndbapi.ACLList(FAKENOSWITCH)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

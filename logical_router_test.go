@@ -132,7 +132,7 @@ func TestLogicalRouter(t *testing.T) {
 	}
 	t.Logf("Deleting LB lb2 to LRouter %s Done", LR)
 	// verify lb delete from lr
-	lbs, err := ovndbapi.LRLBList(LB4)
+	lbs, err := ovndbapi.LRLBList(LR)
 	if err != nil {
 		t.Fatal(err)
 	}

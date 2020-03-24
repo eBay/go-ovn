@@ -87,7 +87,7 @@ func TestLRLoadBalancer(t *testing.T) {
 	}
 	t.Logf("Deleting LB lb2 to LRouter %s Done", LR1)
 	// verify lb delete from lr
-	lbs, err = ovndbapi.LRLBList(LB2)
+	lbs, err = ovndbapi.LRLBList(LR1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,4 +120,10 @@ func TestLRLoadBalancer(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("Router %s deleted", LR1)
+
+	// verify lb list for non-existing routers
+	_, err = ovndbapi.LRLBList(FAKENOROUTER)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

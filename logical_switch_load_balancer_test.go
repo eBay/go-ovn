@@ -115,4 +115,9 @@ func TestLSLoadBalancer(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 
+	// verify LB list for non-existing switch
+	_, err = ovndbapi.LSLBList(FAKENOSWITCH)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

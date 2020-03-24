@@ -193,6 +193,7 @@ func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 		return nil, ErrorNotFound
 	}
 
+	var lrFound bool
 	for _, drows := range cacheLogicalRouter {
 		if rlr, ok := drows.Fields["name"].(string); ok && rlr == lr {
 			ports := drows.Fields["ports"]
@@ -220,8 +221,12 @@ func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
+			lrFound = true
 			break
 		}
+	}
+	if !lrFound {
+		return nil, ErrorNotFound
 	}
 	return listLRP, nil
 }

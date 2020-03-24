@@ -1,6 +1,9 @@
 package goovn
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 const LR4 = "lr4"
 
@@ -89,4 +92,9 @@ func TestLogicalRouterPort(t *testing.T) {
 		t.Logf("Successfully deleted router %s", LR4)
 	}
 
+	// verify router port list for non-existing routers
+	_, err = ovndbapi.LRPList(FAKENOROUTER)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
+	}
 }

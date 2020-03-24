@@ -17,6 +17,7 @@
 package goovn
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -105,5 +106,11 @@ func TestQoS(t *testing.T) {
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// verify QOS list for non-existing switch
+	_, err = ovndbapi.QoSList(FAKENOSWITCH)
+	if err != nil {
+		assert.EqualError(t, ErrorNotFound, err.Error())
 	}
 }

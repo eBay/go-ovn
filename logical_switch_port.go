@@ -289,7 +289,7 @@ func (odbi *ovndb) lspListImp(lsw string) ([]*LogicalSwitchPort, error) {
 	if !ok {
 		return nil, ErrorSchema
 	}
-
+	var lsFound bool
 	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lsw {
 			ports := drows.Fields["ports"]
@@ -317,8 +317,12 @@ func (odbi *ovndb) lspListImp(lsw string) ([]*LogicalSwitchPort, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
+			lsFound = true
 			break
 		}
+	}
+	if !lsFound {
+		return nil, ErrorNotFound
 	}
 	return listLSP, nil
 }

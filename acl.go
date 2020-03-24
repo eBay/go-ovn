@@ -309,7 +309,7 @@ func (odbi *ovndb) aclListImp(lsw string) ([]*ACL, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-
+	var lsFound bool
 	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == lsw {
 			acls := drows.Fields["acls"]
@@ -331,8 +331,12 @@ func (odbi *ovndb) aclListImp(lsw string) ([]*ACL, error) {
 					}
 				}
 			}
+			lsFound = true
 			break
 		}
+	}
+	if !lsFound {
+		return nil, ErrorNotFound
 	}
 	return listACL, nil
 }
