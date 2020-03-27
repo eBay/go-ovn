@@ -46,10 +46,14 @@ func init() {
 
 func main() {
 
+	// execute a ovnCommand by either of the following two methods :
+	// 1) ovndbapi.Execute(specificCommand)
+	// 2) specificCommand.Execute()
+
 	ocmd, _ := ovndbapi.LSAdd("ls1")
 	ovndbapi.Execute(ocmd)
 	ocmd, _ = ovndbapi.LSPAdd("ls1", "test")
-	ovndbapi.Execute(ocmd)
+	ocmd.Execute()
 	ocmd, _ = ovndbapi.LSPSetAddress("test", "12:34:56:78:90 10.10.10.1")
 	ovndbapi.Execute(ocmd)
 

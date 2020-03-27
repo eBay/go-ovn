@@ -176,6 +176,8 @@ type Client interface {
 	Close() error
 }
 
+var _ Client = &ovndb{}
+
 type ovndb struct {
 	client       *libovsdb.OvsdbClient
 	cache        map[string]map[string]libovsdb.Row
