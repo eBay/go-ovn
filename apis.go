@@ -29,7 +29,7 @@ type OvnCommand struct {
 
 // Execute sends command to ovnnb
 func (ocmd *OvnCommand) Execute() error {
-	return ocmd.Exe.Execute()
+	return ocmd.Exe.Execute(ocmd)
 }
 
 // Execution executes multiple ovnnb commands
