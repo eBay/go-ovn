@@ -277,7 +277,7 @@ func (odbi *ovndb) rowToACL(uuid string) *ACL {
 	case string:
 		severity = cacheACL.Fields["severity"].(string)
 	case libovsdb.OvsSet:
-		for _, a := range cacheACL.Fields["meter"].(libovsdb.OvsSet).GoSet {
+		for _, a := range cacheACL.Fields["severity"].(libovsdb.OvsSet).GoSet {
 			severity = a.(string)
 		}
 	default:
