@@ -18,8 +18,9 @@ package goovn
 
 import (
 	"fmt"
-	"github.com/ebay/libovsdb"
 	"sync"
+
+	"github.com/ebay/libovsdb"
 )
 
 // Client ovnnb/sb client
@@ -40,6 +41,8 @@ type Client interface {
 	// Link logical switch to router
 	LinkSwitchToRouter(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error)
 
+	// Get logical switch port by name
+	LSPGet(lsp string) (*LogicalSwitchPort, error)
 	// Add logical port PORT on SWITCH
 	LSPAdd(ls string, lsp string) (*OvnCommand, error)
 	// Delete PORT from its attached switch
@@ -266,6 +269,10 @@ func (c *ovndb) LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnComm
 
 func (c *ovndb) LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error) {
 	return c.lsExtIdsDelImp(ls, external_ids)
+}
+
+func (c *ovndb) LSPGet(lsp string) (*LogicalSwitchPort, error) {
+	return c.lspGetImp(lsp)
 }
 
 func (c *ovndb) LSPAdd(ls string, lsp string) (*OvnCommand, error) {
