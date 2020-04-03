@@ -128,7 +128,10 @@ type Client interface {
 	LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
 	// Set options in LSP
 	LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error)
-
+	// Set dynamic addresses in LSP
+	LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand, error)
+	// Get dynamic addresses from LSP
+	LSPGetDynamicAddresses(lsp string) (string, error)
 	// Add dhcp options for cidr and provided external_ids
 	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Set dhcp options and set external_ids for specific uuid
@@ -313,6 +316,14 @@ func (c *ovndb) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
 
 func (c *ovndb) LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error) {
 	return c.lspSetOptionsImp(lsp, options)
+}
+
+func (c *ovndb) LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand, error) {
+	return c.lspSetDynamicAddressesImp(lsp, address)
+}
+
+func (c *ovndb) LSPGetDynamicAddresses(lsp string) (string, error) {
+	return c.lspGetDynamicAddressesImp(lsp)
 }
 
 func (c *ovndb) LSLBAdd(ls string, lb string) (*OvnCommand, error) {

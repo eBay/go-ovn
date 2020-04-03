@@ -24,15 +24,16 @@ import (
 
 // LogicalSwitchPort ovnnb item
 type LogicalSwitchPort struct {
-	UUID          string
-	Name          string
-	Type          string
-	Options       map[interface{}]interface{}
-	Addresses     []string
-	PortSecurity  []string
-	DHCPv4Options string
-	DHCPv6Options string
-	ExternalID    map[interface{}]interface{}
+	UUID             string
+	Name             string
+	Type             string
+	Options          map[interface{}]interface{}
+	Addresses        []string
+	DynamicAddresses string
+	PortSecurity     []string
+	DHCPv4Options    string
+	DHCPv6Options    string
+	ExternalID       map[interface{}]interface{}
 }
 
 func (odbi *ovndb) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
@@ -206,6 +207,28 @@ func (odbi *ovndb) lspSetOptionsImp(lsp string, options map[string]string) (*Ovn
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+func (odbi *ovndb) lspSetDynamicAddressesImp(lsp string, address string) (*OvnCommand, error) {
+	row := make(OVNRow)
+	row["dynamic_addresses"] = address
+	condition := libovsdb.NewCondition("name", "==", lsp)
+	updateOp := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: tableLogicalSwitchPort,
+		Row:   row,
+		Where: []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{updateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) lspGetDynamicAddressesImp(lsp string) (string, error) {
+	lp, err := odbi.lspGetImp(lsp)
+	if err != nil {
+		return "", err
+	}
+	return lp.DynamicAddresses, nil
+}
+
 func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	lp := &LogicalSwitchPort{
 		UUID:       uuid,
@@ -255,6 +278,10 @@ func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 
 	if options, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["options"]; ok {
 		lp.Options = options.(libovsdb.OvsMap).GoMap
+	}
+
+	if dynamicAddresses, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["dynamic_addresses"]; ok {
+		lp.DynamicAddresses = dynamicAddresses.(string)
 	}
 
 	return lp
