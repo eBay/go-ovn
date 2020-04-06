@@ -23,11 +23,14 @@ import (
 )
 
 const (
-	PORT_TEST_LS1          = "LogicalSwitch1"
-	PORT_TEST_LSP1         = "LogicalSwitchPort1"
-	PORT_TEST_LSP2         = "LogicalSwitchPort2"
-	PORT_TEST_LSP1DYNADDR1 = "a.b.c.d"
-	PORT_TEST_LSP2DYNADDR2 = ""
+	PORT_TEST_LS1            = "LogicalSwitch1"
+	PORT_TEST_LSP1           = "LogicalSwitchPort1"
+	PORT_TEST_LSP2           = "LogicalSwitchPort2"
+	PORT_TEST_LSP3           = ""
+	PORT_TEST_LSP1DYNADDR1   = "a.b.c.d"
+	PORT_TEST_LSP2DYNADDR2   = ""
+	PORT_TEST_EXT_ID_MAC_KEY = "mac_addr"
+	PORT_TEST_EXT_ID_MAC     = "00:01:02:03:04:05"
 )
 
 func TestLogicalSwitchPortAPI(t *testing.T) {
@@ -119,5 +122,47 @@ func TestLogicalSwitchPortAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, lsp2.DynamicAddresses, PORT_TEST_LSP2DYNADDR2)
+
+	extIds, err := ovndbapi.LSPGetExternalIds(PORT_TEST_LSP1)
+	assert.Equal(t, extIds != nil, true)
+
+	extIds[PORT_TEST_EXT_ID_MAC_KEY] = PORT_TEST_EXT_ID_MAC
+
+	cmd, err = ovndbapi.LSPSetExternalIds(PORT_TEST_LSP1, extIds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	extIdsRet, err := ovndbapi.LSPGetExternalIds(PORT_TEST_LSP1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	extIdMac, ok := extIdsRet[PORT_TEST_EXT_ID_MAC_KEY]
+
+	assert.Equal(t, ok, true)
+	assert.Equal(t, extIdMac, PORT_TEST_EXT_ID_MAC)
+
+	//validate that setting fields on an empty LSP string gives a nil cmd and an error
+	cmd, err = ovndbapi.LSPSetDynamicAddresses(PORT_TEST_LSP3, PORT_TEST_LSP1DYNADDR1)
+	assert.Equal(t, cmd, nil)
+	assert.Equal(t, err == nil, false)
+
+	cmd, err = ovndbapi.LSPSetExternalIds(PORT_TEST_LSP3, extIds)
+	assert.Equal(t, cmd, nil)
+	assert.Equal(t, err == nil, false)
+
+	cmd, err = ovndbapi.LSDel(PORT_TEST_LS1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 }

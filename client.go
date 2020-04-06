@@ -132,6 +132,10 @@ type Client interface {
 	LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand, error)
 	// Get dynamic addresses from LSP
 	LSPGetDynamicAddresses(lsp string) (string, error)
+	// Set external_ids for LSP
+	LSPSetExternalIds(lsp string, external_ids map[string]string) (*OvnCommand, error)
+	// Get external_ids from LSP
+	LSPGetExternalIds(lsp string) (map[string]string, error)
 	// Add dhcp options for cidr and provided external_ids
 	DHCPOptionsAdd(cidr string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
 	// Set dhcp options and set external_ids for specific uuid
@@ -324,6 +328,14 @@ func (c *ovndb) LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand,
 
 func (c *ovndb) LSPGetDynamicAddresses(lsp string) (string, error) {
 	return c.lspGetDynamicAddressesImp(lsp)
+}
+
+func (c *ovndb) LSPSetExternalIds(lsp string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.lspSetExternalIdsImp(lsp, external_ids)
+}
+
+func (c *ovndb) LSPGetExternalIds(lsp string) (map[string]string, error) {
+	return c.lspGetExternalIdsImp(lsp)
 }
 
 func (c *ovndb) LSLBAdd(ls string, lb string) (*OvnCommand, error) {
