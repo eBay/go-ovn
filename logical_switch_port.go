@@ -18,21 +18,23 @@ package goovn
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ebay/libovsdb"
 )
 
 // LogicalSwitchPort ovnnb item
 type LogicalSwitchPort struct {
-	UUID          string
-	Name          string
-	Type          string
-	Options       map[interface{}]interface{}
-	Addresses     []string
-	PortSecurity  []string
-	DHCPv4Options string
-	DHCPv6Options string
-	ExternalID    map[interface{}]interface{}
+	UUID             string
+	Name             string
+	Type             string
+	Options          map[interface{}]interface{}
+	Addresses        []string
+	DynamicAddresses string
+	PortSecurity     []string
+	DHCPv4Options    string
+	DHCPv6Options    string
+	ExternalID       map[interface{}]interface{}
 }
 
 func (odbi *ovndb) lspAddImp(lsw, lsp string) (*OvnCommand, error) {
@@ -206,6 +208,69 @@ func (odbi *ovndb) lspSetOptionsImp(lsp string, options map[string]string) (*Ovn
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+func (odbi *ovndb) lspSetDynamicAddressesImp(lsp string, address string) (*OvnCommand, error) {
+	if len(lsp) == 0 {
+		return nil, fmt.Errorf("LSP name cannot be empty while setting dynamic addresses")
+	}
+
+	row := make(OVNRow)
+	row["dynamic_addresses"] = address
+	condition := libovsdb.NewCondition("name", "==", lsp)
+	updateOp := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: tableLogicalSwitchPort,
+		Row:   row,
+		Where: []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{updateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) lspGetDynamicAddressesImp(lsp string) (string, error) {
+	lp, err := odbi.lspGetImp(lsp)
+	if err != nil {
+		return "", err
+	}
+	return lp.DynamicAddresses, nil
+}
+
+func (odbi *ovndb) lspSetExternalIdsImp(lsp string, external_ids map[string]string) (*OvnCommand, error) {
+	if len(lsp) == 0 {
+		return nil, fmt.Errorf("LSP name cannot be empty while setting external ids")
+	}
+
+	mutatemap, _ := libovsdb.NewOvsMap(external_ids)
+	mutation := libovsdb.NewMutation("external_ids", opInsert, mutatemap)
+	condition := libovsdb.NewCondition("name", "==", lsp)
+
+	// simple mutate operation
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     tableLogicalSwitchPort,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) lspGetExternalIdsImp(lsp string) (map[string]string, error) {
+	lp, err := odbi.lspGetImp(lsp)
+	if err != nil {
+		return nil, err
+	}
+	extIds := make(map[string]string)
+	for k, v := range lp.ExternalID {
+		key, keyOk := k.(string)
+		value, valueOk := v.(string)
+		if !keyOk || !valueOk {
+			continue
+		}
+		extIds[key] = value
+	}
+	return extIds, nil
+}
+
 func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 	lp := &LogicalSwitchPort{
 		UUID:       uuid,
@@ -255,6 +320,18 @@ func (odbi *ovndb) rowToLogicalPort(uuid string) *LogicalSwitchPort {
 
 	if options, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["options"]; ok {
 		lp.Options = options.(libovsdb.OvsMap).GoMap
+	}
+
+	if dynamicAddresses, ok := odbi.cache[tableLogicalSwitchPort][uuid].Fields["dynamic_addresses"]; ok {
+		switch dynamicAddresses.(type) {
+		case string:
+			lp.DynamicAddresses = dynamicAddresses.(string)
+		case libovsdb.OvsSet:
+			lp.DynamicAddresses = strings.Join(odbi.ConvertGoSetToStringArray(dynamicAddresses.(libovsdb.OvsSet)), " ")
+		default:
+			//	glog.V(OVNLOGLEVEL).Info("Unsupport type found in lport dynamic address.")
+		}
+		lp.DynamicAddresses = dynamicAddresses.(string)
 	}
 
 	return lp
