@@ -226,8 +226,10 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.signalCB.OnLogicalSwitchCreate(ls)
 					case tableLogicalSwitchPort:
-						lp := odbi.rowToLogicalPort(uuid)
-						odbi.signalCB.OnLogicalPortCreate(lp)
+						lp, err := odbi.rowToLogicalPort(uuid)
+						if err == nil {
+							odbi.signalCB.OnLogicalPortCreate(lp)
+						}
 					case tableACL:
 						acl := odbi.rowToACL(uuid)
 						odbi.signalCB.OnACLCreate(acl)
@@ -273,8 +275,10 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 							ls := odbi.rowToLogicalSwitch(uuid)
 							odbi.signalCB.OnLogicalSwitchDelete(ls)
 						case tableLogicalSwitchPort:
-							lp := odbi.rowToLogicalPort(uuid)
-							odbi.signalCB.OnLogicalPortDelete(lp)
+							lp, err := odbi.rowToLogicalPort(uuid)
+							if err == nil {
+								odbi.signalCB.OnLogicalPortDelete(lp)
+							}
 						case tableACL:
 							acl := odbi.rowToACL(uuid)
 							odbi.signalCB.OnACLDelete(acl)
