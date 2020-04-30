@@ -128,6 +128,8 @@ type Client interface {
 	LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error)
 	// Set options in LSP
 	LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error)
+	// Get options from LSP
+	LSPGetOptions(lsp string) (map[string]string, error)
 	// Set dynamic addresses in LSP
 	LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand, error)
 	// Get dynamic addresses from LSP
@@ -332,6 +334,10 @@ func (c *ovndb) LSPGetDHCPv6Options(lsp string) (*DHCPOptions, error) {
 
 func (c *ovndb) LSPSetOptions(lsp string, options map[string]string) (*OvnCommand, error) {
 	return c.lspSetOptionsImp(lsp, options)
+}
+
+func (c *ovndb) LSPGetOptions(lsp string) (map[string]string, error) {
+	return c.lspGetOptionsImp(lsp)
 }
 
 func (c *ovndb) LSPSetDynamicAddresses(lsp string, address string) (*OvnCommand, error) {
