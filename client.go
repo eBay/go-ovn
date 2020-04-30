@@ -182,6 +182,18 @@ type Client interface {
 	// Get encaps by chassis name
 	EncapList(chname string) ([]*Encap, error)
 
+	// Set NB_Global table options
+	NBGlobalSetOptions(options map[string]string) (*OvnCommand, error)
+
+	// Get NB_Global table options
+	NBGlobalGetOptions() (map[string]string, error)
+
+	// Set SB_Global table options
+	SBGlobalSetOptions(options map[string]string) (*OvnCommand, error)
+
+	// Get SB_Global table options
+	SBGlobalGetOptions() (map[string]string, error)
+
 	// Close connection to OVN
 	Close() error
 }
@@ -520,4 +532,38 @@ func (c *ovndb) MeterList() ([]*Meter, error) {
 
 func (c *ovndb) MeterBandsList() ([]*MeterBand, error) {
 	return c.meterBandsListImp()
+}
+
+func (c *ovndb) NBGlobalSetOptions(options map[string]string) (*OvnCommand, error) {
+	return c.nbGlobalSetOptionsImp(options)
+}
+
+func (c *ovndb) NBGlobalGetOptions() (map[string]string, error) {
+	return c.nbGlobalGetOptionsImp()
+}
+
+func (c *ovndb) SBGlobalSetOptions(options map[string]string) (*OvnCommand, error) {
+	return c.sbGlobalSetOptionsImp(options)
+}
+
+func (c *ovndb) SBGlobalGetOptions() (map[string]string, error) {
+	return c.sbGlobalGetOptionsImp()
+}
+
+// these functions are helpers for unit-tests, but not part of the API
+
+func (c *ovndb) nbGlobalAdd(options map[string]string) (*OvnCommand, error) {
+	return c.nbGlobalAddImp(options)
+}
+
+func (c *ovndb) nbGlobalDel() (*OvnCommand, error) {
+	return c.nbGlobalDelImp()
+}
+
+func (c *ovndb) sbGlobalAdd(options map[string]string) (*OvnCommand, error) {
+	return c.sbGlobalAddImp(options)
+}
+
+func (c *ovndb) sbGlobalDel() (*OvnCommand, error) {
+	return c.sbGlobalDelImp()
 }

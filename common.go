@@ -51,6 +51,7 @@ const (
 	tableGatewayChassis           string = "Gateway_Chassis"
 	tableChassis                  string = "Chassis"
 	tableEncap                    string = "Encap"
+	tableSBGlobal                 string = "SB_Global"
 )
 
 var tablesOrder = []string{
@@ -75,4 +76,5 @@ var tablesOrder = []string{
 	tableLogicalRouter,
 	tableChassis,
 	tableEncap,
+	tableSBGlobal,
 }
