@@ -210,7 +210,12 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 			odbi.float64_to_int(row.New)
 
 			if !reflect.DeepEqual(row.New, empty) {
+				if reflect.DeepEqual(row.New, odbi.cache[table][uuid]) {
+					// Already existed and unchanged, ignore (this can happen when auto-reconnect)
+					continue
+				}
 				odbi.cache[table][uuid] = row.New
+
 				if odbi.signalCB != nil {
 					switch table {
 					case tableLogicalRouter:
