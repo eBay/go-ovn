@@ -97,8 +97,8 @@ type Client interface {
 
 	// Add LRSR with given ip_prefix on given lr
 	LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
-	// Delete LRSR with given ip_prefix on given lr
-	LRSRDel(lr string, ip_prefix string) (*OvnCommand, error)
+	// Delete LRSR with given ip_prefix, nexthop, policy and outputPort on given lr
+	LRSRDel(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error)
 	// Get all LRSRs by lr
 	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
 
@@ -396,8 +396,8 @@ func (c *ovndb) LRSRAdd(lr string, ip_prefix string, nexthop string, output_port
 	return c.lrsrAddImp(lr, ip_prefix, nexthop, output_port, policy, external_ids)
 }
 
-func (c *ovndb) LRSRDel(lr string, ip_prefix string) (*OvnCommand, error) {
-	return c.lrsrDelImp(lr, ip_prefix)
+func (c *ovndb) LRSRDel(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error) {
+	return c.lrsrDelImp(lr, prefix, nexthop, policy, outputPort)
 }
 
 func (c *ovndb) LRSRList(lr string) ([]*LogicalRouterStaticRoute, error) {

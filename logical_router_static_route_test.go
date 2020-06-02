@@ -12,6 +12,8 @@ const (
 	NEXTHOP  = "10.3.0.1"
 )
 
+var nextHop2 = "10.3.0.2"
+
 func TestLogicalRouterStaticRoute(t *testing.T) {
 	ovndbapi := getOVNClient(DBNB)
 	cmd, err := ovndbapi.LRAdd(LR2, nil)
@@ -42,7 +44,7 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Adding static route to lr2 failed with err %v", err)
 	}
-	t.Logf("Adding static route %s to LRouter %s Done", IPPREFIX, LR2)
+	t.Logf("Adding static route %s via %s to LRouter %s Done", IPPREFIX, NEXTHOP, LR2)
 	// verify static route addition to lr2
 	lrsr, err := ovndbapi.LRSRList(LR2)
 	if err != nil {
@@ -52,9 +54,56 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("Static Route %s not created in %s", IPPREFIX, LR2)
 	}
 	assert.Equal(t, true, lrsr[0].IPPrefix == IPPREFIX, "Added static route to lr2")
+	// add static route IPPREFIX via nextHop2
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, nextHop2, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatalf("Adding static route to lr2 failed with err %v", err)
+	}
+	t.Logf("Adding static route %s via %s to LRouter %s Done", IPPREFIX, nextHop2, LR2)
+	// verify static route addition to lr2 via nexthop2
+	lrsr, err = ovndbapi.LRSRList(LR2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lrsr) < 2 {
+		t.Fatalf("Static Route %s via %s not created in %s", IPPREFIX, nextHop2, LR2)
+	}
+	found := false
+	for _, sr := range lrsr {
+		if sr.Nexthop == nextHop2 && sr.IPPrefix == IPPREFIX {
+			found = true
+		}
+	}
+	assert.Equal(t, true, found, "Added second static route to lr2")
+	// delete static route via nextHop2
+	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, &nextHop2, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatalf("Deleting static route from lr2 via %s failed with err %v", nextHop2, err)
+	}
+	t.Logf("Deleted static route %s via %s from LRouter %s", IPPREFIX, nextHop2, LR2)
+	// verify static route via nexthop2 delete from lr2
+	lrsr, err = ovndbapi.LRSRList(LR2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found = false
+	for _, sr := range lrsr {
+		if sr.Nexthop == nextHop2 && sr.IPPrefix == IPPREFIX {
+			found = true
+		}
+	}
+	assert.Equal(t, false, found, "Deleted second static route from lr2")
 
 	// Delete the static route from lr2
-	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX)
+	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

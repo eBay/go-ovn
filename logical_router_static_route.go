@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"fmt"
+
 	"github.com/ebay/libovsdb"
 )
 
@@ -36,6 +37,7 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 	if err != nil {
 		return nil, err
 	}
+
 	row := make(OVNRow)
 	row["ip_prefix"] = ip_prefix
 	row["nexthop"] = nexthop
@@ -83,10 +85,25 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 
 }
 
-func (odbi *ovndb) lrsrDelImp(lr string, ip_prefix string) (*OvnCommand, error) {
+func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error) {
+	if lr == "" {
+		return nil, fmt.Errorf("lr (logical router name) is required")
+	}
+	if prefix == "" {
+		return nil, fmt.Errorf("prefix is required")
+	}
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
-	row["ip_prefix"] = ip_prefix
+	row["ip_prefix"] = prefix
+	if nexthop != nil {
+		row["nexthop"] = *nexthop
+	}
+	if policy != nil {
+		row["policy"] = []string{*policy}
+	}
+	if outputPort != nil {
+		row["output_port"] = []string{*outputPort}
+	}
 	lrsruuid := odbi.getRowUUID(tableLogicalRouterStaticRoute, row)
 	if len(lrsruuid) == 0 {
 		return nil, ErrorNotFound
