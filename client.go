@@ -20,7 +20,10 @@ import (
 	"fmt"
 	"sync"
 
+	"crypto/tls"
 	"github.com/ebay/libovsdb"
+	"log"
+	"time"
 )
 
 // Client ovnnb/sb client
@@ -210,6 +213,25 @@ type ovndb struct {
 	signalCB     OVNSignal
 	disconnectCB OVNDisconnectedCallback
 	db           string
+	addr         string
+	tlsConfig    *tls.Config
+	reconn       bool
+}
+
+func connect(c *ovndb) error {
+	ovsdb, err := libovsdb.Connect(c.addr, c.tlsConfig)
+	if err != nil {
+		return err
+	}
+	c.client = ovsdb
+	initial, err := ovsdb.MonitorAll(c.db, "")
+	if err != nil {
+		return err
+	}
+	c.populateCache(*initial)
+	notifier := ovnNotifier{c}
+	ovsdb.Register(notifier)
+	return nil
 }
 
 func NewClient(cfg *Config) (Client, error) {
@@ -224,29 +246,44 @@ func NewClient(cfg *Config) (Client, error) {
 		return nil, fmt.Errorf("Valid db names are: %s and %s", DBNB, DBSB)
 	}
 
-	imp := &ovndb{
+	ovndb := &ovndb{
 		cache:        make(map[string]map[string]libovsdb.Row),
 		signalCB:     cfg.SignalCB,
 		disconnectCB: cfg.DisconnectCB,
 		db:           db,
+		addr:         cfg.Addr,
+		tlsConfig:    cfg.TLSConfig,
+		reconn:       cfg.Reconnect,
 	}
 
-	c, err := libovsdb.Connect(cfg.Addr, cfg.TLSConfig)
+	err := connect(ovndb)
 	if err != nil {
 		return nil, err
 	}
-	imp.client = c
+	return ovndb, err
+}
 
-	initial, err := imp.client.MonitorAll(db, "")
-	if err != nil {
-		return nil, err
-	}
-
-	imp.populateCache(*initial)
-	notifier := ovnNotifier{imp}
-	imp.client.Register(notifier)
-
-	return imp, nil
+func (c *ovndb) reconnect() {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		log.Printf("%s disconnected. Reconnecting ... \n", c.addr)
+		retry := 0
+		for range ticker.C {
+			if err := connect(c); err != nil {
+				if retry < 10 {
+					log.Printf("%s reconnect failed (%v). Retry...\n",
+						c.addr, err)
+				} else if retry == 10 {
+					log.Printf("%s reconnect failed (%v). Continue retrying but log will be supressed.\n",
+						c.addr, err)
+				}
+				retry++
+				continue
+			}
+			log.Printf("%s reconnected.\n", c.addr)
+			return
+		}
+	}()
 }
 
 // TODO return proper error

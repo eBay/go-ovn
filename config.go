@@ -26,5 +26,6 @@ type Config struct {
 	Addr         string
 	TLSConfig    *tls.Config
 	SignalCB     OVNSignal
-	DisconnectCB OVNDisconnectedCallback
+	DisconnectCB OVNDisconnectedCallback // Callback that is called when disconnected, if "Reconnect" is false.
+	Reconnect    bool                    // Automatically reconnect when disconnected
 }
