@@ -73,14 +73,16 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("Static Route %s via %s not created in %s", IPPREFIX, nextHop2, LR2)
 	}
 	found := false
+	var secondSr *LogicalRouterStaticRoute
 	for _, sr := range lrsr {
 		if sr.Nexthop == nextHop2 && sr.IPPrefix == IPPREFIX {
 			found = true
+			secondSr = sr
 		}
 	}
 	assert.Equal(t, true, found, "Added second static route to lr2")
 	// delete static route via nextHop2
-	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, &nextHop2, nil, nil)
+	cmd, err = ovndbapi.LRSRDelByUUID(LR2, secondSr.UUID)
 	if err != nil {
 		t.Fatal(err)
 	}

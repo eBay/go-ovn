@@ -21,9 +21,10 @@ import (
 	"sync"
 
 	"crypto/tls"
-	"github.com/ebay/libovsdb"
 	"log"
 	"time"
+
+	"github.com/ebay/libovsdb"
 )
 
 // Client ovnnb/sb client
@@ -102,6 +103,8 @@ type Client interface {
 	LRSRAdd(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error)
 	// Delete LRSR with given ip_prefix, nexthop, policy and outputPort on given lr
 	LRSRDel(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error)
+	// Delete LRSR by uuid given lr
+	LRSRDelByUUID(lr, uuid string) (*OvnCommand, error)
 	// Get all LRSRs by lr
 	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
 
@@ -435,6 +438,10 @@ func (c *ovndb) LRSRAdd(lr string, ip_prefix string, nexthop string, output_port
 
 func (c *ovndb) LRSRDel(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error) {
 	return c.lrsrDelImp(lr, prefix, nexthop, policy, outputPort)
+}
+
+func (c *ovndb) LRSRDelByUUID(lr, uuid string) (*OvnCommand, error) {
+	return c.lrsrDelByUUIDImp(lr, uuid)
 }
 
 func (c *ovndb) LRSRList(lr string) ([]*LogicalRouterStaticRoute, error) {
