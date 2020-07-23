@@ -115,11 +115,7 @@ func (odbi *ovndb) lspDelImp(lsp string) (*OvnCommand, error) {
 
 func (odbi *ovndb) lspSetAddressImp(lsp string, addr ...string) (*OvnCommand, error) {
 	row := make(OVNRow)
-	addresses, err := libovsdb.NewOvsSet(addr)
-	if err != nil {
-		return nil, err
-	}
-	row["addresses"] = addresses
+	row["addresses"] = strings.Join(addr, " ")
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	updateOp := libovsdb.Operation{
 		Op:    opUpdate,
@@ -133,11 +129,7 @@ func (odbi *ovndb) lspSetAddressImp(lsp string, addr ...string) (*OvnCommand, er
 
 func (odbi *ovndb) lspSetPortSecurityImp(lsp string, security ...string) (*OvnCommand, error) {
 	row := make(OVNRow)
-	port_security, err := libovsdb.NewOvsSet(security)
-	if err != nil {
-		return nil, err
-	}
-	row["port_security"] = port_security
+	row["port_security"] = strings.Join(security, " ")
 	condition := libovsdb.NewCondition("name", "==", lsp)
 	updateOp := libovsdb.Operation{
 		Op:    opUpdate,
