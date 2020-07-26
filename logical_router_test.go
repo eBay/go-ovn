@@ -92,7 +92,7 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd, err = ovndbapi.LRSRAdd(LR, IPPREFIX, NEXTHOP, nil, nil, nil)
+	cmd, err = ovndbapi.LRSRAdd(LR, IPPREFIX, NEXTHOP, "", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

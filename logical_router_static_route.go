@@ -27,12 +27,12 @@ type LogicalRouterStaticRoute struct {
 	UUID       string
 	IPPrefix   string
 	Nexthop    string
-	OutputPort []string
-	Policy     []string
+	OutputPort string
+	Policy     string
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, output_port string, policy string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -41,12 +41,16 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 	row := make(OVNRow)
 	row["ip_prefix"] = ip_prefix
 	row["nexthop"] = nexthop
-	if len(output_port) > 0 {
+
+	if output_port != "" {
 		row["output_port"] = output_port
 	}
-	if len(policy) > 0 {
-		row["policies"] = policy
+
+	if policy == "" {
+		policy = "dst-ip"
 	}
+	row["policy"] = policy
+
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
@@ -85,7 +89,7 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 
 }
 
-func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error) {
+func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop string, output_port string, policy string) (*OvnCommand, error) {
 	if lr == "" {
 		return nil, fmt.Errorf("lr (logical router name) is required")
 	}
@@ -95,15 +99,16 @@ func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputP
 	var operations []libovsdb.Operation
 	row := make(OVNRow)
 	row["ip_prefix"] = prefix
-	if nexthop != nil {
-		row["nexthop"] = *nexthop
+	if nexthop != "" {
+		row["nexthop"] = nexthop
 	}
-	if policy != nil {
-		row["policy"] = []string{*policy}
+	if policy != "" {
+		row["policy"] = policy
 	}
-	if outputPort != nil {
-		row["output_port"] = []string{*outputPort}
+	if output_port != "" {
+		row["output_port"] = output_port
 	}
+
 	lrsruuid := odbi.getRowUUID(TableLogicalRouterStaticRoute, row)
 	if len(lrsruuid) == 0 {
 		return nil, ErrorNotFound
@@ -178,17 +183,28 @@ func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStat
 	if policy, ok := cacheLogicalRouterStaticRoute.Fields["policy"]; ok {
 		switch policy.(type) {
 		case libovsdb.UUID:
-			lrsr.Policy = []string{policy.(libovsdb.UUID).GoUUID}
+			lrsr.Policy = policy.(libovsdb.UUID).GoUUID
 		case libovsdb.OvsSet:
-			lrsr.Policy = odbi.ConvertGoSetToStringArray(policy.(libovsdb.OvsSet))
+			policies := odbi.ConvertGoSetToStringArray(policy.(libovsdb.OvsSet))
+			if len(policies) > 0 {
+				lrsr.Policy = policies[0]
+			}
+		case string:
+			lrsr.Policy = policy.(string)
 		}
 	}
+
 	if outputPort, ok := cacheLogicalRouterStaticRoute.Fields["output_port"]; ok {
 		switch outputPort.(type) {
 		case libovsdb.UUID:
-			lrsr.OutputPort = []string{outputPort.(libovsdb.UUID).GoUUID}
+			lrsr.OutputPort = outputPort.(libovsdb.UUID).GoUUID
 		case libovsdb.OvsSet:
-			lrsr.OutputPort = odbi.ConvertGoSetToStringArray(outputPort.(libovsdb.OvsSet))
+			outputPorts := odbi.ConvertGoSetToStringArray(outputPort.(libovsdb.OvsSet))
+			if len(outputPorts) > 0 {
+				lrsr.OutputPort = outputPorts[0]
+			}
+		case string:
+			lrsr.OutputPort = outputPort.(string)
 		}
 	}
 	return lrsr
