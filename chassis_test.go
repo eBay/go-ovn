@@ -26,6 +26,7 @@ const (
 	IP                = "10.0.0.11"
 	CHASSIS2_HOSTNAME = "fakehost2"
 	CHASSIS2_NAME     = "fakechassis2"
+	IP2               = "10.0.0.12"
 )
 
 // can be one or many encap_types similar to chassis-add of sbctl
@@ -44,8 +45,29 @@ func TestChassis(t *testing.T) {
 	}
 	t.Logf("Adding Chassis to OVN Done")
 
+	t.Logf("Adding second Chassis to OVN SB DB")
+	ocmd, err = ovndbapi.ChassisAdd(CHASSIS2_NAME, CHASSIS2_HOSTNAME, ENCAP_TYPES, IP2, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Adding second Chassis to OVN failed with err %v", err)
+	}
+	t.Logf("Adding second Chassis to OVN Done")
+
+	t.Logf("Listing all the Chassis in OVN SB")
+	chassis, err := ovndbapi.ChassisList()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(chassis) != 2 {
+		t.Fatalf("err listing chassis, total:%v", len(chassis))
+	}
+	t.Logf("Two Chassis found: %+v", chassis)
+
 	t.Logf("Gettting Chassis by hostname")
-	chassis, err := ovndbapi.ChassisGet(CHASSIS_HOSTNAME)
+	chassis, err = ovndbapi.ChassisGet(CHASSIS_HOSTNAME)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,13 +78,20 @@ func TestChassis(t *testing.T) {
 	t.Logf("Chassis found:%+v", chName)
 
 	t.Logf("Deleting Chassis:%v", chName)
+	ocmds := make([]*OvnCommand, 0, 2)
 	ocmd, err = ovndbapi.ChassisDel(chName)
 	if err != nil && err != ErrorNotFound {
 		t.Fatal(err)
 	}
-	err = ovndbapi.Execute(ocmd)
+	ocmds = append(ocmds, ocmd)
+	ocmd, err = ovndbapi.ChassisDel(CHASSIS2_NAME)
+	if err != nil && err != ErrorNotFound {
+		t.Fatal(err)
+	}
+	ocmds = append(ocmds, ocmd)
+	err = ovndbapi.Execute(ocmds...)
 	if err != nil {
-		t.Fatalf("err executing command:%v", err)
+		t.Fatalf("err executing commands %v: %v", ocmds, err)
 	}
 
 	// Verify deletion
