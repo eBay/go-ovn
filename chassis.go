@@ -142,8 +142,7 @@ func (odbi *ovndb) chassisGetImp(chassis string) ([]*Chassis, error) {
 				return nil, err
 			}
 			listChassis = append(listChassis, ch)
-		}
-		if chName, ok := drows.Fields["name"].(string); ok && chName == chassis {
+		} else if chName, ok := drows.Fields["name"].(string); ok && chName == chassis {
 			ch, err := odbi.rowToChassis(uuid)
 			if err != nil {
 				return nil, err
