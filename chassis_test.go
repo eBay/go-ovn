@@ -21,9 +21,11 @@ import (
 )
 
 const (
-	CHASSIS_HOSTNAME = "fakehost"
-	CHASSIS_NAME     = "fakechassis"
-	IP               = "10.0.0.11"
+	CHASSIS_HOSTNAME  = "fakehost"
+	CHASSIS_NAME      = "fakechassis"
+	IP                = "10.0.0.11"
+	CHASSIS2_HOSTNAME = "fakehost2"
+	CHASSIS2_NAME     = "fakechassis2"
 )
 
 // can be one or many encap_types similar to chassis-add of sbctl
