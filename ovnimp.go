@@ -210,7 +210,7 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 
-	for _, table := range tablesOrder {
+	for table := range odbi.tableCols {
 		tableUpdate, ok := updates.Updates[table]
 		if !ok {
 			continue
