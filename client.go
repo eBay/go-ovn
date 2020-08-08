@@ -186,6 +186,8 @@ type Client interface {
 	ChassisDel(chName string) (*OvnCommand, error)
 	// Get chassis by hostname or name
 	ChassisGet(chname string) ([]*Chassis, error)
+	// List chassis
+	ChassisList() ([]*Chassis, error)
 
 	// Get encaps by chassis name
 	EncapList(chname string) ([]*Encap, error)
@@ -301,6 +303,10 @@ func (c *ovndb) EncapList(chname string) ([]*Encap, error) {
 
 func (c *ovndb) ChassisGet(name string) ([]*Chassis, error) {
 	return c.chassisGetImp(name)
+}
+
+func (c *ovndb) ChassisList() ([]*Chassis, error) {
+	return c.chassisListImp()
 }
 
 func (c *ovndb) ChassisAdd(name string, hostname string, etype []string, ip string,
