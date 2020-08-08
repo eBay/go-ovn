@@ -27,6 +27,7 @@ run() {
     echo "$@"
     (cd "$sandbox" && "$@") || exit 1
 }
+
 ovn_start_db() {
     local db=$1 model=$2 servers=$3 schema=$4
     local DB=$(echo $db | tr a-z A-Z)
@@ -111,6 +112,7 @@ cd ../
 go get -v ./...
 go test -v
 
+ovs-appctl -t ${OVS_RUNDIR}/nb1 exit
+ovs-appctl -t ${OVS_RUNDIR}/sb1 exit
 
-pkill ovsdb-server
 rm -rf ovs
