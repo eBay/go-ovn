@@ -221,12 +221,18 @@ type ovndb struct {
 	reconn       bool
 }
 
-func connect(c *ovndb) error {
+func connect(c *ovndb) (err error) {
 	ovsdb, err := libovsdb.Connect(c.addr, c.tlsConfig)
 	if err != nil {
 		return err
 	}
 	c.client = ovsdb
+	defer func() {
+		if err != nil {
+			c.client.Disconnect()
+			c.client = nil
+		}
+	}()
 	initial, err := ovsdb.MonitorAll(c.db, "")
 	if err != nil {
 		return err
