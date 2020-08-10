@@ -37,7 +37,7 @@ func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	cacheLogicalSwitch, ok := odbi.cache[TableLogicalSwitch]
 	if !ok {
 		return "", ErrorSchema
 	}
@@ -51,7 +51,7 @@ func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error
 					if as, ok := acls.(libovsdb.OvsSet); ok {
 						for _, a := range as.GoSet {
 							if va, ok := a.(libovsdb.UUID); ok {
-								cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
+								cacheACL, ok := odbi.cache[TableACL][va.GoUUID]
 								if !ok {
 									return "", ErrorSchema
 								}
@@ -91,7 +91,7 @@ func (odbi *ovndb) getACLUUIDByRow(lsw, table string, row OVNRow) (string, error
 					}
 				case libovsdb.UUID:
 					if va, ok := acls.(libovsdb.UUID); ok {
-						cacheACL, ok := odbi.cache[tableACL][va.GoUUID]
+						cacheACL, ok := odbi.cache[TableACL][va.GoUUID]
 						if !ok {
 							return "", ErrorSchema
 						}
@@ -152,7 +152,7 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 		row["external_ids"] = oMap
 	}
 
-	_, err = odbi.getACLUUIDByRow(lsw, tableACL, row)
+	_, err = odbi.getACLUUIDByRow(lsw, TableACL, row)
 	switch err {
 	case ErrorNotFound:
 		break
@@ -180,7 +180,7 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 	}
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
-		Table:    tableACL,
+		Table:    TableACL,
 		Row:      row,
 		UUIDName: namedUUID,
 	}
@@ -196,7 +196,7 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 	// simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalSwitch,
+		Table:     TableLogicalSwitch,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
@@ -228,7 +228,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 		row["external_ids"] = oMap
 	}
 
-	aclUUID, err := odbi.getACLUUIDByRow(lsw, tableACL, row)
+	aclUUID, err := odbi.getACLUUIDByRow(lsw, TableACL, row)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 	wherecondition = append(wherecondition, uuidcondition)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
-		Table: tableACL,
+		Table: TableACL,
 		Where: wherecondition,
 	}
 
@@ -247,7 +247,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 	// Simple mutate operation
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalSwitch,
+		Table:     TableLogicalSwitch,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
@@ -256,7 +256,7 @@ func (odbi *ovndb) aclDelImp(lsw, direct, match string, priority int, external_i
 }
 
 func (odbi *ovndb) rowToACL(uuid string) *ACL {
-	cacheACL, ok := odbi.cache[tableACL][uuid]
+	cacheACL, ok := odbi.cache[TableACL][uuid]
 	if !ok {
 		return nil
 	}
@@ -305,7 +305,7 @@ func (odbi *ovndb) aclListImp(lsw string) ([]*ACL, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	cacheLogicalSwitch, ok := odbi.cache[TableLogicalSwitch]
 	if !ok {
 		return nil, ErrorNotFound
 	}

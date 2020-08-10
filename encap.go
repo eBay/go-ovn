@@ -35,7 +35,7 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheChassis, ok := odbi.cache[tableChassis]
+	cacheChassis, ok := odbi.cache[TableChassis]
 	if !ok {
 		return nil, ErrorNotFound
 	}
@@ -84,7 +84,7 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 }
 
 func (odbi *ovndb) rowToEncap(uuid string) (*Encap, error) {
-	cacheEncaps, ok := odbi.cache[tableEncap][uuid]
+	cacheEncaps, ok := odbi.cache[TableEncap][uuid]
 	if !ok {
 		return nil, fmt.Errorf("Encap with uuid%s not found", uuid)
 	}

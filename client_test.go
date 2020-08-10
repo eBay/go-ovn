@@ -6,10 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const DUMMYTABLE = "Table1"
+
 func TestNewClient_InvalidNBTables(t *testing.T) {
 	cfg := buildOvnDbConfig(DBNB)
 	cfg.TableCols = map[string][]string{
-		"Table1": {},
+		DUMMYTABLE: {},
 	}
 	_, err := NewClient(cfg)
 	assert.Error(t, err)
@@ -19,7 +21,7 @@ func TestNewClient_InvalidNBTables(t *testing.T) {
 func TestNewClient_ValidNBTableInvalidCol(t *testing.T) {
 	cfg := buildOvnDbConfig(DBNB)
 	cfg.TableCols = map[string][]string{
-		"Logical_Switch_Port": {"col1"},
+		TableLogicalSwitchPort: {"col1"},
 	}
 	_, err := NewClient(cfg)
 	assert.Error(t, err)
@@ -29,7 +31,7 @@ func TestNewClient_ValidNBTableInvalidCol(t *testing.T) {
 func TestNewClient_ValidNBTableCols(t *testing.T) {
 	cfg := buildOvnDbConfig(DBNB)
 	cfg.TableCols = map[string][]string{
-		"Logical_Switch": {},
+		TableLogicalSwitch: {},
 	}
 	api, err := NewClient(cfg)
 	if err != nil {
@@ -100,7 +102,7 @@ func TestNewClient_ValidNBTableCols(t *testing.T) {
 	_ = api.Close()
 	cfg = buildOvnDbConfig(DBNB)
 	cfg.TableCols = map[string][]string{
-		"Logical_Router": {},
+		TableLogicalRouter: {},
 	}
 	api, err = NewClient(cfg)
 	if err != nil {
@@ -123,7 +125,7 @@ func TestNewClient_ValidNBTableCols(t *testing.T) {
 func TestNewClient_InvalidSBTables(t *testing.T) {
 	cfg := buildOvnDbConfig(DBSB)
 	cfg.TableCols = map[string][]string{
-		"Table1": {},
+		DUMMYTABLE: {},
 	}
 	_, err := NewClient(cfg)
 	assert.Error(t, err)
@@ -133,7 +135,7 @@ func TestNewClient_InvalidSBTables(t *testing.T) {
 func TestNewClient_ValidSBTableInvalidCol(t *testing.T) {
 	cfg := buildOvnDbConfig(DBSB)
 	cfg.TableCols = map[string][]string{
-		"Chassis": {"col1"},
+		TableChassis: {"col1"},
 	}
 	_, err := NewClient(cfg)
 	assert.Error(t, err)

@@ -55,13 +55,13 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 		row["external_ids"] = oMap
 	}
 
-	if uuid := odbi.getRowUUID(tableLogicalRouterStaticRoute, row); len(uuid) > 0 {
+	if uuid := odbi.getRowUUID(TableLogicalRouterStaticRoute, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
 
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
-		Table:    tableLogicalRouterStaticRoute,
+		Table:    TableLogicalRouterStaticRoute,
 		Row:      row,
 		UUIDName: namedUUID,
 	}
@@ -76,7 +76,7 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalRouter,
+		Table:     TableLogicalRouter,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
@@ -104,7 +104,7 @@ func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputP
 	if outputPort != nil {
 		row["output_port"] = []string{*outputPort}
 	}
-	lrsruuid := odbi.getRowUUID(tableLogicalRouterStaticRoute, row)
+	lrsruuid := odbi.getRowUUID(TableLogicalRouterStaticRoute, row)
 	if len(lrsruuid) == 0 {
 		return nil, ErrorNotFound
 	}
@@ -115,7 +115,7 @@ func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputP
 	}
 	row = make(OVNRow)
 	row["name"] = lr
-	lruuid := odbi.getRowUUID(tableLogicalRouter, row)
+	lruuid := odbi.getRowUUID(TableLogicalRouter, row)
 	if len(lruuid) == 0 {
 		return nil, ErrorNotFound
 	}
@@ -124,7 +124,7 @@ func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputP
 	mucondition := libovsdb.NewCondition("name", "==", lr)
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalRouter,
+		Table:     TableLogicalRouter,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{mucondition},
 	}
@@ -141,7 +141,7 @@ func (odbi *ovndb) lrsrDelByUUIDImp(lr, uuid string) (*OvnCommand, error) {
 	}
 	row := make(OVNRow)
 	row["name"] = lr
-	lruuid := odbi.getRowUUID(tableLogicalRouter, row)
+	lruuid := odbi.getRowUUID(TableLogicalRouter, row)
 	if len(lruuid) == 0 {
 		return nil, ErrorNotFound
 	}
@@ -155,7 +155,7 @@ func (odbi *ovndb) lrsrDelByUUIDImp(lr, uuid string) (*OvnCommand, error) {
 	mucondition := libovsdb.NewCondition("name", "==", lr)
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalRouter,
+		Table:     TableLogicalRouter,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{mucondition},
 	}
@@ -164,15 +164,15 @@ func (odbi *ovndb) lrsrDelByUUIDImp(lr, uuid string) (*OvnCommand, error) {
 }
 
 func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStaticRoute {
-	cacheLogicalRouterStaticRoute, ok := odbi.cache[tableLogicalRouterStaticRoute][uuid]
+	cacheLogicalRouterStaticRoute, ok := odbi.cache[TableLogicalRouterStaticRoute][uuid]
 	if !ok {
 		return nil
 	}
 	lrsr := &LogicalRouterStaticRoute{
 		UUID:       uuid,
-		IPPrefix:   odbi.cache[tableLogicalRouterStaticRoute][uuid].Fields["ip_prefix"].(string),
-		Nexthop:    odbi.cache[tableLogicalRouterStaticRoute][uuid].Fields["nexthop"].(string),
-		ExternalID: odbi.cache[tableLogicalRouterStaticRoute][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		IPPrefix:   odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["ip_prefix"].(string),
+		Nexthop:    odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["nexthop"].(string),
+		ExternalID: odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
 	if policy, ok := cacheLogicalRouterStaticRoute.Fields["policy"]; ok {
@@ -200,7 +200,7 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLogicalRouter, ok := odbi.cache[tableLogicalRouter]
+	cacheLogicalRouter, ok := odbi.cache[TableLogicalRouter]
 	if !ok {
 		return nil, ErrorNotFound
 	}

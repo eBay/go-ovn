@@ -50,7 +50,7 @@ func (odbi *ovndb) lbUpdateImp(name string, vipPort string, protocol string, add
 
 	insertOp := libovsdb.Operation{
 		Op:    opUpdate,
-		Table: tableLoadBalancer,
+		Table: TableLoadBalancer,
 		Row:   row,
 		Where: []interface{}{condition},
 	}
@@ -68,7 +68,7 @@ func (odbi *ovndb) lbAddImp(name string, vipPort string, protocol string, addrs 
 	row := make(OVNRow)
 	row["name"] = name
 
-	if uuid := odbi.getRowUUID(tableLoadBalancer, row); len(uuid) > 0 {
+	if uuid := odbi.getRowUUID(TableLoadBalancer, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
 
@@ -85,7 +85,7 @@ func (odbi *ovndb) lbAddImp(name string, vipPort string, protocol string, addrs 
 
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
-		Table:    tableLoadBalancer,
+		Table:    TableLoadBalancer,
 		Row:      row,
 		UUIDName: namedUUID,
 	}
@@ -99,13 +99,13 @@ func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", name)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
-		Table: tableLoadBalancer,
+		Table: TableLoadBalancer,
 		Where: []interface{}{condition},
 	}
 	// Also delete references from Logical switches
 	row := make(OVNRow)
 	row["name"] = name
-	lbuuid := odbi.getRowUUID(tableLoadBalancer, row)
+	lbuuid := odbi.getRowUUID(TableLoadBalancer, row)
 	if len(lbuuid) == 0 {
 		return nil, ErrorNotFound
 	}
@@ -115,7 +115,7 @@ func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 		return nil, err
 	}
 	mutation := libovsdb.NewMutation("load_balancer", opDelete, mutateSet)
-	lswitches, err := odbi.getRowsMatchingUUID(tableLogicalSwitch, "load_balancer", lbuuid)
+	lswitches, err := odbi.getRowsMatchingUUID(TableLogicalSwitch, "load_balancer", lbuuid)
 	if err != nil && err != ErrorNotFound {
 		return nil, err
 	} else if err == nil {
@@ -124,7 +124,7 @@ func (odbi *ovndb) lbDelImp(name string) (*OvnCommand, error) {
 			mucondition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(lswitch))
 			mutateOp := libovsdb.Operation{
 				Op:        opMutate,
-				Table:     tableLogicalSwitch,
+				Table:     TableLogicalSwitch,
 				Mutations: []interface{}{mutation},
 				Where:     []interface{}{mucondition},
 			}
@@ -141,7 +141,7 @@ func (odbi *ovndb) lbGetImp(name string) ([]*LoadBalancer, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer]
+	cacheLoadBalancer, ok := odbi.cache[TableLoadBalancer]
 	if !ok {
 		return nil, ErrorSchema
 	}
@@ -159,7 +159,7 @@ func (odbi *ovndb) lbGetImp(name string) ([]*LoadBalancer, error) {
 }
 
 func (odbi *ovndb) rowToLB(uuid string) (*LoadBalancer, error) {
-	cacheLoadBalancer, ok := odbi.cache[tableLoadBalancer][uuid]
+	cacheLoadBalancer, ok := odbi.cache[TableLoadBalancer][uuid]
 	if !ok {
 		return nil, ErrorSchema
 	}
