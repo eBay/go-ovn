@@ -219,17 +219,24 @@ type ovndb struct {
 	disconnectCB OVNDisconnectedCallback
 	db           string
 	addr         string
+	tableCols    map[string][]string
 	tlsConfig    *tls.Config
 	reconn       bool
 }
 
-func connect(c *ovndb) error {
+func connect(c *ovndb) (err error) {
 	ovsdb, err := libovsdb.Connect(c.addr, c.tlsConfig)
 	if err != nil {
 		return err
 	}
 	c.client = ovsdb
-	initial, err := ovsdb.MonitorAll(c.db, "")
+	defer func() {
+		if err != nil {
+			c.client.Disconnect()
+			c.client = nil
+		}
+	}()
+	initial, err := c.MonitorTables("")
 	if err != nil {
 		return err
 	}
@@ -256,6 +263,7 @@ func NewClient(cfg *Config) (Client, error) {
 		signalCB:     cfg.SignalCB,
 		disconnectCB: cfg.DisconnectCB,
 		db:           db,
+		tableCols:    cfg.TableCols,
 		addr:         cfg.Addr,
 		tlsConfig:    cfg.TLSConfig,
 		reconn:       cfg.Reconnect,
@@ -289,6 +297,54 @@ func (c *ovndb) reconnect() {
 			return
 		}
 	}()
+}
+
+func (c *ovndb) MonitorTables(jsonContext interface{}) (*libovsdb.TableUpdates, error) {
+	// get the table list based on the DB
+	var tables []string
+	if c.db == DBNB {
+		tables = NBTablesOrder
+	} else {
+		tables = SBTablesOrder
+	}
+
+	// verify whether user specified table and its columns are legit
+	if len(c.tableCols) != 0 {
+		supportedTableMaps := make(map[string]bool)
+		for _, table := range tables {
+			supportedTableMaps[table] = true
+		}
+		for table, columns := range c.tableCols {
+			if _, ok := supportedTableMaps[table]; ok {
+				// TODO: adding support for specific columns requires more work.
+				// All of the rowTo<TableName>() functions need to be fixed for
+				// the missing columns.
+				if len(columns) != 0 {
+					return nil, fmt.Errorf("providing specific columns is not supported yet")
+				}
+			} else {
+				return nil, fmt.Errorf("specified table %q in database %q not supported by the library",
+					table, c.db)
+			}
+		}
+	} else {
+		c.tableCols = make(map[string][]string)
+		for _, table := range tables {
+			c.tableCols[table] = []string{}
+		}
+	}
+	requests := make(map[string]libovsdb.MonitorRequest)
+	for table, columns := range c.tableCols {
+		requests[table] = libovsdb.MonitorRequest{
+			Columns: columns,
+			Select: libovsdb.MonitorSelect{
+				Initial: true,
+				Insert:  true,
+				Delete:  true,
+				Modify:  true,
+			}}
+	}
+	return c.client.Monitor(c.db, jsonContext, requests)
 }
 
 // TODO return proper error
