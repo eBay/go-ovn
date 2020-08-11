@@ -233,45 +233,45 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 
 				if odbi.signalCB != nil {
 					switch table {
-					case tableLogicalRouter:
+					case TableLogicalRouter:
 						lr := odbi.rowToLogicalRouter(uuid)
 						odbi.signalCB.OnLogicalRouterCreate(lr)
-					case tableLogicalRouterPort:
+					case TableLogicalRouterPort:
 						lrp := odbi.rowToLogicalRouterPort(uuid)
 						odbi.signalCB.OnLogicalRouterPortCreate(lrp)
-					case tableLogicalRouterStaticRoute:
+					case TableLogicalRouterStaticRoute:
 						lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
 						odbi.signalCB.OnLogicalRouterStaticRouteCreate(lrsr)
-					case tableLogicalSwitch:
+					case TableLogicalSwitch:
 						ls := odbi.rowToLogicalSwitch(uuid)
 						odbi.signalCB.OnLogicalSwitchCreate(ls)
-					case tableLogicalSwitchPort:
+					case TableLogicalSwitchPort:
 						lp, err := odbi.rowToLogicalPort(uuid)
 						if err == nil {
 							odbi.signalCB.OnLogicalPortCreate(lp)
 						}
-					case tableACL:
+					case TableACL:
 						acl := odbi.rowToACL(uuid)
 						odbi.signalCB.OnACLCreate(acl)
-					case tableDHCPOptions:
+					case TableDHCPOptions:
 						dhcp := odbi.rowToDHCPOptions(uuid)
 						odbi.signalCB.OnDHCPOptionsCreate(dhcp)
-					case tableQoS:
+					case TableQoS:
 						qos := odbi.rowToQoS(uuid)
 						odbi.signalCB.OnQoSCreate(qos)
-					case tableLoadBalancer:
+					case TableLoadBalancer:
 						lb, _ := odbi.rowToLB(uuid)
 						odbi.signalCB.OnLoadBalancerCreate(lb)
-					case tableMeter:
+					case TableMeter:
 						meter := odbi.rowToMeter(uuid)
 						odbi.signalCB.onMeterCreate(meter)
-					case tableMeterBand:
+					case TableMeterBand:
 						band, _ := odbi.rowToMeterBand(uuid)
 						odbi.signalCB.onMeterBandCreate(band)
-					case tableChassis:
+					case TableChassis:
 						chassis, _ := odbi.rowToChassis(uuid)
 						odbi.signalCB.onChassisCreate(chassis)
-					case tableEncap:
+					case TableEncap:
 						encap, _ := odbi.rowToEncap(uuid)
 						odbi.signalCB.onEncapCreate(encap)
 					}
@@ -282,45 +282,45 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 				if odbi.signalCB != nil {
 					defer func(table, uuid string) {
 						switch table {
-						case tableLogicalRouter:
+						case TableLogicalRouter:
 							lr := odbi.rowToLogicalRouter(uuid)
 							odbi.signalCB.OnLogicalRouterDelete(lr)
-						case tableLogicalRouterPort:
+						case TableLogicalRouterPort:
 							lrp := odbi.rowToLogicalRouterPort(uuid)
 							odbi.signalCB.OnLogicalRouterPortDelete(lrp)
-						case tableLogicalRouterStaticRoute:
+						case TableLogicalRouterStaticRoute:
 							lrsr := odbi.rowToLogicalRouterStaticRoute(uuid)
 							odbi.signalCB.OnLogicalRouterStaticRouteDelete(lrsr)
-						case tableLogicalSwitch:
+						case TableLogicalSwitch:
 							ls := odbi.rowToLogicalSwitch(uuid)
 							odbi.signalCB.OnLogicalSwitchDelete(ls)
-						case tableLogicalSwitchPort:
+						case TableLogicalSwitchPort:
 							lp, err := odbi.rowToLogicalPort(uuid)
 							if err == nil {
 								odbi.signalCB.OnLogicalPortDelete(lp)
 							}
-						case tableACL:
+						case TableACL:
 							acl := odbi.rowToACL(uuid)
 							odbi.signalCB.OnACLDelete(acl)
-						case tableDHCPOptions:
+						case TableDHCPOptions:
 							dhcp := odbi.rowToDHCPOptions(uuid)
 							odbi.signalCB.OnDHCPOptionsDelete(dhcp)
-						case tableQoS:
+						case TableQoS:
 							qos := odbi.rowToQoS(uuid)
 							odbi.signalCB.OnQoSDelete(qos)
-						case tableLoadBalancer:
+						case TableLoadBalancer:
 							lb, _ := odbi.rowToLB(uuid)
 							odbi.signalCB.OnLoadBalancerDelete(lb)
-						case tableMeter:
+						case TableMeter:
 							meter := odbi.rowToMeter(uuid)
 							odbi.signalCB.onMeterDelete(meter)
-						case tableMeterBand:
+						case TableMeterBand:
 							band, _ := odbi.rowToMeterBand(uuid)
 							odbi.signalCB.onMeterBandDelete(band)
-						case tableChassis:
+						case TableChassis:
 							chassis, _ := odbi.rowToChassis(uuid)
 							odbi.signalCB.onChassisDelete(chassis)
-						case tableEncap:
+						case TableEncap:
 							encap, _ := odbi.rowToEncap(uuid)
 							odbi.signalCB.onEncapDelete(encap)
 						}

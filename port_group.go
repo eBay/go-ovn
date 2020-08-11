@@ -40,7 +40,7 @@ func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[strin
 	row := make(OVNRow)
 	row["name"] = group
 
-	if uuid := odbi.getRowUUID(tablePortGroup, row); len(uuid) > 0 {
+	if uuid := odbi.getRowUUID(TablePortGroup, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
 	pgports, err := libovsdb.NewOvsSet(ports)
@@ -58,7 +58,7 @@ func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[strin
 
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
-		Table:    tablePortGroup,
+		Table:    TablePortGroup,
 		Row:      row,
 		UUIDName: namedUUID,
 	}
@@ -70,7 +70,7 @@ func (odbi *ovndb) pgSetPortsImp(group string, ports []string, external_ids map[
 	row := make(OVNRow)
 	row["name"] = group
 
-	if uuid := odbi.getRowUUID(tablePortGroup, row); len(uuid) == 0 {
+	if uuid := odbi.getRowUUID(TablePortGroup, row); len(uuid) == 0 {
 		return nil, ErrorNotFound
 	}
 	pgports, err := libovsdb.NewOvsSet(ports)
@@ -89,7 +89,7 @@ func (odbi *ovndb) pgSetPortsImp(group string, ports []string, external_ids map[
 	condition := libovsdb.NewCondition("name", "==", group)
 	updateOp := libovsdb.Operation{
 		Op:    opUpdate,
-		Table: tablePortGroup,
+		Table: TablePortGroup,
 		Row:   row,
 		Where: []interface{}{condition},
 	}
@@ -102,7 +102,7 @@ func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
 	condition := libovsdb.NewCondition("name", "==", group)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
-		Table: tablePortGroup,
+		Table: TablePortGroup,
 		Where: []interface{}{condition},
 	}
 	operations := []libovsdb.Operation{deleteOp}
@@ -112,17 +112,17 @@ func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
 func (odbi *ovndb) RowToPortGroup(uuid string) *PortGroup {
 	pg := &PortGroup{
 		UUID:       uuid,
-		Name:       odbi.cache[tablePortGroup][uuid].Fields["name"].(string),
-		ExternalID: odbi.cache[tablePortGroup][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		Name:       odbi.cache[TablePortGroup][uuid].Fields["name"].(string),
+		ExternalID: odbi.cache[TablePortGroup][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
-	ports := odbi.cache[tablePortGroup][uuid].Fields["ports"]
+	ports := odbi.cache[TablePortGroup][uuid].Fields["ports"]
 	switch ports.(type) {
 	case string:
 		pg.Ports = []string{ports.(string)}
 	case libovsdb.OvsSet:
 		pg.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
 	}
-	acls := odbi.cache[tablePortGroup][uuid].Fields["acls"]
+	acls := odbi.cache[TablePortGroup][uuid].Fields["acls"]
 	switch acls.(type) {
 	case string:
 		pg.ACLs = []string{acls.(string)}
@@ -138,7 +138,7 @@ func (odbi *ovndb) GetLogicalPortsByPortGroup(group string) ([]*LogicalSwitchPor
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cachePortGroup, ok := odbi.cache[tablePortGroup]
+	cachePortGroup, ok := odbi.cache[TablePortGroup]
 	if !ok {
 		return nil, ErrorSchema
 	}

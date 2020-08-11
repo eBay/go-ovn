@@ -35,7 +35,7 @@ type QoS struct {
 }
 
 func (odbi *ovndb) rowToQoS(uuid string) *QoS {
-	cacheQoS, ok := odbi.cache[tableQoS][uuid]
+	cacheQoS, ok := odbi.cache[TableQoS][uuid]
 	if !ok {
 		return nil
 	}
@@ -88,7 +88,7 @@ func (odbi *ovndb) qosAddImp(ls string, direction string, priority int, match st
 
 	insertOp := libovsdb.Operation{
 		Op:       opInsert,
-		Table:    tableQoS,
+		Table:    TableQoS,
 		Row:      row,
 		UUIDName: namedUUID,
 	}
@@ -104,7 +104,7 @@ func (odbi *ovndb) qosAddImp(ls string, direction string, priority int, match st
 
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalSwitch,
+		Table:     TableLogicalSwitch,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
@@ -128,7 +128,7 @@ func (odbi *ovndb) qosDelImp(ls string, direction string, priority int, match st
 		row["match"] = match
 	}
 
-	selUUIDs := odbi.getRowUUIDs(tableQoS, row)
+	selUUIDs := odbi.getRowUUIDs(TableQoS, row)
 	if len(selUUIDs) == 0 && !reflect.DeepEqual(row, make(OVNRow)) {
 		return nil, ErrorNotFound
 	}
@@ -163,7 +163,7 @@ func (odbi *ovndb) qosDelImp(ls string, direction string, priority int, match st
 	condition := libovsdb.NewCondition("name", "==", ls)
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
-		Table:     tableLogicalSwitch,
+		Table:     TableLogicalSwitch,
 		Mutations: []interface{}{mutation},
 		Where:     []interface{}{condition},
 	}
@@ -178,7 +178,7 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
-	cacheLogicalSwitch, ok := odbi.cache[tableLogicalSwitch]
+	cacheLogicalSwitch, ok := odbi.cache[TableLogicalSwitch]
 	if !ok {
 		return nil, ErrorNotFound
 	}
