@@ -293,7 +293,8 @@ func (c *ovndb) reconnect() {
 				retry++
 				continue
 			}
-			log.Printf("%s reconnected.\n", c.addr)
+			log.Printf("%s reconnected after %d retries.\n", c.addr, retry)
+			ticker.Stop()
 			return
 		}
 	}()
