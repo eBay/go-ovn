@@ -183,8 +183,6 @@ func (odbi *ovndb) rowToLogicalRouterPort(uuid string) *LogicalRouterPort {
 }
 
 func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
-	var listLRP []*LogicalRouterPort
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -193,7 +191,6 @@ func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 		return nil, ErrorNotFound
 	}
 
-	var lrFound bool
 	for _, drows := range cacheLogicalRouter {
 		if rlr, ok := drows.Fields["name"].(string); ok && rlr == lr {
 			ports := drows.Fields["ports"]
@@ -201,19 +198,21 @@ func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 				switch ports.(type) {
 				case libovsdb.OvsSet:
 					if ps, ok := ports.(libovsdb.OvsSet); ok {
+						listLRP := make([]*LogicalRouterPort, 0, len(ps.GoSet))
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
 								tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
 								listLRP = append(listLRP, tp)
 							}
 						}
+						return listLRP, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
 					}
 				case libovsdb.UUID:
 					if vp, ok := ports.(libovsdb.UUID); ok {
 						tp := odbi.rowToLogicalRouterPort(vp.GoUUID)
-						listLRP = append(listLRP, tp)
+						return []*LogicalRouterPort{tp}, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -221,12 +220,8 @@ func (odbi *ovndb) lrpListImp(lr string) ([]*LogicalRouterPort, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
-			lrFound = true
-			break
+			return []*LogicalRouterPort{}, nil
 		}
 	}
-	if !lrFound {
-		return nil, ErrorNotFound
-	}
-	return listLRP, nil
+	return nil, ErrorNotFound
 }

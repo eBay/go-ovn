@@ -144,8 +144,6 @@ func (odbi *ovndb) dhcpOptionsDelImp(uuid string) (*OvnCommand, error) {
 
 // List all dhcp options
 func (odbi *ovndb) dhcpOptionsListImp() ([]*DHCPOptions, error) {
-	var listDHCP []*DHCPOptions
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -154,6 +152,7 @@ func (odbi *ovndb) dhcpOptionsListImp() ([]*DHCPOptions, error) {
 		return nil, ErrorSchema
 	}
 
+	listDHCP := make([]*DHCPOptions, 0, len(cacheDHCPOptions))
 	for uuid := range cacheDHCPOptions {
 		listDHCP = append(listDHCP, odbi.rowToDHCPOptions(uuid))
 	}

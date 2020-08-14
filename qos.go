@@ -173,8 +173,6 @@ func (odbi *ovndb) qosDelImp(ls string, direction string, priority int, match st
 }
 
 func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
-	var listQoS []*QoS
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -182,7 +180,6 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-	var lsFound bool
 	for _, drows := range cacheLogicalSwitch {
 		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == ls {
 			qosrules := drows.Fields["qos_rules"]
@@ -190,19 +187,21 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 				switch qosrules.(type) {
 				case libovsdb.OvsSet:
 					if ps, ok := qosrules.(libovsdb.OvsSet); ok {
+						listQoS := make([]*QoS, 0, len(ps.GoSet))
 						for _, p := range ps.GoSet {
 							if vp, ok := p.(libovsdb.UUID); ok {
 								tp := odbi.rowToQoS(vp.GoUUID)
 								listQoS = append(listQoS, tp)
 							}
 						}
+						return listQoS, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
 					}
 				case libovsdb.UUID:
 					if vp, ok := qosrules.(libovsdb.UUID); ok {
 						tp := odbi.rowToQoS(vp.GoUUID)
-						listQoS = append(listQoS, tp)
+						return []*QoS{tp}, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -210,12 +209,8 @@ func (odbi *ovndb) qosListImp(ls string) ([]*QoS, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
-			lsFound = true
-			break
+			return []*QoS{}, nil
 		}
 	}
-	if !lsFound {
-		return nil, ErrorNotFound
-	}
-	return listQoS, nil
+	return nil, ErrorNotFound
 }
