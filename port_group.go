@@ -117,15 +117,15 @@ func (odbi *ovndb) RowToPortGroup(uuid string) *PortGroup {
 	}
 	ports := odbi.cache[TablePortGroup][uuid].Fields["ports"]
 	switch ports.(type) {
-	case string:
-		pg.Ports = []string{ports.(string)}
+	case libovsdb.UUID:
+		pg.Ports = []string{ports.(libovsdb.UUID).GoUUID}
 	case libovsdb.OvsSet:
 		pg.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
 	}
 	acls := odbi.cache[TablePortGroup][uuid].Fields["acls"]
 	switch acls.(type) {
-	case string:
-		pg.ACLs = []string{acls.(string)}
+	case libovsdb.UUID:
+		pg.ACLs = []string{acls.(libovsdb.UUID).GoUUID}
 	case libovsdb.OvsSet:
 		pg.ACLs = odbi.ConvertGoSetToStringArray(acls.(libovsdb.OvsSet))
 	}
