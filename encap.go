@@ -31,7 +31,6 @@ type Encap struct {
 }
 
 func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -40,8 +39,6 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 		return nil, ErrorNotFound
 	}
 
-	var encaps []*Encap
-	var chFound bool
 	for _, drows := range cacheChassis {
 		if ch, ok := drows.Fields["name"].(string); ok && ch == chassisName {
 			if enc, ok := drows.Fields["encaps"]; ok {
@@ -52,12 +49,13 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 						if err != nil {
 							return nil, err
 						}
-						encaps = append(encaps, cenc)
+						return []*Encap{cenc}, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
 				case libovsdb.OvsSet:
 					if en, ok := enc.(libovsdb.OvsSet); ok {
+						encaps := make([]*Encap, 0, len(en.GoSet))
 						for _, e := range en.GoSet {
 							if euid, ok := e.(libovsdb.UUID); ok {
 								enc, err := odbi.rowToEncap(euid.GoUUID)
@@ -67,20 +65,16 @@ func (odbi *ovndb) encapListImp(chassisName string) ([]*Encap, error) {
 								encaps = append(encaps, enc)
 							}
 						}
+						return encaps, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
 					}
 				}
 			}
-			chFound = true
-			break
+			return []*Encap{}, nil
 		}
 	}
-	if !chFound {
-		return nil, ErrorNotFound
-	}
-	return encaps, nil
-
+	return nil, ErrorNotFound
 }
 
 func (odbi *ovndb) rowToEncap(uuid string) (*Encap, error) {

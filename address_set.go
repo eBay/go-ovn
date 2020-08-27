@@ -113,8 +113,6 @@ func (odbi *ovndb) asDelImp(name string) (*OvnCommand, error) {
 
 // Get all addressset
 func (odbi *ovndb) asListImp() ([]*AddressSet, error) {
-	var listAS []*AddressSet
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -123,6 +121,7 @@ func (odbi *ovndb) asListImp() ([]*AddressSet, error) {
 		return nil, ErrorSchema
 	}
 
+	listAS := make([]*AddressSet, 0, len(cacheAddressSet))
 	for uuid, drows := range cacheAddressSet {
 		ta := &AddressSet{
 			UUID:       uuid,

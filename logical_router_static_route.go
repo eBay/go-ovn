@@ -195,8 +195,6 @@ func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStat
 }
 
 func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
-	var listLRSR []*LogicalRouterStaticRoute
-
 	odbi.cachemutex.RLock()
 	defer odbi.cachemutex.RUnlock()
 
@@ -204,7 +202,6 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 	if !ok {
 		return nil, ErrorNotFound
 	}
-	var lrFound bool
 	for _, drows := range cacheLogicalRouter {
 		if rlr, ok := drows.Fields["name"].(string); ok && rlr == lr {
 			staticRoutes := drows.Fields["static_routes"]
@@ -212,19 +209,21 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 				switch staticRoutes.(type) {
 				case libovsdb.OvsSet:
 					if sr, ok := staticRoutes.(libovsdb.OvsSet); ok {
+						listLRSR := make([]*LogicalRouterStaticRoute, 0, len(sr.GoSet))
 						for _, s := range sr.GoSet {
 							if sruid, ok := s.(libovsdb.UUID); ok {
 								rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
 								listLRSR = append(listLRSR, rsr)
 							}
 						}
+						return listLRSR, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.OvsSet casting failed")
 					}
 				case libovsdb.UUID:
 					if sruid, ok := staticRoutes.(libovsdb.UUID); ok {
 						rsr := odbi.rowToLogicalRouterStaticRoute(sruid.GoUUID)
-						listLRSR = append(listLRSR, rsr)
+						return []*LogicalRouterStaticRoute{rsr}, nil
 					} else {
 						return nil, fmt.Errorf("type libovsdb.UUID casting failed")
 					}
@@ -232,13 +231,9 @@ func (odbi *ovndb) lrsrListImp(lr string) ([]*LogicalRouterStaticRoute, error) {
 					return nil, fmt.Errorf("Unsupport type found in ovsdb rows")
 				}
 			}
-			lrFound = true
-			break
+			return []*LogicalRouterStaticRoute{}, nil
 		}
 	}
 
-	if !lrFound {
-		return nil, ErrorNotFound
-	}
-	return listLRSR, nil
+	return nil, ErrorNotFound
 }
