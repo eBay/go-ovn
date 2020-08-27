@@ -177,16 +177,16 @@ func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStat
 
 	if policy, ok := cacheLogicalRouterStaticRoute.Fields["policy"]; ok {
 		switch policy.(type) {
-		case libovsdb.UUID:
-			lrsr.Policy = []string{policy.(libovsdb.UUID).GoUUID}
+		case string:
+			lrsr.Policy = []string{policy.(string)}
 		case libovsdb.OvsSet:
 			lrsr.Policy = odbi.ConvertGoSetToStringArray(policy.(libovsdb.OvsSet))
 		}
 	}
 	if outputPort, ok := cacheLogicalRouterStaticRoute.Fields["output_port"]; ok {
 		switch outputPort.(type) {
-		case libovsdb.UUID:
-			lrsr.OutputPort = []string{outputPort.(libovsdb.UUID).GoUUID}
+		case string:
+			lrsr.OutputPort = []string{outputPort.(string)}
 		case libovsdb.OvsSet:
 			lrsr.OutputPort = odbi.ConvertGoSetToStringArray(outputPort.(libovsdb.OvsSet))
 		}
