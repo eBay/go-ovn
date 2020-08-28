@@ -190,16 +190,16 @@ func (odbi *ovndb) rowToChassis(uuid string) (*Chassis, error) {
 
 	if tz, ok := cacheChassis.Fields["transport_zones"]; ok {
 		switch tz.(type) {
-		case libovsdb.UUID:
-			ch.TransportZones = []string{tz.(libovsdb.UUID).GoUUID}
+		case string:
+			ch.TransportZones = []string{tz.(string)}
 		case libovsdb.OvsSet:
 			ch.TransportZones = odbi.ConvertGoSetToStringArray(tz.(libovsdb.OvsSet))
 		}
 	}
 	if vtep, ok := cacheChassis.Fields["vtep_logical_switches"]; ok {
 		switch vtep.(type) {
-		case libovsdb.UUID:
-			ch.VtepLogicalSwitches = []string{vtep.(libovsdb.UUID).GoUUID}
+		case string:
+			ch.VtepLogicalSwitches = []string{vtep.(string)}
 		case libovsdb.OvsSet:
 			ch.VtepLogicalSwitches = odbi.ConvertGoSetToStringArray(vtep.(libovsdb.OvsSet))
 		}
