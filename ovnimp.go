@@ -334,9 +334,13 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 	var ret = []string{}
 	for _, s := range oset.GoSet {
-		value, ok := s.(string)
-		if ok {
+		switch s.(type) {
+		case string:
+			value := s.(string)
 			ret = append(ret, value)
+		case libovsdb.UUID:
+			uuid := s.(libovsdb.UUID)
+			ret = append(ret, uuid.GoUUID)
 		}
 	}
 	return ret

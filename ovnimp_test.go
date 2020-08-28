@@ -44,3 +44,61 @@ func TestBadTransact(t *testing.T) {
 		t.Fatalf("err executing command:%v", err)
 	}
 }
+
+func TestConvertGoSetToStringArray(t *testing.T) {
+	// 1. create a logical switch and add a port to it.
+	// 2. get the newly added port's uuid
+	// 3. make sure that portUUID is in logical_switch's ports field.
+	ovndbapi := getOVNClient(DBNB)
+	t.Logf("Adding LogicalSwitch to OVN NB DB")
+	ocmd, err := ovndbapi.LSAdd(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Adding Logical Switch to OVN failed with err %v", err)
+	}
+	t.Logf("Adding Logical Switch to OVN Done")
+
+	ocmd, err = ovndbapi.LSPAdd(LSW, LSP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Adding Logical Switch Port to OVN failed with err %v", err)
+	}
+	t.Logf("Adding Logical Switch Port to OVN Done")
+
+	lspInfo, err := ovndbapi.LSPGet(LSP)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lsInfo, err := ovndbapi.LSGet(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uuidFound := false
+	for _, port := range lsInfo[0].Ports {
+		if port == lspInfo.UUID {
+			uuidFound = true
+			break
+		}
+	}
+	if !uuidFound {
+		t.Fatalf("couldn't find port uuid %s in %s", lspInfo.UUID, LSW)
+	}
+	t.Logf("Found Logical Switch Port's UUID in Logical Switch")
+
+	t.Logf("Deleting the logical switch " + LSW)
+	ocmd, err = ovndbapi.LSDel(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Deleting Logical Switch from OVN failed with err %v", err)
+	}
+	t.Logf("Deleted the logical switch " + LSW)
+}
