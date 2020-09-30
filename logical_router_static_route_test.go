@@ -147,7 +147,7 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	assert.Equal(t, policy, lrsr[0].Policy[0])
 
 	// Delete the static route with outputPort specified
-	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, nil, nil, &outputPort)
+	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, nil, &outputPort, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

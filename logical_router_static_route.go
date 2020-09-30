@@ -85,7 +85,7 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 
 }
 
-func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputPort *string) (*OvnCommand, error) {
+func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, outputPort, policy *string) (*OvnCommand, error) {
 	if lr == "" {
 		return nil, fmt.Errorf("lr (logical router name) is required")
 	}
