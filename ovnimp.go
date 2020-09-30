@@ -65,18 +65,16 @@ func (odbi *ovndb) getRowUUIDs(table string, row OVNRow) []string {
 			continue
 		}
 
-		found := false
+		isEqual := true
 		for field, value := range row {
 			if v, ok := drows.Fields[field]; ok {
-				if v == value {
-					found = true
-				} else {
-					found = false
+				if v != value {
+					isEqual = false
 					break
 				}
 			}
 		}
-		if found {
+		if isEqual {
 			uuids = append(uuids, uuid)
 		}
 	}
