@@ -42,10 +42,10 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 	row["ip_prefix"] = ip_prefix
 	row["nexthop"] = nexthop
 	if len(output_port) > 0 {
-		row["output_port"] = output_port
+		row["output_port"] = output_port[0]
 	}
 	if len(policy) > 0 {
-		row["policies"] = policy
+		row["policy"] = policy[0]
 	}
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
@@ -99,10 +99,10 @@ func (odbi *ovndb) lrsrDelImp(lr string, prefix string, nexthop, policy, outputP
 		row["nexthop"] = *nexthop
 	}
 	if policy != nil {
-		row["policy"] = []string{*policy}
+		row["policy"] = *policy
 	}
 	if outputPort != nil {
-		row["output_port"] = []string{*outputPort}
+		row["output_port"] = *outputPort
 	}
 	lrsruuid := odbi.getRowUUID(TableLogicalRouterStaticRoute, row)
 	if len(lrsruuid) == 0 {

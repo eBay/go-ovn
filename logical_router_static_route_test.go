@@ -125,6 +125,44 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	}
 	assert.Equal(t, true, len(lrsr) == 0, "Deleted static route from lr2")
 
+	// Add static route with policy and output_port.
+	outputPort := "lsp1"
+	policy := "src-ip"
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, []string{outputPort}, []string{policy}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatalf("Adding static route to lr2 failed with err %v", err)
+	}
+	lrsr, err = ovndbapi.LRSRList(LR2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lrsr) < 1 {
+		t.Fatalf("Static Route %s using %s with policy %s not created in %s", IPPREFIX, outputPort, policy, LR2)
+	}
+	assert.Equal(t, outputPort, lrsr[0].OutputPort[0])
+	assert.Equal(t, policy, lrsr[0].Policy[0])
+
+	// Delete the static route with outputPort specified
+	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, nil, nil, &outputPort)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatalf("Deleting static route from lr2 failed with err %v", err)
+	}
+	t.Logf("Deleting static route %s from LRouter %s Done", IPPREFIX, LR2)
+
+	lrsr, err = ovndbapi.LRSRList(LR2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(lrsr) == 0, "Deleted static route from lr2")
+
 	// Delete the router
 	cmd, err = ovndbapi.LRDel(LR2)
 	if err != nil {
