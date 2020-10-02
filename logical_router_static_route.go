@@ -170,9 +170,9 @@ func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStat
 	}
 	lrsr := &LogicalRouterStaticRoute{
 		UUID:       uuid,
-		IPPrefix:   odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["ip_prefix"].(string),
-		Nexthop:    odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["nexthop"].(string),
-		ExternalID: odbi.cache[TableLogicalRouterStaticRoute][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		IPPrefix:   cacheLogicalRouterStaticRoute.Fields["ip_prefix"].(string),
+		Nexthop:    cacheLogicalRouterStaticRoute.Fields["nexthop"].(string),
+		ExternalID: cacheLogicalRouterStaticRoute.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
 	if policy, ok := cacheLogicalRouterStaticRoute.Fields["policy"]; ok {
