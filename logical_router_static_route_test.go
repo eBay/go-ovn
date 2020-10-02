@@ -35,7 +35,7 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("lr not created %v", lrs)
 	}
 
-	//lr string, ip_prefix string, nexthop string, output_port []string, policy []string, external_ids map[string]string
+	//lr string, ip_prefix string, nexthop string, output_port *string, policy *string, external_ids map[string]string
 	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -128,7 +128,7 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	// Add static route with policy and output_port.
 	outputPort := "lsp1"
 	policy := "src-ip"
-	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, []string{outputPort}, []string{policy}, nil)
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, &outputPort, &policy, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,8 +143,8 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	if len(lrsr) < 1 {
 		t.Fatalf("Static Route %s using %s with policy %s not created in %s", IPPREFIX, outputPort, policy, LR2)
 	}
-	assert.Equal(t, outputPort, lrsr[0].OutputPort[0])
-	assert.Equal(t, policy, lrsr[0].Policy[0])
+	assert.Equal(t, outputPort, *lrsr[0].OutputPort)
+	assert.Equal(t, policy, *lrsr[0].Policy)
 
 	// Delete the static route with outputPort specified
 	cmd, err = ovndbapi.LRSRDel(LR2, IPPREFIX, nil, &outputPort, nil)
