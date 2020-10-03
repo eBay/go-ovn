@@ -346,6 +346,21 @@ func (odbi *ovndb) ConvertGoSetToStringArray(oset libovsdb.OvsSet) []string {
 	return ret
 }
 
+func (odbi *ovndb) optionalStringFieldToPointer(fieldValue interface{}) *string {
+	switch fieldValue.(type) {
+	case string:
+		temp := fieldValue.(string)
+		return &temp
+	case libovsdb.OvsSet:
+		temp := odbi.ConvertGoSetToStringArray(fieldValue.(libovsdb.OvsSet))
+		if len(temp) > 0 {
+			return &temp[0]
+		}
+		return nil
+	}
+	return nil
+}
+
 func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
