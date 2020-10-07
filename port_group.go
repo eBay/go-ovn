@@ -110,19 +110,23 @@ func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
 }
 
 func (odbi *ovndb) RowToPortGroup(uuid string) *PortGroup {
+	cachePortGroup, ok := odbi.cache[TablePortGroup][uuid]
+	if !ok {
+		return nil
+	}
 	pg := &PortGroup{
 		UUID:       uuid,
-		Name:       odbi.cache[TablePortGroup][uuid].Fields["name"].(string),
-		ExternalID: odbi.cache[TablePortGroup][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		Name:       cachePortGroup.Fields["name"].(string),
+		ExternalID: cachePortGroup.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
-	ports := odbi.cache[TablePortGroup][uuid].Fields["ports"]
+	ports := cachePortGroup.Fields["ports"]
 	switch ports.(type) {
 	case libovsdb.UUID:
 		pg.Ports = []string{ports.(libovsdb.UUID).GoUUID}
 	case libovsdb.OvsSet:
 		pg.Ports = odbi.ConvertGoSetToStringArray(ports.(libovsdb.OvsSet))
 	}
-	acls := odbi.cache[TablePortGroup][uuid].Fields["acls"]
+	acls := cachePortGroup.Fields["acls"]
 	switch acls.(type) {
 	case libovsdb.UUID:
 		pg.ACLs = []string{acls.(libovsdb.UUID).GoUUID}
