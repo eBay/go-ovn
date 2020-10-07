@@ -101,14 +101,18 @@ func (odbi *ovndb) lrGetImp(name string) ([]*LogicalRouter, error) {
 }
 
 func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
+	cacheLogicalRouter, ok := odbi.cache[TableLogicalRouter][uuid]
+	if !ok {
+		return nil
+	}
 	lr := &LogicalRouter{
 		UUID:       uuid,
-		Name:       odbi.cache[TableLogicalRouter][uuid].Fields["name"].(string),
-		Options:    odbi.cache[TableLogicalRouter][uuid].Fields["options"].(libovsdb.OvsMap).GoMap,
-		ExternalID: odbi.cache[TableLogicalRouter][uuid].Fields["external_ids"].(libovsdb.OvsMap).GoMap,
+		Name:       cacheLogicalRouter.Fields["name"].(string),
+		Options:    cacheLogicalRouter.Fields["options"].(libovsdb.OvsMap).GoMap,
+		ExternalID: cacheLogicalRouter.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
-	if enabled, ok := odbi.cache[TableLogicalRouter][uuid].Fields["enabled"]; ok {
+	if enabled, ok := cacheLogicalRouter.Fields["enabled"]; ok {
 		switch enabled.(type) {
 		case bool:
 			lr.Enabled = enabled.(bool)
@@ -120,7 +124,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	}
 
 	var lbs []string
-	load_balancer := odbi.cache[TableLogicalRouter][uuid].Fields["load_balancer"]
+	load_balancer := cacheLogicalRouter.Fields["load_balancer"]
 	if load_balancer != nil {
 		switch load_balancer.(type) {
 		case libovsdb.OvsSet:
@@ -143,7 +147,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	lr.LoadBalancer = lbs
 
 	var lps []string
-	ports := odbi.cache[TableLogicalRouter][uuid].Fields["ports"]
+	ports := cacheLogicalRouter.Fields["ports"]
 	if ports != nil {
 		switch ports.(type) {
 		case string:
@@ -167,7 +171,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	lr.Ports = lps
 
 	var listLRSR []string
-	staticRoutes := odbi.cache[TableLogicalRouter][uuid].Fields["static_routes"]
+	staticRoutes := cacheLogicalRouter.Fields["static_routes"]
 	if staticRoutes != nil {
 		switch staticRoutes.(type) {
 		case libovsdb.OvsSet:
@@ -189,7 +193,7 @@ func (odbi *ovndb) rowToLogicalRouter(uuid string) *LogicalRouter {
 	lr.StaticRoutes = listLRSR
 
 	var NATList []string
-	nat := odbi.cache[TableLogicalRouter][uuid].Fields["nat"]
+	nat := cacheLogicalRouter.Fields["nat"]
 	if nat != nil {
 		switch nat.(type) {
 		case libovsdb.OvsSet:
