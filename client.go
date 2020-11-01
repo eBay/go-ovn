@@ -123,6 +123,8 @@ type Client interface {
 	LBDel(name string) (*OvnCommand, error)
 	// Update existing LB
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
+	// Set selection fields for LB session affinity
+	LBSetSelectionFields(name string, selectionFields string) (*OvnCommand, error)
 
 	// Set dhcp4_options uuid on lsp
 	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
@@ -533,6 +535,10 @@ func (c *ovndb) LBUpdate(name string, vipPort string, protocol string, addrs []s
 
 func (c *ovndb) LBDel(name string) (*OvnCommand, error) {
 	return c.lbDelImp(name)
+}
+
+func (c *ovndb) LBSetSelectionFields(name string, selectionFields string) (*OvnCommand, error) {
+	return c.lbSetSelectionFieldsImp(name, selectionFields)
 }
 
 func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {

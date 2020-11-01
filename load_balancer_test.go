@@ -45,6 +45,15 @@ func TestLoadBalancer(t *testing.T) {
 		t.Fatalf("Updating LB OVN failed with err %v", err)
 	}
 	t.Logf("Updating LB to OVN done")
+	ocmd, err = ovndbapi.LBSetSelectionFields(LB1, "ip_src")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(ocmd)
+	if err != nil {
+		t.Fatalf("Setting LB OVN selection fields failed with err %v", err)
+	}
+	t.Logf("Setting LB selection_fields to OVN done")
 
 	t.Logf("Gettting LB by name")
 	lb, err := ovndbapi.LBGet(LB1)
@@ -53,6 +62,9 @@ func TestLoadBalancer(t *testing.T) {
 	}
 	if len(lb) != 1 {
 		t.Fatalf("err getting lbs, total:%v", len(lb))
+	}
+	if lb[0].selectionFields != "ip_src" {
+		t.Fatalf("err setting lbs selection fields, expected: ip_src received:%v", lb[0].selectionFields)
 	}
 	t.Logf("Lb found:%+v", lb[0])
 
