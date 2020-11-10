@@ -1,5 +1,10 @@
 #!/bin/sh -ex
 
+WORKDIR=`pwd`
+ovn_srcdir=${OVN_SRCDIR:-$PWD}
+mkdir -p $ovn_srcdir
+
+cd $ovn_srcdir
 rm -rf ovs
 rm -rf ovn
 
@@ -9,8 +14,6 @@ cd ovs
 ./boot.sh && ./configure --enable-silent-rules
 make -j4
 
-srcdir=`pwd`
-builddir=$srcdir
 rm -rf sandbox
 mkdir sandbox
 sandbox=`cd sandbox && pwd`
@@ -22,8 +25,8 @@ OVS_RUNDIR=$sandbox; export OVS_RUNDIR
 OVS_LOGDIR=$sandbox; export OVS_LOGDIR
 OVS_DBDIR=$sandbox; export OVS_DBDIR
 OVS_SYSCONFDIR=$sandbox; export OVS_SYSCONFDIR
-PATH=$builddir/ovsdb:$builddir/vswitchd:$builddir/utilities:$builddir/vtep:$PATH
-PATH=$builddir/ovn/controller:$builddir/ovn/controller-vtep:$builddir/ovn/northd:$builddir/ovn/utilities:$PATH
+PATH=$ovn_srcdir/ovs/ovsdb:$ovn_srcdir/ovs/vswitchd:$ovn_srcdir/ovs/utilities:$ovn_srcdir/ovs/vtep:$PATH
+PATH=$ovn_srcdir/ovn/controller:$ovn_srcdir/ovn/controller-vtep:$ovn_srcdir/ovn/northd:$ovn_srcdir/ovn/utilities:$PATH
 export PATH
 
 run() {
@@ -107,10 +110,11 @@ The backup database file is sandbox/${db}2.db
     eval OVN_${DB}_DB=\$remote
     eval export OVN_${DB}_DB
 }
-ovn_start_db nb standalone 1 $srcdir/../ovn/ovn-nb.ovsschema
-ovn_start_db sb standalone 1 $srcdir/../ovn/ovn-sb.ovsschema
+ovn_start_db nb standalone 1 ${ovn_srcdir}/ovn/ovn-nb.ovsschema
+ovn_start_db sb standalone 1 ${ovn_srcdir}/ovn/ovn-sb.ovsschema
+
 export GO111MODULE=on
-cd ../
+cd ${WORKDIR}
 go get -v ./...
 go test -v -tags=travis
 
