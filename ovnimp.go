@@ -262,16 +262,16 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 						odbi.signalCB.OnLoadBalancerCreate(lb)
 					case TableMeter:
 						meter := odbi.rowToMeter(uuid)
-						odbi.signalCB.onMeterCreate(meter)
+						odbi.signalCB.OnMeterCreate(meter)
 					case TableMeterBand:
 						band, _ := odbi.rowToMeterBand(uuid)
-						odbi.signalCB.onMeterBandCreate(band)
+						odbi.signalCB.OnMeterBandCreate(band)
 					case TableChassis:
 						chassis, _ := odbi.rowToChassis(uuid)
-						odbi.signalCB.onChassisCreate(chassis)
+						odbi.signalCB.OnChassisCreate(chassis)
 					case TableEncap:
 						encap, _ := odbi.rowToEncap(uuid)
-						odbi.signalCB.onEncapCreate(encap)
+						odbi.signalCB.OnEncapCreate(encap)
 					}
 				}
 			} else {
@@ -311,16 +311,16 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 							odbi.signalCB.OnLoadBalancerDelete(lb)
 						case TableMeter:
 							meter := odbi.rowToMeter(uuid)
-							odbi.signalCB.onMeterDelete(meter)
+							odbi.signalCB.OnMeterDelete(meter)
 						case TableMeterBand:
 							band, _ := odbi.rowToMeterBand(uuid)
-							odbi.signalCB.onMeterBandDelete(band)
+							odbi.signalCB.OnMeterBandDelete(band)
 						case TableChassis:
 							chassis, _ := odbi.rowToChassis(uuid)
-							odbi.signalCB.onChassisDelete(chassis)
+							odbi.signalCB.OnChassisDelete(chassis)
 						case TableEncap:
 							encap, _ := odbi.rowToEncap(uuid)
-							odbi.signalCB.onEncapDelete(encap)
+							odbi.signalCB.OnEncapDelete(encap)
 						}
 					}(table, uuid)
 				}
