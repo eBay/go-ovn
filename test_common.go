@@ -53,6 +53,49 @@ var (
 	ovn_socket string
 )
 
+type signal struct{}
+
+func (s signal) OnLogicalSwitchCreate(ls *LogicalSwitch) {}
+func (s signal) OnLogicalSwitchDelete(ls *LogicalSwitch) {}
+
+func (s signal) OnLogicalPortCreate(lp *LogicalSwitchPort) {}
+func (s signal) OnLogicalPortDelete(lp *LogicalSwitchPort) {}
+
+func (s signal) OnLogicalRouterCreate(lr *LogicalRouter) {}
+func (s signal) OnLogicalRouterDelete(lr *LogicalRouter) {}
+
+func (s signal) OnLogicalRouterPortCreate(lrp *LogicalRouterPort) {}
+func (s signal) OnLogicalRouterPortDelete(lrp *LogicalRouterPort) {}
+
+func (s signal) OnLogicalRouterStaticRouteCreate(lrsr *LogicalRouterStaticRoute) {}
+func (s signal) OnLogicalRouterStaticRouteDelete(lrsr *LogicalRouterStaticRoute) {}
+
+func (s signal) OnACLCreate(acl *ACL) {}
+func (s signal) OnACLDelete(acl *ACL) {}
+
+func (s signal) OnDHCPOptionsCreate(dhcp *DHCPOptions) {}
+func (s signal) OnDHCPOptionsDelete(dhcp *DHCPOptions) {}
+
+func (s signal) OnQoSCreate(qos *QoS) {}
+func (s signal) OnQoSDelete(qos *QoS) {}
+
+func (s signal) OnLoadBalancerCreate(ls *LoadBalancer) {}
+func (s signal) OnLoadBalancerDelete(ls *LoadBalancer) {}
+
+func (s signal) OnMeterCreate(meter *Meter) {}
+func (s signal) OnMeterDelete(meter *Meter) {}
+
+func (s signal) OnMeterBandCreate(band *MeterBand) {}
+func (s signal) OnMeterBandDelete(band *MeterBand) {}
+
+// Create/delete chassis from south bound db
+func (s signal) OnChassisCreate(ch *Chassis) {}
+func (s signal) OnChassisDelete(ch *Chassis) {}
+
+// Create/delete encap from south bound db
+func (s signal) OnEncapCreate(ch *Encap) {}
+func (s signal) OnEncapDelete(ch *Encap) {}
+
 func buildOvnDbConfig(db string) *Config {
 	cfg := &Config{}
 	if db == DBNB || db == "" {
@@ -114,6 +157,9 @@ func buildOvnDbConfig(db string) *Config {
 			cfg.Addr = fmt.Sprintf("%s:%s:%d", strs[0], strs[1], port)
 		}
 	}
+
+	cfg.SignalCB = signal{}
+
 	return cfg
 }
 
