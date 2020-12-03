@@ -24,11 +24,12 @@ import (
 
 // LoadBalancer ovnnb item
 type LoadBalancer struct {
-	UUID       string
-	Name       string
-	vips       map[interface{}]interface{}
-	protocol   string
-	ExternalID map[interface{}]interface{}
+	UUID            string
+	Name            string
+	vips            map[interface{}]interface{}
+	protocol        string
+	selectionFields string
+	ExternalID      map[interface{}]interface{}
 }
 
 func (odbi *ovndb) lbUpdateImp(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error) {
@@ -158,6 +159,22 @@ func (odbi *ovndb) lbGetImp(name string) ([]*LoadBalancer, error) {
 	return listLB, nil
 }
 
+func (odbi *ovndb) lbSetSelectionFieldsImp(name string, selectionFields string) (*OvnCommand, error) {
+	row := make(OVNRow)
+	row["selection_fields"] = selectionFields
+
+	condition := libovsdb.NewCondition("name", "==", name)
+
+	updateOp := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: TableLoadBalancer,
+		Row:   row,
+		Where: []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{updateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 func (odbi *ovndb) rowToLB(uuid string) (*LoadBalancer, error) {
 	cacheLoadBalancer, ok := odbi.cache[TableLoadBalancer][uuid]
 	if !ok {
@@ -172,5 +189,8 @@ func (odbi *ovndb) rowToLB(uuid string) (*LoadBalancer, error) {
 		ExternalID: cacheLoadBalancer.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
+	if fields, ok := cacheLoadBalancer.Fields["selection_fields"].(string); ok {
+		lb.selectionFields = fields
+	}
 	return lb, nil
 }
