@@ -112,7 +112,7 @@ ovn_start_db sb standalone 1 $srcdir/../ovn/ovn-sb.ovsschema
 export GO111MODULE=on
 cd ../
 go get -v ./...
-go test -v
+go test -v -tags=travis
 
 ovs-appctl -t ${OVS_RUNDIR}/nb1 exit
 ovs-appctl -t ${OVS_RUNDIR}/sb1 exit

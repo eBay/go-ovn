@@ -1,3 +1,5 @@
+// +build travis
+
 /**
  * Copyright (c) 2020 eBay Inc.
  *
