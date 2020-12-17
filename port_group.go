@@ -43,11 +43,19 @@ func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[strin
 	if uuid := odbi.getRowUUID(TablePortGroup, row); len(uuid) > 0 {
 		return nil, ErrorExist
 	}
-	pgports, err := libovsdb.NewOvsSet(ports)
-	if err != nil {
-		return nil, err
+
+	if ports != nil {
+		var portUUIDs []libovsdb.UUID
+		for _, u := range ports {
+			portUUIDs = append(portUUIDs, stringToGoUUID(u))
+		}
+		pgports, err := libovsdb.NewOvsSet(portUUIDs)
+		if err != nil {
+			return nil, err
+		}
+		row["ports"] = pgports
 	}
-	row["ports"] = pgports
+
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
@@ -66,18 +74,30 @@ func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[strin
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) pgSetPortsImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) pgUpdateImp(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["name"] = group
 
 	if uuid := odbi.getRowUUID(TablePortGroup, row); len(uuid) == 0 {
 		return nil, ErrorNotFound
 	}
-	pgports, err := libovsdb.NewOvsSet(ports)
-	if err != nil {
-		return nil, err
+
+	if ports == nil && external_ids == nil {
+		return nil, ErrorNoChanges
 	}
-	row["ports"] = pgports
+
+	if ports != nil {
+		var portUUIDs []libovsdb.UUID
+		for _, u := range ports {
+			portUUIDs = append(portUUIDs, stringToGoUUID(u))
+		}
+		pgports, err := libovsdb.NewOvsSet(portUUIDs)
+		if err != nil {
+			return nil, err
+		}
+		row["ports"] = pgports
+	}
+
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
 		if err != nil {
@@ -95,7 +115,6 @@ func (odbi *ovndb) pgSetPortsImp(group string, ports []string, external_ids map[
 	}
 	operations := []libovsdb.Operation{updateOp}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
-
 }
 
 func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
@@ -107,6 +126,31 @@ func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
 	}
 	operations := []libovsdb.Operation{deleteOp}
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) pgGetImp(pg string) (*PortGroup, error) {
+	var pgList []*PortGroup
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cachePortGroup, ok := odbi.cache[TablePortGroup]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for uuid, drows := range cachePortGroup {
+		if rlsw, ok := drows.Fields["name"].(string); ok && rlsw == pg {
+			pgList = append(pgList, odbi.RowToPortGroup(uuid))
+		}
+	}
+
+	if len(pgList) == 0 {
+		return nil, ErrorNotFound
+	} else if len(pgList) != 1 {
+		return nil, ErrorSchema
+	} else {
+		return pgList[0], nil
+	}
 }
 
 func (odbi *ovndb) RowToPortGroup(uuid string) *PortGroup {

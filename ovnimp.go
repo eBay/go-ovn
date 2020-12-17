@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	commitTransactionText = "commiting transaction"
+	commitTransactionText = "committing transaction"
 )
 
 var (
@@ -38,6 +38,8 @@ var (
 	ErrorNotFound = errors.New("object not found")
 	// ErrorExist used when object already exists in ovnnb
 	ErrorExist = errors.New("object exist")
+	// ErrorNoChanges used when function called, but no changes
+	ErrorNoChanges = errors.New("no changes requested")
 )
 
 // OVNRow ovn nb/sb row

@@ -206,6 +206,15 @@ type Client interface {
 	// Get SB_Global table options
 	SBGlobalGetOptions() (map[string]string, error)
 
+	// Creates a new port group in the Port_Group table named "group" with optional "ports" added to the group.
+	PortGroupAdd(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
+	// Sets "ports" and/or "external_ids" on the port group named "group". It is an error if group does not exist.
+	PortGroupUpdate(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
+	// Deletes port group "group". It is an error if "group" does not exist.
+	PortGroupDel(group string) (*OvnCommand, error)
+	// Get PortGroup data structure if it exists
+	PortGroupGet(group string) (*PortGroup, error)
+
 	// Close connection to OVN
 	Close() error
 }
@@ -667,6 +676,22 @@ func (c *ovndb) SBGlobalSetOptions(options map[string]string) (*OvnCommand, erro
 
 func (c *ovndb) SBGlobalGetOptions() (map[string]string, error) {
 	return c.sbGlobalGetOptionsImp()
+}
+
+func (c *ovndb) PortGroupAdd(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.pgAddImp(group, ports, external_ids)
+}
+
+func (c *ovndb) PortGroupUpdate(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.pgUpdateImp(group, ports, external_ids)
+}
+
+func (c *ovndb) PortGroupDel(group string) (*OvnCommand, error) {
+	return c.pgDelImp(group)
+}
+
+func (c *ovndb) PortGroupGet(group string) (*PortGroup, error) {
+	return c.pgGetImp(group)
 }
 
 // these functions are helpers for unit-tests, but not part of the API
