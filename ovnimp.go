@@ -210,7 +210,17 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
 
-	for table := range odbi.tableCols {
+	var tableOrder []string
+	if odbi.db == DBNB {
+		tableOrder = NBTablesOrder
+	} else {
+		tableOrder = SBTablesOrder
+	}
+
+	for _, table := range tableOrder {
+		if _, ok := odbi.tableCols[table]; !ok {
+			continue
+		}
 		tableUpdate, ok := updates.Updates[table]
 		if !ok {
 			continue
