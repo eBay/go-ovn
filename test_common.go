@@ -36,8 +36,10 @@ const (
 	LSP                  = "TEST_LSP"
 	LSP_SECOND           = "TEST_LSP_SECOND "
 	ADDR                 = "36:46:56:76:86:96 127.0.0.1"
+	ADDR2                = "36:46:56:76:86:97 192.168.1.10"
 	MATCH                = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.61"
 	MATCH_SECOND         = "outport == \"96d44061-1823-428b-a7ce-f473d10eb3d0\" && ip && ip.dst == 10.97.183.62"
+	MATCH3               = "ip && ip.dst == 10.97.183.64"
 	defaultClientCACert  = "/etc/openvswitch/client_ca_cert.pem"
 	defaultClientPrivKey = "/etc/openvswitch/ovnnb-privkey.pem"
 	SKIP_TLS_VERIFY      = true
@@ -46,6 +48,19 @@ const (
 	FAKENOCHASSIS        = "fakenochassis"
 	FAKENOSWITCH         = "fakenoswitch"
 	FAKENOROUTER         = "fakenorouter"
+	PG_TEST_PG1          = "TestPortGroup1"
+	PG_TEST_PG2          = "TestPortGroup2"
+	PG_TEST_LS1          = "TestLogicalSwitch"
+	PG_TEST_LSP1         = "TestLogicalSwitchPort1"
+	PG_TEST_LSP2         = "TestLogicalSwitchPort2"
+	PG_TEST_LSP3         = "TestLogicalSwitchPort3"
+	PG_TEST_LSP4         = "TestLogicalSwitchPort4"
+	PG_TEST_KEY_1        = "mac_addr"
+	PG_TEST_ID_1         = "00:01:02:03:04:05"
+	PG_TEST_KEY_2        = "ip_addr"
+	PG_TEST_ID_2         = "169.254.1.1"
+	PG_TEST_KEY_3        = "foo1"
+	PG_TEST_ID_3         = "bar1"
 )
 
 var (

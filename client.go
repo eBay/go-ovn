@@ -27,6 +27,12 @@ import (
 	"github.com/ebay/libovsdb"
 )
 
+type EntityType string
+const(
+	PORT_GROUP EntityType = "PORT_GROUP"
+	LOGICAL_SWITCH EntityType = "LOICAL_SWITCH"
+)
+
 // Client ovnnb/sb client
 // Note: We can create different clients for ovn nb and sb each in future.
 type Client interface {
@@ -65,11 +71,17 @@ type Client interface {
 	// List Load balancers for a LSW
 	LSLBList(ls string) ([]*LoadBalancer, error)
 
-	// Add ACL
+	// Add ACL to entity (PORT_GROUP or LOGICAL_SWITCH)
+	ACLAddEntity(entityType EntityType, entity, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error)
+	// Deprecated in favor of ACLAddEntity(). Add ACL to logical switch.
 	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error)
-	// Delete acl
+	// Delete acl from entity (PORT_GROUP or LOGICAL_SWITCH)
+	ACLDelEntity(entityType EntityType, entity, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
+	// Deprecated in favor of ACLDelEntity(). Delete acl from logical switch
 	ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
-	// Get all acl by lswitch
+	// Get all acl by entity
+	ACLListEntity(entityType EntityType, entity string) ([]*ACL, error)
+	// Deprecated in favor of ACLListEntity(). Get all acl by logical switch
 	ACLList(ls string) ([]*ACL, error)
 
 	// Get AS
@@ -550,12 +562,20 @@ func (c *ovndb) LBSetSelectionFields(name string, selectionFields string) (*OvnC
 	return c.lbSetSelectionFieldsImp(name, selectionFields)
 }
 
+func (c *ovndb) ACLAddEntity(entityType EntityType, entity, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
+	return c.aclAddImp(entityType, entity, direct, match, action, priority, external_ids, logflag, meter, severity)
+}
+
 func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
-	return c.aclAddImp(ls, direct, match, action, priority, external_ids, logflag, meter, severity)
+	return c.aclAddImp(LOGICAL_SWITCH, ls, direct, match, action, priority, external_ids, logflag, meter, severity)
+}
+
+func (c *ovndb) ACLDelEntity(entityType EntityType, entity, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
+	return c.aclDelImp(entityType, entity, direct, match, priority, external_ids)
 }
 
 func (c *ovndb) ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
-	return c.aclDelImp(ls, direct, match, priority, external_ids)
+	return c.aclDelImp(LOGICAL_SWITCH, ls, direct, match, priority, external_ids)
 }
 
 func (c *ovndb) ASAdd(name string, addrs []string, external_ids map[string]string) (*OvnCommand, error) {
@@ -594,8 +614,12 @@ func (c *ovndb) LSPList(ls string) ([]*LogicalSwitchPort, error) {
 	return c.lspListImp(ls)
 }
 
+func (c *ovndb) ACLListEntity(entityType EntityType, entity string) ([]*ACL, error) {
+	return c.aclListImp(entityType, entity)
+}
+
 func (c *ovndb) ACLList(ls string) ([]*ACL, error) {
-	return c.aclListImp(ls)
+	return c.aclListImp(LOGICAL_SWITCH, ls)
 }
 
 func (c *ovndb) ASList() ([]*AddressSet, error) {
