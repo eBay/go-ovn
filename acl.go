@@ -144,14 +144,6 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 	row["match"] = match
 	row["priority"] = priority
 
-	if external_ids != nil {
-		oMap, err := libovsdb.NewOvsMap(external_ids)
-		if err != nil {
-			return nil, err
-		}
-		row["external_ids"] = oMap
-	}
-
 	_, err = odbi.getACLUUIDByRow(lsw, TableACL, row)
 	switch err {
 	case ErrorNotFound:
@@ -160,6 +152,14 @@ func (odbi *ovndb) aclAddImp(lsw, direct, match, action string, priority int, ex
 		return nil, ErrorExist
 	default:
 		return nil, err
+	}
+
+	if external_ids != nil {
+		oMap, err := libovsdb.NewOvsMap(external_ids)
+		if err != nil {
+			return nil, err
+		}
+		row["external_ids"] = oMap
 	}
 
 	row["action"] = action

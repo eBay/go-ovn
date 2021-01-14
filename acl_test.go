@@ -141,7 +141,34 @@ func TestACLs(t *testing.T) {
 	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
 
+	// The following should fail because it is considered a duplicate of an existing ACL
 	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "b", "B": "b"}, false, "", "")
+	if err == nil {
+		t.Fatal(err)
+	}
+	if cmd != nil {
+		t.Fatal(err)
+	}
+	// cmd is nil, so this is noop
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	acls, err = ovndbapi.ACLList(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 2, "test[%s]", "add second acl")
+
+	// The following should fail because it is considered a duplicate of an existing ACL
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1001, nil, false, "", "")
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// Different priority is a different ACL, so this should succeed
+	cmd, err = ovndbapi.ACLAdd(LSW, "to-lport", MATCH_SECOND, "drop", 1002, map[string]string{"A": "a", "B": "b"}, false, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +183,39 @@ func TestACLs(t *testing.T) {
 	}
 	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
 
-	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
+	// Different direction is a different ACL, so this should succeed
+	cmd, err = ovndbapi.ACLAdd(LSW, "from-lport", MATCH_SECOND, "drop", 1001, map[string]string{"A": "a", "B": "b"}, false, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	acls, err = ovndbapi.ACLList(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 4, "test[%s]", "add second acl")
+
+
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1002, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	acls, err = ovndbapi.ACLList(LSW)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, true, len(acls) == 3, "test[%s]", "add second acl")
+
+	cmd, err = ovndbapi.ACLDel(LSW, "from-lport", MATCH_SECOND, 1001, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +230,7 @@ func TestACLs(t *testing.T) {
 	}
 	assert.Equal(t, true, len(acls) == 2, "test[%s]", "acl remove")
 
-	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH, 1001, map[string]string{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +246,14 @@ func TestACLs(t *testing.T) {
 
 	assert.Equal(t, true, len(acls) == 1, "test[%s]", "acl remove")
 
+	//The following delete should fail because external ids are provided, but they don't exist in any ACL
 	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	//The following delete should succeed because the provided external_ids provided are a subset of thoe in an existing ACL
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,6 +267,12 @@ func TestACLs(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, len(acls) == 0, "test[%s]", "acl remove")
+
+	// The following ACLDel should fail because all the ACLs have been deleted.
+	cmd, err = ovndbapi.ACLDel(LSW, "to-lport", MATCH_SECOND, 1001, map[string]string{"A": "b"})
+	if err == nil {
+		t.Fatal(err)
+	}
 
 	cmd, err = ovndbapi.LSPDel(LSP)
 	if err != nil {
