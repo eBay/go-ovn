@@ -227,6 +227,8 @@ type Client interface {
 	// Get PortGroup data structure if it exists
 	PortGroupGet(group string) (*PortGroup, error)
 
+	// Force reconnection to OVN
+	ForceReconnect() error
 	// Close connection to OVN
 	Close() error
 }
@@ -369,6 +371,16 @@ func (c *ovndb) MonitorTables(jsonContext interface{}) (*libovsdb.TableUpdates, 
 			}}
 	}
 	return c.client.Monitor(c.db, jsonContext, requests)
+}
+
+// Disconnect current ovsdb client and reconnct with new one.
+// This API can be used for reconnecting to osvdb with new TLS cert/key pair.
+func (c *ovndb) ForceReconnect() error {
+	// Unregister nofitfier to avoid current client reconnect via callback.
+	err := c.client.Unregister(ovnNotifier{c})
+	c.client.Disconnect()
+	c.reconnect()
+	return err
 }
 
 // TODO return proper error
