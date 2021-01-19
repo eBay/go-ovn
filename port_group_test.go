@@ -24,22 +24,6 @@ import (
 	"testing"
 )
 
-const (
-	PG_TEST_PG1         = "TestPortGroup1"
-	PG_TEST_PG2         = "TestPortGroup2"
-	PG_TEST_LS1         = "TestLogicalSwitch"
-	PG_TEST_LSP1        = "TestLogicalSwitchPort1"
-	PG_TEST_LSP2        = "TestLogicalSwitchPort2"
-	PG_TEST_LSP3        = "TestLogicalSwitchPort3"
-	PG_TEST_LSP4        = "TestLogicalSwitchPort4"
-	PG_TEST_KEY_1       = "mac_addr"
-	PG_TEST_ID_1        = "00:01:02:03:04:05"
-	PG_TEST_KEY_2       = "ip_addr"
-	PG_TEST_ID_2        = "169.254.1.1"
-	PG_TEST_KEY_3       = "foo1"
-	PG_TEST_ID_3        = "bar1"
-)
-
 type pgConfig struct {
 	pgName      string
 	ports       []string

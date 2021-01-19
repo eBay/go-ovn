@@ -45,7 +45,7 @@ func (odbi *ovndb) pgAddImp(group string, ports []string, external_ids map[strin
 	}
 
 	if ports != nil {
-		var portUUIDs []libovsdb.UUID
+		portUUIDs := make([]libovsdb.UUID, 0, len(ports))
 		for _, u := range ports {
 			portUUIDs = append(portUUIDs, stringToGoUUID(u))
 		}
@@ -87,7 +87,7 @@ func (odbi *ovndb) pgUpdateImp(group string, ports []string, external_ids map[st
 	}
 
 	if ports != nil {
-		var portUUIDs []libovsdb.UUID
+		portUUIDs := make([]libovsdb.UUID, 0, len(ports))
 		for _, u := range ports {
 			portUUIDs = append(portUUIDs, stringToGoUUID(u))
 		}
