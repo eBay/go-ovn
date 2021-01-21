@@ -117,7 +117,76 @@ func (odbi *ovndb) pgUpdateImp(group string, ports []string, external_ids map[st
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+func (odbi *ovndb) pgAddPortImp(group, port string)  (*OvnCommand, error) {
+	if pg, err := odbi.pgGetImp(group); err == nil {
+		for _, p := range pg.Ports {
+			if p == port {
+				return nil, ErrorExist
+			}
+		}
+	} else {
+		return nil, err
+	}
+
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(port)}
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	mutation := libovsdb.NewMutation("ports", opInsert, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", group)
+
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     TablePortGroup,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) pgRemovePortImp(group string, port string) (*OvnCommand, error) {
+	if pg, err := odbi.pgGetImp(group); err == nil {
+		portFound := false
+		for _, p := range pg.Ports {
+			if p == port {
+				portFound = true
+				break
+			}
+		}
+		if portFound != true {
+			return nil, ErrorNotFound
+		}
+	} else {
+		return nil, err
+	}
+
+	mutateUUID := []libovsdb.UUID{stringToGoUUID(port)}
+	mutateSet, err := libovsdb.NewOvsSet(mutateUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	mutation := libovsdb.NewMutation("ports", opDelete, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", group)
+
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     TablePortGroup,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 func (odbi *ovndb) pgDelImp(group string) (*OvnCommand, error) {
+	if _, err := odbi.pgGetImp(group); err != nil {
+		return nil, err
+	}
+
 	condition := libovsdb.NewCondition("name", "==", group)
 	deleteOp := libovsdb.Operation{
 		Op:    opDelete,
@@ -147,7 +216,7 @@ func (odbi *ovndb) pgGetImp(pg string) (*PortGroup, error) {
 	if len(pgList) == 0 {
 		return nil, ErrorNotFound
 	} else if len(pgList) != 1 {
-		return nil, ErrorSchema
+		return nil, ErrorDuplicateName
 	} else {
 		return pgList[0], nil
 	}

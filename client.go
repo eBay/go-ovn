@@ -218,10 +218,14 @@ type Client interface {
 	// Get SB_Global table options
 	SBGlobalGetOptions() (map[string]string, error)
 
-	// Creates a new port group in the Port_Group table named "group" with optional "ports" added to the group.
+	// Creates a new port group in the Port_Group table named "group" with optional "ports"  and "external_ids".
 	PortGroupAdd(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
 	// Sets "ports" and/or "external_ids" on the port group named "group". It is an error if group does not exist.
 	PortGroupUpdate(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
+	// Add port to port group.
+	PortGroupAddPort(group string, port string) (*OvnCommand, error)
+	// Remove port from port group.
+	PortGroupRemovePort(group string, port string) (*OvnCommand, error)
 	// Deletes port group "group". It is an error if "group" does not exist.
 	PortGroupDel(group string) (*OvnCommand, error)
 	// Get PortGroup data structure if it exists
@@ -708,6 +712,14 @@ func (c *ovndb) PortGroupAdd(group string, ports []string, external_ids map[stri
 
 func (c *ovndb) PortGroupUpdate(group string, ports []string, external_ids map[string]string) (*OvnCommand, error) {
 	return c.pgUpdateImp(group, ports, external_ids)
+}
+
+func (c *ovndb) PortGroupAddPort(group string, port string) (*OvnCommand, error) {
+	return c.pgAddPortImp(group, port)
+}
+
+func (c *ovndb) PortGroupRemovePort(group string, port string) (*OvnCommand, error) {
+	return c.pgRemovePortImp(group, port)
 }
 
 func (c *ovndb) PortGroupDel(group string) (*OvnCommand, error) {

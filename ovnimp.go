@@ -40,6 +40,8 @@ var (
 	ErrorExist = errors.New("object exist")
 	// ErrorNoChanges used when function called, but no changes
 	ErrorNoChanges = errors.New("no changes requested")
+	// ErrorDuplicateName used when multiple rows are found when searching by name
+	ErrorDuplicateName = errors.New("duplicate name")
 )
 
 // OVNRow ovn nb/sb row

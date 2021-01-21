@@ -356,6 +356,63 @@ func TestPortGroupAPI(t *testing.T) {
 		assert.Nil(err)
 	})
 
+	t.Run("add/delete ports to/from port group", func(t *testing.T) {
+		ports := []string{lsp1UUID}
+
+		// Add the port group
+		cmd, err = ovndbapi.PortGroupAdd(PG_TEST_PG1, ports, nil)
+		assert.Nil(err)
+		err = ovndbapi.Execute(cmd)
+		assert.Nil(err)
+
+		cmd, err = ovndbapi.PortGroupAddPort(PG_TEST_PG1, lsp2UUID)
+		assert.Nil(err)
+		err = ovndbapi.Execute(cmd)
+		assert.Nil(err)
+
+		// Validate port group
+		ports = append(ports, lsp2UUID)
+		pg, err := ovndbapi.PortGroupGet(PG_TEST_PG1)
+		assert.Nil(err)
+		assert.NotNil(pg)
+		sort.Strings(ports)
+		sort.Strings(pg.Ports)
+		assert.True(reflect.DeepEqual(ports, pg.Ports))
+
+		// Add duplicate port
+		cmd, err = ovndbapi.PortGroupAddPort(PG_TEST_PG1, lsp2UUID)
+		assert.Equal(ErrorExist, err)
+
+		// Add port to non-existent port group
+		cmd, err = ovndbapi.PortGroupAddPort(PG_TEST_PG2, lsp1UUID)
+		assert.Equal(ErrorNotFound, err)
+
+		// Remove lsp2 from port group
+		cmd, err = ovndbapi.PortGroupRemovePort(PG_TEST_PG1, lsp2UUID)
+		assert.Nil(err)
+		err = ovndbapi.Execute(cmd)
+		assert.Nil(err)
+		pg, err = ovndbapi.PortGroupGet(PG_TEST_PG1)
+		assert.Nil(err)
+		ports = []string{lsp1UUID}
+		assert.True(reflect.DeepEqual(ports, pg.Ports))
+
+		// Remove lsp1 from port group
+		cmd, err = ovndbapi.PortGroupRemovePort(PG_TEST_PG1, lsp1UUID)
+		assert.Nil(err)
+		err = ovndbapi.Execute(cmd)
+		assert.Nil(err)
+		pg, err = ovndbapi.PortGroupGet(PG_TEST_PG1)
+		assert.Nil(err)
+		assert.True(len(pg.Ports) == 0)
+
+		// Delete the port group
+		cmd, err = ovndbapi.PortGroupDel(PG_TEST_PG1)
+		assert.Nil(err)
+		err = ovndbapi.Execute(cmd)
+		assert.Nil(err)
+	})
+
 	t.Run("set port group that doesn't exist", func(t *testing.T) {
 		cmd, err = ovndbapi.PortGroupUpdate(PG_TEST_PG1, []string{lsp1UUID, lsp2UUID}, nil)
 		assert.NotNil(err)
