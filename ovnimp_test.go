@@ -102,3 +102,108 @@ func TestConvertGoSetToStringArray(t *testing.T) {
 	}
 	t.Logf("Deleted the logical switch " + LSW)
 }
+
+func lsNameToUUID(lsName string, c Client) (string, error) {
+	lsList, err := c.LSList()
+	if err == nil {
+		for _, ls := range lsList {
+			if ls.Name == lsName {
+				return ls.UUID, nil
+			}
+			return "", ErrorNotFound
+		}
+	}
+	return "", err
+}
+
+func lspNameToUUID(lspName string, c Client) (string, error) {
+	lsp, err := c.LSPGet(lspName)
+	if err == nil {
+		return lsp.UUID, nil
+	} else {
+		return "", ErrorNotFound
+	}
+}
+
+func TestExecuteR(t *testing.T) {
+	ovndbapi := getOVNClient(DBNB)
+
+	t.Run("execute one command in an ExecuteR call", func(t *testing.T) {
+		// Create Switch
+		cmd, err := ovndbapi.LSAdd(PG_TEST_LS1)
+		assert.Nil(t, err)
+		result, err := ovndbapi.ExecuteR(cmd)
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(result))
+		//Check UUID returned
+		lsUUID, err := lsNameToUUID(PG_TEST_LS1, ovndbapi)
+		assert.Nil(t, err)
+		assert.Greater(t, len(lsUUID), 0)
+		assert.Equal(t, lsUUID, result[0])
+
+		// Delete Switch (LSPs will get deleted by OVSDB)
+		cmd, err = ovndbapi.LSDel(PG_TEST_LS1)
+		assert.Nil(t, err)
+		result, err = ovndbapi.ExecuteR(cmd)
+		assert.Nil(t, err)
+		// LSDel should not return any UUIDs
+		assert.Nil(t, result)
+	})
+
+	t.Run("execute multiple commands in one ExecuteR call", func(t *testing.T) {
+		var cmds []*OvnCommand
+
+		// Create switch and ports
+		cmd, err := ovndbapi.LSAdd(PG_TEST_LS1)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		// Add ports
+		cmd, err = ovndbapi.LSPAdd(PG_TEST_LS1, PG_TEST_LSP1)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		cmd, err = ovndbapi.LSPSetAddress(PG_TEST_LSP1, ADDR)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		cmd, err = ovndbapi.LSPSetPortSecurity(PG_TEST_LSP1, ADDR)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		cmd, err = ovndbapi.LSPAdd(PG_TEST_LS1, PG_TEST_LSP2)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		cmd, err = ovndbapi.LSPSetAddress(PG_TEST_LSP2, ADDR2)
+		assert.Nil(t, err)
+		cmds = append(cmds, cmd)
+		cmd, err = ovndbapi.LSPSetPortSecurity(PG_TEST_LSP2, ADDR2)
+		cmds = append(cmds, cmd)
+		assert.Nil(t, err)
+
+		result, err := ovndbapi.ExecuteR(cmds...)
+		assert.Nil(t, err)
+		// Only the 3 "Add" commands above should return a UUID
+		assert.Equal(t, 3, len(result))
+
+		//Check UUIDs returned
+		lsUUID, err := lsNameToUUID(PG_TEST_LS1, ovndbapi)
+		assert.Nil(t, err)
+		assert.Greater(t, len(lsUUID), 0)
+		assert.Equal(t, lsUUID, result[0])
+
+		lsp1UUID, err := lspNameToUUID(PG_TEST_LSP1, ovndbapi)
+		assert.Nil(t, err)
+		assert.Greater(t, len(lsp1UUID), 0)
+		assert.Equal(t, lsp1UUID, result[1])
+
+		lsp2UUID, err := lspNameToUUID(PG_TEST_LSP2, ovndbapi)
+		assert.Nil(t, err)
+		assert.Greater(t, len(lsp2UUID), 0)
+		assert.Equal(t, lsp2UUID, result[2])
+
+		// Delete Switch (LSPs will get deleted by OVSDB)
+		cmd, err = ovndbapi.LSDel(PG_TEST_LS1)
+		assert.Nil(t, err)
+		result, err = ovndbapi.ExecuteR(cmd)
+		assert.Nil(t, err)
+		// LSDel should not return any UUIDs
+		assert.Nil(t, result)
+	})
+}

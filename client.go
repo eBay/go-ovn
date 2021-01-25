@@ -193,6 +193,8 @@ type Client interface {
 	MeterBandsList() ([]*MeterBand, error)
 	// Exec command, support mul-commands in one transaction.
 	Execute(cmds ...*OvnCommand) error
+	// Same as Execute, but returns a UUID for each object created.
+	ExecuteR(cmds ...*OvnCommand) ([]string, error)
 
 	// Add chassis with given name
 	ChassisAdd(name string, hostname string, etype []string, ip string, external_ids map[string]string,
@@ -654,6 +656,10 @@ func (c *ovndb) QoSList(ls string) ([]*QoS, error) {
 
 func (c *ovndb) Execute(cmds ...*OvnCommand) error {
 	return c.execute(cmds...)
+}
+
+func (c *ovndb) ExecuteR(cmds ...*OvnCommand) ([]string, error) {
+	return c.executeR(cmds...)
 }
 
 func (c *ovndb) LSGet(ls string) ([]*LogicalSwitch, error) {

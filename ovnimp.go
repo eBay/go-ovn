@@ -178,8 +178,13 @@ func (odbi *ovndb) transact(db string, ops ...libovsdb.Operation) ([]libovsdb.Op
 }
 
 func (odbi *ovndb) execute(cmds ...*OvnCommand) error {
+	_, err := odbi.ExecuteR(cmds...)
+	return err
+}
+
+func (odbi *ovndb) executeR(cmds ...*OvnCommand) ([]string, error) {
 	if cmds == nil {
-		return nil
+		return nil, nil
 	}
 	var ops []libovsdb.Operation
 	for _, cmd := range cmds {
@@ -188,11 +193,23 @@ func (odbi *ovndb) execute(cmds ...*OvnCommand) error {
 		}
 	}
 
-	_, err := odbi.transact(odbi.db, ops...)
-	if err != nil {
-		return err
+	results, err := odbi.transact(odbi.db, ops...)
+	if err == nil {
+		// The total number of UUIDs will be <= number of results returned.
+		UUIDs := make([]string, 0, len(results))
+		for _, r := range results {
+			if len(r.UUID.GoUUID) >0 {
+				UUIDs = append(UUIDs, r.UUID.GoUUID)
+			}
+		}
+		if len(UUIDs) > 0 {
+			return UUIDs, nil
+		} else {
+			return nil, nil
+		}
+	} else {
+		return nil, err
 	}
-	return nil
 }
 
 func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
