@@ -28,8 +28,9 @@ import (
 )
 
 type EntityType string
-const(
-	PORT_GROUP EntityType = "PORT_GROUP"
+
+const (
+	PORT_GROUP     EntityType = "PORT_GROUP"
 	LOGICAL_SWITCH EntityType = "LOICAL_SWITCH"
 )
 
@@ -48,6 +49,10 @@ type Client interface {
 	LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
 	// Del external_ids from logical_switch
 	LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
+	// Add external_ids or other_config records to logical switch
+	LSAuxAdd(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error)
+	// Del external_ids or other_config from logical_switch
+	LSAuxDel(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error)
 	// Link logical switch to router
 	LinkSwitchToRouter(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error)
 
@@ -420,6 +425,14 @@ func (c *ovndb) LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnComm
 
 func (c *ovndb) LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error) {
 	return c.lsExtIdsDelImp(ls, external_ids)
+}
+
+func (c *ovndb) LSAuxAdd(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error) {
+	return c.lsAuxAddImp(ls, auxConf, auxTable)
+}
+
+func (c *ovndb) LSAuxDel(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error) {
+	return c.lsAuxDelImp(ls, auxConf, auxTable)
 }
 
 func (c *ovndb) LSPGet(lsp string) (*LogicalSwitchPort, error) {

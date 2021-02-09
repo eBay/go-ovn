@@ -331,6 +331,70 @@ func (odbi *ovndb) lsExtIdsDelImp(ls string, external_ids map[string]string) (*O
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+// lsAuxAddImp is for adding records to external_ids or other_config tables
+func (odbi *ovndb) lsAuxAddImp(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error) {
+	if (auxTable != "external_ids") && (auxTable != "other_config") {
+		return nil, fmt.Errorf("%s is neither other_config or external_ids", auxTable)
+	}
+
+	var operations []libovsdb.Operation
+	row := make(OVNRow)
+	row["name"] = ls
+	lsuuid := odbi.getRowUUID(TableLogicalSwitch, row)
+	if len(lsuuid) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(auxConf) == 0 {
+		return nil, fmt.Errorf("%s map is nil or empty", auxTable)
+	}
+	mutateSet, err := libovsdb.NewOvsMap(auxConf)
+	if err != nil {
+		return nil, err
+	}
+	mutation := libovsdb.NewMutation(auxTable, opInsert, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", ls)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     TableLogicalSwitch,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations = append(operations, mutateOp)
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+// lsAuxDelImp is for removing records from external_ids or other_config tables
+func (odbi *ovndb) lsAuxDelImp(ls string, auxConf map[string]string, auxTable string) (*OvnCommand, error) {
+	if (auxTable != "external_ids") && (auxTable != "other_config") {
+		return nil, fmt.Errorf("%s is neither other_config or external_ids", auxTable)
+	}
+
+	var operations []libovsdb.Operation
+	row := make(OVNRow)
+	row["name"] = ls
+	lsuuid := odbi.getRowUUID(TableLogicalSwitch, row)
+	if len(lsuuid) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(auxConf) == 0 {
+		return nil, fmt.Errorf("%s map is nil or empty", auxTable)
+	}
+	mutateSet, err := libovsdb.NewOvsMap(auxConf)
+	if err != nil {
+		return nil, err
+	}
+	mutation := libovsdb.NewMutation(auxTable, opDelete, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", ls)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     TableLogicalSwitch,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+	operations = append(operations, mutateOp)
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 func (odbi *ovndb) linkSwitchToRouterImp(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error) {
 	// validate logical switch
 	row := make(OVNRow)
