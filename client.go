@@ -30,7 +30,7 @@ import (
 type EntityType string
 const(
 	PORT_GROUP EntityType = "PORT_GROUP"
-	LOGICAL_SWITCH EntityType = "LOICAL_SWITCH"
+	LOGICAL_SWITCH EntityType = "LOGICAL_SWITCH"
 )
 
 // Client ovnnb/sb client
@@ -202,6 +202,13 @@ type Client interface {
 	ChassisGet(chname string) ([]*Chassis, error)
 	// List chassis
 	ChassisList() ([]*Chassis, error)
+
+	// Delete Chassis row from Chassis_Private with given name
+	ChassisPrivateDel(chName string) (*OvnCommand, error)
+	// List Chassis rows in chassis_private table
+	ChassisPrivateList() ([]*ChassisPrivate, error)
+	// Get Chassis row in chassis_private table by given name
+	ChassisPrivateGet(chName string) ([]*ChassisPrivate, error)
 
 	// Get encaps by chassis name
 	EncapList(chname string) ([]*Encap, error)
@@ -400,6 +407,22 @@ func (c *ovndb) ChassisAdd(name string, hostname string, etype []string, ip stri
 
 func (c *ovndb) ChassisDel(name string) (*OvnCommand, error) {
 	return c.chassisDelImp(name)
+}
+
+func (c *ovndb) chassisPrivateAdd(name string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.chassisPrivateAddImp(name, external_ids)
+}
+
+func (c *ovndb) ChassisPrivateList() ([]*ChassisPrivate, error) {
+	return c.chassisPrivateListImp()
+}
+
+func (c *ovndb) ChassisPrivateGet(name string) ([]*ChassisPrivate, error) {
+	return c.chassisPrivateGetImp(name)
+}
+
+func (c *ovndb) ChassisPrivateDel(name string) (*OvnCommand, error) {
+	return c.chassisPrivateDelImp(name)
 }
 
 func (c *ovndb) LSAdd(ls string) (*OvnCommand, error) {
