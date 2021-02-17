@@ -28,8 +28,9 @@ import (
 )
 
 type EntityType string
-const(
-	PORT_GROUP EntityType = "PORT_GROUP"
+
+const (
+	PORT_GROUP     EntityType = "PORT_GROUP"
 	LOGICAL_SWITCH EntityType = "LOGICAL_SWITCH"
 )
 
