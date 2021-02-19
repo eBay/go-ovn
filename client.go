@@ -241,6 +241,9 @@ type Client interface {
 
 	// Close connection to OVN
 	Close() error
+
+	// GetSchema() returns ovn-db schema
+	GetSchema() libovsdb.DatabaseSchema
 }
 
 var _ Client = &ovndb{}
@@ -387,6 +390,10 @@ func (c *ovndb) MonitorTables(jsonContext interface{}) (*libovsdb.TableUpdates, 
 func (c *ovndb) Close() error {
 	c.client.Disconnect()
 	return nil
+}
+
+func (c *ovndb) GetSchema() libovsdb.DatabaseSchema {
+	return c.client.Schema[c.db]
 }
 
 func (c *ovndb) EncapList(chname string) ([]*Encap, error) {
