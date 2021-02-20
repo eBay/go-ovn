@@ -49,6 +49,10 @@ type Client interface {
 	LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnCommand, error)
 	// Del external_ids from logical_switch
 	LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error)
+	// Add keys/vals to logical switch external_ids or other_config records
+	LSAuxAdd(ls string, auxConf map[string]string, auxColumn string) (*OvnCommand, error)
+	// Remove keys/vals from logical switch external_ids or other_config records
+	LSAuxDel(ls string, auxConf map[string]string, auxColumn string) (*OvnCommand, error)
 	// Link logical switch to router
 	LinkSwitchToRouter(lsw, lsp, lr, lrp, lrpMac string, networks []string, externalIds map[string]string) (*OvnCommand, error)
 
@@ -444,6 +448,14 @@ func (c *ovndb) LSExtIdsAdd(ls string, external_ids map[string]string) (*OvnComm
 
 func (c *ovndb) LSExtIdsDel(ls string, external_ids map[string]string) (*OvnCommand, error) {
 	return c.lsExtIdsDelImp(ls, external_ids)
+}
+
+func (c *ovndb) LSAuxAdd(ls string, auxConf map[string]string, auxColumn string) (*OvnCommand, error) {
+	return c.lsAuxAddImp(ls, auxConf, auxColumn)
+}
+
+func (c *ovndb) LSAuxDel(ls string, auxConf map[string]string, auxColumn string) (*OvnCommand, error) {
+	return c.lsAuxDelImp(ls, auxConf, auxColumn)
 }
 
 func (c *ovndb) LSPGet(lsp string) (*LogicalSwitchPort, error) {

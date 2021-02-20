@@ -25,6 +25,7 @@ import (
 const (
 	LS3             = "LS3"
 	NEUTRON_NETWORK = "neutron:network"
+	ANOTHER_NETWORK = "another:network"
 	DUMMY           = "dummy"
 	FOO             = "foo"
 	BAR             = "bar"
@@ -63,6 +64,27 @@ func TestLSwitchExtIds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Add external_ids to LS3 via LSAuxAdd
+	cmd, err = ovndbapi.LSAuxAdd(LS3, map[string]string{ANOTHER_NETWORK: DUMMY, FOO: BAR}, "external_ids")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add other_config to LS3 via LSAuxAdd
+	cmd, err = ovndbapi.LSAuxAdd(LS3, map[string]string{ANOTHER_NETWORK: DUMMY, FOO: BAR}, "other_config")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Get LS3 and get external_id NEUTRON_NETWORK
 	lswitch, err := ovndbapi.LSGet(LS3)
 	if err != nil {
@@ -74,12 +96,44 @@ func TestLSwitchExtIds(t *testing.T) {
 			assert.Equal(t, true, val.(string) == DUMMY, "Got external ID dummy")
 			t.Logf("Successfully validated external_id key NEUTRON_NETWORK to LS3")
 		}
+		if key == ANOTHER_NETWORK {
+			assert.Equal(t, true, val.(string) == DUMMY, "Got external ID dummy")
+			t.Logf("Successfully validated external_id key ANOTHER_NETWORK to LS3")
+		}
 	}
+	otherConfig := lswitch[0].OtherConfig
+	for key, val := range otherConfig {
+		if key == ANOTHER_NETWORK {
+			assert.Equal(t, true, val.(string) == DUMMY, "Got other_config dummy")
+			t.Logf("Successfully validated other_config key ANOTHER_NETWORK to LS3")
+		}
+	}
+
 	// Add empty external_ids to LS3
 	cmd, err = ovndbapi.LSExtIdsAdd(LS3, nil)
 	if err != nil {
 		assert.Errorf(t, err, "Cannot update lswitch with empty ext_id")
 		t.Logf("Adding empty external_id for LS3 validation is ok")
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Add empty external_ids to LS3 via LSAuxAdd
+	cmd, err = ovndbapi.LSAuxAdd(LS3, nil, "external_ids")
+	if err != nil {
+		assert.Errorf(t, err, "Cannot update lswitch with empty external_ids (LSAuxAdd)")
+		t.Logf("Adding empty external_id for LS3 validation via LSAuxAdd is ok")
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Add empty other_config to LS3 via LSAuxAdd
+	cmd, err = ovndbapi.LSAuxAdd(LS3, nil, "other_config")
+	if err != nil {
+		assert.Errorf(t, err, "Cannot update lswitch with empty other_config")
+		t.Logf("Adding empty other_config for LS3 validation via LSAuxAdd is ok")
 	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
@@ -95,6 +149,25 @@ func TestLSwitchExtIds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	//delete external_id from LS3 via LSAuxDel
+	cmd, err = ovndbapi.LSAuxDel(LS3, map[string]string{"another:network": "dummy"}, "external_ids")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//delete other_config from LS3 via LSAuxDel
+	cmd, err = ovndbapi.LSAuxDel(LS3, map[string]string{"another:network": "dummy"}, "other_config")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Get LS3 and get external_id
 	lswitch, err = ovndbapi.LSGet(LS3)
 	if err != nil {
@@ -103,8 +176,15 @@ func TestLSwitchExtIds(t *testing.T) {
 	externalIDs = lswitch[0].ExternalID
 	for key, val := range externalIDs {
 		if key == FOO {
-			assert.Equal(t, true, val.(string) == BAR, "Externel id with value dummy deleted")
-			t.Logf("Deleted external_id key NEUTRON_NETWORK from LS3")
+			assert.Equal(t, true, val.(string) == BAR, "External IDs with dummy values deleted")
+			t.Logf("Deleted external_id keys NEUTRON_NETWORK, ANOTHER_NETWORK from LS3")
+		}
+	}
+	otherConfig = lswitch[0].OtherConfig
+	for key, val := range otherConfig {
+		if key == FOO {
+			assert.Equal(t, true, val.(string) == BAR, "Other Config with value dummy deleted")
+			t.Logf("Deleted other_config key ANOTHER_NETWORK from LS3")
 		}
 	}
 	// Delete empty external_ids from LS3
@@ -112,6 +192,26 @@ func TestLSwitchExtIds(t *testing.T) {
 	if err != nil {
 		assert.Errorf(t, err, "Cannot update lswitch with empty ext_id")
 		t.Logf("Deleting empty external_id from LS3 validation is ok")
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Delete empty external_ids from LS3 via LSAuxDel
+	cmd, err = ovndbapi.LSAuxDel(LS3, nil, "external_ids")
+	if err != nil {
+		assert.Errorf(t, err, "Cannot update lswitch with empty external_ids (LSAuxDel)")
+		t.Logf("Deleting empty other_config from LS3 validation via LSAuxDel is ok")
+	}
+	err = ovndbapi.Execute(cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Delete empty other_config from LS3
+	cmd, err = ovndbapi.LSAuxDel(LS3, nil, "other_config")
+	if err != nil {
+		assert.Errorf(t, err, "Cannot update lswitch with empty other_config")
+		t.Logf("Deleting empty other_config from LS3 validation is ok via LSAuxDel")
 	}
 	err = ovndbapi.Execute(cmd)
 	if err != nil {
