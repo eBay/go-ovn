@@ -66,6 +66,8 @@ type Client interface {
 	LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, error)
 	// Set port security per lport
 	LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error)
+	// Set lport type
+	LSPSetType(lsp string, portType string) (*OvnCommand, error)
 	// Get all lport by lswitch
 	LSPList(ls string) ([]*LogicalSwitchPort, error)
 
@@ -480,6 +482,10 @@ func (c *ovndb) LSPSetAddress(lsp string, addresses ...string) (*OvnCommand, err
 
 func (c *ovndb) LSPSetPortSecurity(lsp string, security ...string) (*OvnCommand, error) {
 	return c.lspSetPortSecurityImp(lsp, security...)
+}
+
+func (c *ovndb) LSPSetType(lsp string, portType string) (*OvnCommand, error) {
+	return c.lspSetTypeImp(lsp, portType)
 }
 
 func (c *ovndb) LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error) {
