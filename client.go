@@ -338,15 +338,30 @@ func (c *ovndb) reconnect() {
 	}()
 }
 
-func (c *ovndb) MonitorTables(jsonContext interface{}) (*libovsdb.TableUpdates, error) {
-	// get the table list based on the DB
+// filterTablesFromSchema checks whether tables in
+// NBTablesOrder / SBTablesOrder exists in current ovn-db schema
+func (c *ovndb) filterTablesFromSchema() []string {
 	var tables []string
+
+	// get the table list based on the DB
 	if c.db == DBNB {
 		tables = NBTablesOrder
 	} else {
 		tables = SBTablesOrder
 	}
 
+	dbSchema := c.GetSchema()
+	schemaTables := make([]string, 0)
+	for _, table := range tables {
+		if _, ok := dbSchema.Tables[table]; ok {
+			schemaTables = append(schemaTables, table)
+		}
+	}
+	return schemaTables
+}
+
+func (c *ovndb) MonitorTables(jsonContext interface{}) (*libovsdb.TableUpdates, error) {
+	tables := c.filterTablesFromSchema()
 	// verify whether user specified table and its columns are legit
 	if len(c.tableCols) != 0 {
 		supportedTableMaps := make(map[string]bool)
