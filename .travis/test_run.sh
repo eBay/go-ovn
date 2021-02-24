@@ -110,6 +110,6 @@ export GO111MODULE=on
 go get -v ./...
 go test -v -tags=travis
 
-ovs-appctl -t ${OVS_RUNDIR}/nb1 exit
-ovs-appctl -t ${OVS_RUNDIR}/sb1 exit
+#ovs-appctl -t ${OVS_RUNDIR}/nb1 exit
+#ovs-appctl -t ${OVS_RUNDIR}/sb1 exit
 
