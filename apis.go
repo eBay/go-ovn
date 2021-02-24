@@ -85,6 +85,12 @@ type OVNSignal interface {
 	OnEncapDelete(ch *Encap)
 }
 
+// OVNORMSignal notifies on changes to ovnnb
+type OVNORMSignal interface {
+	OnCreated(Model)
+	OnDeleted(Model)
+}
+
 // OVNNotifier ovnnb and ovnsb notifier
 type OVNNotifier interface {
 	Update(context interface{}, tableUpdates libovsdb.TableUpdates)
