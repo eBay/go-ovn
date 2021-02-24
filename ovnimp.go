@@ -42,6 +42,8 @@ var (
 	ErrorNoChanges = errors.New("no changes requested")
 	// ErrorDuplicateName used when multiple rows are found when searching by name
 	ErrorDuplicateName = errors.New("duplicate name")
+
+	emptyRow = libovsdb.Row{}
 )
 
 // OVNRow ovn nb/sb row
@@ -225,7 +227,14 @@ func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
 }
 
 func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
-	empty := libovsdb.Row{}
+	if odbi.mode == ORM {
+		odbi.populateCacheORM(updates)
+	} else {
+		odbi.populateCacheNormal(updates)
+	}
+}
+
+func (odbi *ovndb) populateCacheNormal(updates libovsdb.TableUpdates) {
 
 	odbi.cachemutex.Lock()
 	defer odbi.cachemutex.Unlock()
@@ -244,7 +253,7 @@ func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 			// missing json number conversion in libovsdb
 			odbi.float64_to_int(row.New)
 
-			if !reflect.DeepEqual(row.New, empty) {
+			if !reflect.DeepEqual(row.New, emptyRow) {
 				if reflect.DeepEqual(row.New, odbi.cache[table][uuid]) {
 					// Already existed and unchanged, ignore (this can happen when auto-reconnect)
 					continue
