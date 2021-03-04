@@ -279,6 +279,16 @@ type ORMClient interface {
 	// will be used to set the condition.
 	Delete(Model, ...string) (*OvnCommand, error)
 
+	// Update returns the command needed to update a model on the Database
+	// It is equivalent to running UpdateFields with an empty set of fields
+	Update(model Model, index ...string) (*OvnCommand, error)
+
+	// UpdateFields returns the command capable of updating the specified list of fields
+	// of the model in the database
+	// Optionally, additional indexes can be provided to modify the condition used to
+	// select the row to be updated
+	UpdateFields(Model, []string, ...string) (*OvnCommand, error)
+
 	// Close connection to OVN
 	Close() error
 }

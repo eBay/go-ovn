@@ -239,6 +239,47 @@ func (odbi *ovndb) Delete(model Model, index ...string) (*OvnCommand, error) {
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
+// Update is a generic function capable of updating any field in any row in the database
+// It will return the OvnCommand that will make the row that matches model (based on
+func (odbi *ovndb) Update(model Model, index ...string) (*OvnCommand, error) {
+	return odbi.UpdateFields(model, []string{}, index...)
+
+}
+
+// UpdateFields returns the command capable of updating the specified fields in the provided
+// model. If an empty field list is given, all non-default fields will be updated
+func (odbi *ovndb) UpdateFields(model Model, fields []string, index ...string) (*OvnCommand, error) {
+	api, err := odbi.client.ORM(odbi.db)
+	if err != nil {
+		return nil, err
+	}
+	modelVal := reflect.ValueOf(model)
+
+	table := odbi.findTable(modelVal.Type())
+	if table == "" {
+		return nil, ErrorSchema
+	}
+
+	conditions, err := api.NewCondition(table, model, index...)
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := api.NewRow(table, model, fields...)
+	if err != nil {
+		return nil, err
+	}
+
+	updateOp := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: table,
+		Row:   row,
+		Where: conditions,
+	}
+	operations := []libovsdb.Operation{updateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 // findTable returns the TableName associated with a reflect.Type or ""
 func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 	for table, tType := range odbi.dbModel.types {
