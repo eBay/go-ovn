@@ -255,6 +255,9 @@ type ORMClient interface {
 	// GetSchema() returns ovn-db schema
 	GetSchema() libovsdb.DatabaseSchema
 
+	// List populates a slice of ORM objects based on their type
+	List(interface{}) error
+
 	// Close connection to OVN
 	Close() error
 }

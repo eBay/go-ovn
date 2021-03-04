@@ -1,6 +1,7 @@
 package goovn
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 
@@ -60,6 +61,66 @@ func (odbi *ovndb) populateCacheORM(updates libovsdb.TableUpdates) {
 			}
 		}
 	}
+}
+
+// List is a generic function capable of returning (through a provided pointer)
+// a list of instances of any row in the cache. It only works on ORM mode.
+// 'result' must be a pointer to an slice of the ORM structs that shall be retrived
+// The items are appended to the given (pointer to) slice until its capability is reached.
+// If the slice is null, all of the table cache will be returned
+func (odbi *ovndb) List(result interface{}) error {
+	if odbi.mode != ORM {
+		return fmt.Errorf("List() is only available in ORM mode")
+	}
+
+	resultPtr := reflect.ValueOf(result)
+	if resultPtr.Type().Kind() != reflect.Ptr {
+		return fmt.Errorf("List() result must be a pointer")
+	}
+
+	resultVal := reflect.Indirect(resultPtr)
+	if resultVal.Type().Kind() != reflect.Slice {
+		return fmt.Errorf("List() result must be a pointer to slice")
+	}
+
+	// DBModel stores pointer to structs, slice should have structs, so calling PtrTo
+	table := odbi.findTable(reflect.PtrTo(resultVal.Type().Elem()))
+	if table == "" {
+		return fmt.Errorf("Schema error: finding table for types %s. Table content %+v", reflect.PtrTo(resultVal.Type().Elem()), odbi.dbModel.types)
+	}
+
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	tableCache, ok := odbi.ormCache[table]
+	if !ok {
+		return ErrorNotFound
+	}
+
+	// If given a null slice, fill it in the cache table completely, if not, just up to
+	// its capability
+	if resultVal.IsNil() {
+		resultVal.Set(reflect.MakeSlice(resultVal.Type(), 0, len(tableCache)))
+	}
+	i := resultVal.Len()
+	for _, elem := range tableCache {
+		if i >= resultVal.Cap() {
+			break
+		}
+		resultVal.Set(reflect.Append(resultVal, reflect.Indirect(reflect.ValueOf(elem))))
+		i++
+	}
+	return nil
+}
+
+// findTable returns the TableName associated with a reflect.Type or ""
+func (odbi *ovndb) findTable(mType reflect.Type) TableName {
+	for table, tType := range odbi.dbModel.types {
+		if tType == mType {
+			return table
+		}
+	}
+	return ""
 }
 
 func (odbi *ovndb) setUUID(model Model, uuid string) {
