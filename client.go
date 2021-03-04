@@ -258,6 +258,12 @@ type ORMClient interface {
 	// List populates a slice of ORM objects based on their type
 	List(interface{}) error
 
+	// Get retrieves a model from the cache
+	// The way the object will be fetch depends on the data contained in the
+	// provided model and the indexes defined in the associated schema
+	// Optionally, a list of additional collumns to use as index can be given
+	Get(Model, ...string) error
+
 	// Close connection to OVN
 	Close() error
 }

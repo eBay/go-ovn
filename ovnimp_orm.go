@@ -113,6 +113,37 @@ func (odbi *ovndb) List(result interface{}) error {
 	return nil
 }
 
+// Get is a generic Get function capable of returning (through a provided pointer)
+// a instance of any row in the cache. It only works on ORM mode.
+// 'result' must be a pointer to an Model that exists in the DBModel
+//
+// The way the cache is search depends on the fields already populated in 'result'
+// Any table index (including _uuid) will be used for comparison. Additionally,
+// any additional index provided as argument will be also used
+func (odbi *ovndb) Get(model Model, index ...string) error {
+	if odbi.mode != ORM {
+		return fmt.Errorf("Get() is only available in ORM mode")
+	}
+
+	resultVal := reflect.ValueOf(model)
+	if resultVal.Type().Kind() != reflect.Ptr {
+		return fmt.Errorf("Get() result must be a pointer")
+	}
+
+	table := odbi.findTable(resultVal.Type())
+	if table == "" {
+		return ErrorSchema
+	}
+
+	elem, err := odbi.ormFindInCache(table, model, index...)
+	if err != nil {
+		return err
+	}
+	resultVal.Elem().Set(reflect.Indirect(reflect.ValueOf(elem)))
+	return nil
+
+}
+
 // findTable returns the TableName associated with a reflect.Type or ""
 func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 	for table, tType := range odbi.dbModel.types {
@@ -126,4 +157,39 @@ func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 func (odbi *ovndb) setUUID(model Model, uuid string) {
 	uField := reflect.Indirect(reflect.ValueOf(model)).FieldByName("UUID")
 	uField.Set(reflect.ValueOf(uuid))
+}
+
+// ormFindInCache looks for an item in the cache
+func (odbi *ovndb) ormFindInCache(table TableName, model Model, index ...string) (Model, error) {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	tableCache, ok := odbi.ormCache[table]
+	if !ok {
+		return nil, ErrorNotFound
+	}
+
+	for _, elem := range tableCache {
+		eq, err := odbi.ormEqual(elem.(Model), model, index...)
+		if err != nil {
+			return nil, err
+		}
+		if eq {
+			return elem.(Model), nil
+		}
+	}
+	return nil, ErrorNotFound
+}
+
+// ormEqual compares two ORM models based on their indexes
+// Optionally, additional indexes can be specified
+func (odbi *ovndb) ormEqual(lhs, rhs Model, indexes ...string) (bool, error) {
+	api, err := odbi.client.ORM(odbi.db)
+	if err != nil {
+		return false, err
+	}
+	if lhs.Table() != rhs.Table() {
+		return false, nil
+	}
+	return api.Equal(lhs.Table(), lhs, rhs, indexes...)
 }
