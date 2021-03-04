@@ -186,3 +186,13 @@ func getOVNClient(db string) (ovndbapi Client) {
 	}
 	return api
 }
+
+func getOVNClientORM(db string, model *DBModel) (ovndbapi ORMClient) {
+	cfg := buildOvnDbConfig(db)
+	cfg.DBModel = model
+	api, err := NewORMClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return api
+}
