@@ -196,6 +196,49 @@ func (odbi *ovndb) Create(model Model) (*OvnCommand, error) {
 		Results: make([][]map[string]interface{}, 1)}, nil
 }
 
+// Delete is a generic function capable of deleting any row in the database
+// The condition on which the row is deleted depends optional index argument
+// If no condition is provided, and the model contains an UUID (model.GetUUID() != ""),
+// the _uuid column will be used on the condition
+// Else, the table indexes will be traversed (in no particular order).
+// The first field(s) that correspond to table indexes that are non-null in the given model
+// will be used to set the condition.
+// Empty strings will be considered null but other types (e.g: booleans) cannot have a null
+// value, so they will be used if they exist in the given model.
+// Therefore, not providing a condition nor UUID is only recommended when there is only
+// one additional index in the column
+func (odbi *ovndb) Delete(model Model, index ...string) (*OvnCommand, error) {
+	modelVal := reflect.ValueOf(model)
+
+	table := odbi.findTable(modelVal.Type())
+	if table == "" {
+		return nil, ErrorSchema
+	}
+
+	_, err := odbi.ormFindInCache(table, model)
+	if err != nil {
+		return nil, ErrorNotFound
+	}
+
+	api, err := odbi.client.ORM(odbi.db)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions, err := api.NewCondition(table, model, index...)
+	if err != nil {
+		return nil, err
+	}
+
+	deleteOp := libovsdb.Operation{
+		Op:    opDelete,
+		Table: table,
+		Where: conditions,
+	}
+	operations := []libovsdb.Operation{deleteOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
 // findTable returns the TableName associated with a reflect.Type or ""
 func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 	for table, tType := range odbi.dbModel.types {

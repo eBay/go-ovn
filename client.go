@@ -268,6 +268,17 @@ type ORMClient interface {
 	// Only non-default fields will be added to the transaction
 	Create(Model) (*OvnCommand, error)
 
+	// Delete returns the command needed to delete a model from the Database
+	// The condition used to select the row to be deleted depends on the data contained
+	// in the provided model and the indexes defined in the associated schema
+	// Optionally, a list of collumns to use as index can be given
+	// Therefore, the list of indexes that will be used are:
+	// [UUID, <provided index>] or [UUID, <Schema Indexes>]
+	// The first non-null index value found will be used.
+	// Note that some fields do not have an identifiable null value (e.g: booleans)
+	// will be used to set the condition.
+	Delete(Model, ...string) (*OvnCommand, error)
+
 	// Close connection to OVN
 	Close() error
 }
