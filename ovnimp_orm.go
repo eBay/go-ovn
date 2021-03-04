@@ -144,6 +144,58 @@ func (odbi *ovndb) Get(model Model, index ...string) error {
 
 }
 
+// Create is a generic function capable of creating any row in the DB
+// It only works on ORM mode.
+// A valud Model (pointer to object) must be provided.
+func (odbi *ovndb) Create(model Model) (*OvnCommand, error) {
+	var uuid string
+	var err error
+
+	if odbi.mode != ORM {
+		return nil, fmt.Errorf("Create() is only available in ORM mode")
+	}
+
+	table := odbi.findTable(reflect.ValueOf(model).Type())
+	if table == "" {
+		return nil, ErrorSchema
+	}
+
+	if muuid := odbi.getUUID(model); muuid != "" {
+		uuid = muuid
+	} else {
+		uuid, err = newRowUUID()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Check if exists already
+	_, err = odbi.ormFindInCache(table, model)
+	if _, err = odbi.ormFindInCache(table, model); err != ErrorNotFound {
+		return nil, ErrorExist
+	}
+
+	api, err := odbi.client.ORM(odbi.db)
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := api.NewRow(string(table), model)
+	if err != nil {
+		return nil, err
+	}
+	insertOp := libovsdb.Operation{
+		Op:       opInsert,
+		Table:    string(table),
+		Row:      row,
+		UUIDName: uuid,
+	}
+
+	return &OvnCommand{Operations: []libovsdb.Operation{insertOp},
+		Exe:     odbi,
+		Results: make([][]map[string]interface{}, 1)}, nil
+}
+
 // findTable returns the TableName associated with a reflect.Type or ""
 func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 	for table, tType := range odbi.dbModel.types {
@@ -157,6 +209,10 @@ func (odbi *ovndb) findTable(mType reflect.Type) TableName {
 func (odbi *ovndb) setUUID(model Model, uuid string) {
 	uField := reflect.Indirect(reflect.ValueOf(model)).FieldByName("UUID")
 	uField.Set(reflect.ValueOf(uuid))
+}
+
+func (odbi *ovndb) getUUID(model Model) string {
+	return reflect.Indirect(reflect.ValueOf(model)).FieldByName("UUID").Interface().(string)
 }
 
 // ormFindInCache looks for an item in the cache

@@ -264,6 +264,10 @@ type ORMClient interface {
 	// Optionally, a list of additional collumns to use as index can be given
 	Get(Model, ...string) error
 
+	// Create returns the command needed to add a model to the Database
+	// Only non-default fields will be added to the transaction
+	Create(Model) (*OvnCommand, error)
+
 	// Close connection to OVN
 	Close() error
 }
