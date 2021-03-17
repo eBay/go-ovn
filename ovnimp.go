@@ -194,22 +194,23 @@ func (odbi *ovndb) executeR(cmds ...*OvnCommand) ([]string, error) {
 	}
 
 	results, err := odbi.transact(odbi.db, ops...)
-	if err == nil {
-		// The total number of UUIDs will be <= number of results returned.
-		UUIDs := make([]string, 0, len(results))
-		for _, r := range results {
-			if len(r.UUID.GoUUID) >0 {
-				UUIDs = append(UUIDs, r.UUID.GoUUID)
-			}
-		}
-		if len(UUIDs) > 0 {
-			return UUIDs, nil
-		} else {
-			return nil, nil
-		}
-	} else {
+	if err != nil {
 		return nil, err
 	}
+
+	// The total number of UUIDs will be <= number of results returned.
+	UUIDs := make([]string, 0, len(results))
+	for _, r := range results {
+		if len(r.UUID.GoUUID) > 0 {
+			UUIDs = append(UUIDs, r.UUID.GoUUID)
+		}
+	}
+
+	if len(UUIDs) > 0 {
+		return UUIDs, nil
+	}
+
+	return nil, nil
 }
 
 func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
