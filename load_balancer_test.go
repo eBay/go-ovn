@@ -63,8 +63,8 @@ func TestLoadBalancer(t *testing.T) {
 	if len(lb) != 1 {
 		t.Fatalf("err getting lbs, total:%v", len(lb))
 	}
-	if lb[0].selectionFields != "ip_src" {
-		t.Fatalf("err setting lbs selection fields, expected: ip_src received:%v", lb[0].selectionFields)
+	if lb[0].SelectionFields != "ip_src" {
+		t.Fatalf("err setting lbs selection fields, expected: ip_src received:%v", lb[0].SelectionFields)
 	}
 	t.Logf("Lb found:%+v", lb[0])
 

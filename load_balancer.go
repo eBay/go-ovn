@@ -26,9 +26,9 @@ import (
 type LoadBalancer struct {
 	UUID            string
 	Name            string
-	vips            map[interface{}]interface{}
-	protocol        string
-	selectionFields string
+	VIPs            map[interface{}]interface{}
+	Protocol        string
+	SelectionFields string
 	ExternalID      map[interface{}]interface{}
 }
 
@@ -183,14 +183,14 @@ func (odbi *ovndb) rowToLB(uuid string) (*LoadBalancer, error) {
 
 	lb := &LoadBalancer{
 		UUID:       uuid,
-		protocol:   cacheLoadBalancer.Fields["protocol"].(string),
+		Protocol:   cacheLoadBalancer.Fields["protocol"].(string),
 		Name:       cacheLoadBalancer.Fields["name"].(string),
-		vips:       cacheLoadBalancer.Fields["vips"].(libovsdb.OvsMap).GoMap,
+		VIPs:       cacheLoadBalancer.Fields["vips"].(libovsdb.OvsMap).GoMap,
 		ExternalID: cacheLoadBalancer.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
 	if fields, ok := cacheLoadBalancer.Fields["selection_fields"].(string); ok {
-		lb.selectionFields = fields
+		lb.SelectionFields = fields
 	}
 	return lb, nil
 }
