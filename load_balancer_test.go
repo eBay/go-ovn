@@ -63,6 +63,15 @@ func TestLoadBalancer(t *testing.T) {
 	if len(lb) != 1 {
 		t.Fatalf("err getting lbs, total:%v", len(lb))
 	}
+	// Tessting LBlist()
+	lbList, err := ovndbapi.LBList()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lbList) != 1 {
+		t.Fatalf("err getting lbList, total: %v", len(lbList))
+	}
+
 	if lb[0].SelectionFields != "ip_src" {
 		t.Fatalf("err setting lbs selection fields, expected: ip_src received:%v", lb[0].SelectionFields)
 	}

@@ -159,6 +159,27 @@ func (odbi *ovndb) lbGetImp(name string) ([]*LoadBalancer, error) {
 	return listLB, nil
 }
 
+func (odbi *ovndb) lbListImp() ([]*LoadBalancer, error) {
+	odbi.cachemutex.RLock()
+	defer odbi.cachemutex.RUnlock()
+
+	cacheLoadBalancer, ok := odbi.cache[TableLoadBalancer]
+	if !ok {
+		return nil, ErrorSchema
+	}
+
+	listLB := make([]*LoadBalancer, 0, len(cacheLoadBalancer))
+	for uuid := range cacheLoadBalancer {
+		lb, err := odbi.rowToLB(uuid)
+		if err != nil {
+			return nil, err
+		}
+		listLB = append(listLB, lb)
+	}
+
+	return listLB, nil
+}
+
 func (odbi *ovndb) lbSetSelectionFieldsImp(name string, selectionFields string) (*OvnCommand, error) {
 	row := make(OVNRow)
 	row["selection_fields"] = selectionFields

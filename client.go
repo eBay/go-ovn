@@ -138,6 +138,8 @@ type Client interface {
 	LBUpdate(name string, vipPort string, protocol string, addrs []string) (*OvnCommand, error)
 	// Set selection fields for LB session affinity
 	LBSetSelectionFields(name string, selectionFields string) (*OvnCommand, error)
+	// Get LBs
+	LBList() ([]*LoadBalancer, error)
 
 	// Set dhcp4_options uuid on lsp
 	LSPSetDHCPv4Options(lsp string, options string) (*OvnCommand, error)
@@ -612,6 +614,10 @@ func (c *ovndb) LBDel(name string) (*OvnCommand, error) {
 
 func (c *ovndb) LBSetSelectionFields(name string, selectionFields string) (*OvnCommand, error) {
 	return c.lbSetSelectionFieldsImp(name, selectionFields)
+}
+
+func (c *ovndb) LBList() ([]*LoadBalancer, error) {
+	return c.lbListImp()
 }
 
 func (c *ovndb) ACLAddEntity(entityType EntityType, entity, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
