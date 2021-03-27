@@ -207,3 +207,107 @@ func TestExecuteR(t *testing.T) {
 		assert.Nil(t, result)
 	})
 }
+
+func TestAuxKeyValSetDel(t *testing.T) {
+	asrt := assert.New(t)
+
+	// create a logical switch
+	ovndbapi := getOVNClient(DBNB)
+	ocmd, err := ovndbapi.LSAdd(LSW)
+	assert.Nil(t, err)
+	err = ovndbapi.Execute(ocmd)
+	assert.Nil(t, err)
+	t.Log("added logical switch")
+
+	col := "external_ids"
+
+	setMap := make(map[string]string)
+	expectedMap := make(map[interface{}]interface{})
+	for _, idx := range []string{"1", "2", "3", "4"} {
+		k, v := "k"+idx, "v"+idx
+		setMap[k] = v
+		expectedMap[k] = v
+	}
+
+	// set initial 4 key/val pairs in external_ids column
+	ocmd, err = ovndbapi.AuxKeyValSet(TableLogicalSwitch, LSW, col, setMap)
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err := ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "map insert: failed") {
+		t.Logf("initial map stored correctly in logical switch %s", col)
+	}
+
+	// update existing key with a new value, insert new key/value
+	setMap["k1"] = "v1.1"
+	setMap["k5"] = "v5"
+	expectedMap["k1"] = "v1.1"
+	expectedMap["k5"] = "v5"
+	ocmd, err = ovndbapi.AuxKeyValSet(TableLogicalSwitch, LSW, col, setMap)
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err = ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "key/value update/insert: failed") {
+		t.Log("updated existing, inserted new key/value")
+	}
+
+	delMap := make(map[string]*string)
+
+	// remove key/value
+	delMap["k5"] = strPtr("v5")
+	delete(expectedMap, "k5")
+	ocmd, err = ovndbapi.AuxKeyValDel(TableLogicalSwitch, LSW, col, delMap)
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err = ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "key/value removal: failed") {
+		t.Log("key/value removed")
+	}
+
+	// remove key by setting its value to nil
+	delMap["k4"] = nil
+	delete(expectedMap, "k4")
+	ocmd, err = ovndbapi.AuxKeyValDel(TableLogicalSwitch, LSW, col, delMap)
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err = ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "key removal: failed") {
+		t.Log("key removed")
+	}
+
+	// attempt to remove a non-existing key or a key with non-matching value should be a no-op
+	delMap["k3"] = strPtr("v3.1")
+	delMap["foo"] = strPtr("bar")
+	ocmd, err = ovndbapi.AuxKeyValDel(TableLogicalSwitch, LSW, col, delMap)
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err = ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "non-existing key or key/value removal: failed") {
+		t.Log("non-existing key or key/value removal: no-op, as expected")
+	}
+
+	// delete the remaining keys using a different method. also, provide a non-existing key to make sure no error is returned
+	ocmd, err = ovndbapi.AuxKeyDel(TableLogicalSwitch, LSW, col, "k1", "k2", "k3", "key-DNE")
+	asrt.Nil(err)
+	err = ovndbapi.Execute(ocmd)
+	asrt.Nil(err)
+	ls, err = ovndbapi.LSGet(LSW)
+	asrt.Nil(err)
+	if asrt.Empty(ls[0].ExternalID, "all keys removal via AuxKeyDel(): failed") {
+		t.Log("all keys/values have been removed via AuxKeyDel()")
+	}
+}
+
+func strPtr(str string) *string {
+	return &str
+}

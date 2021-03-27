@@ -248,6 +248,14 @@ type Client interface {
 
 	// GetSchema() returns ovn-db schema
 	GetSchema() libovsdb.DatabaseSchema
+
+	// AuxKeyValSet() sets keys/values for a column of OvsMap type, e.g., 'external_ids', 'other_config'.
+	AuxKeyValSet(table string, row string, auxCol string, kv map[string]string) (*OvnCommand, error)
+	// AuxKeyValDel() removes keys/values for a column of OvsMap type, e.g., 'external_ids', 'other_config'.
+	// special value of 'nil' removes the given key regardless of its value
+	AuxKeyValDel(table string, row string, auxCol string, kv map[string]*string) (*OvnCommand, error)
+	// AuxKeyDel() removes specified keys from a column of OvsMap type
+	AuxKeyDel(table string, row string, auxCol string, keys ...string) (*OvnCommand, error)
 }
 
 var _ Client = &ovndb{}
@@ -804,4 +812,16 @@ func (c *ovndb) sbGlobalAdd(options map[string]string) (*OvnCommand, error) {
 
 func (c *ovndb) sbGlobalDel() (*OvnCommand, error) {
 	return c.sbGlobalDelImp()
+}
+
+func (c *ovndb) AuxKeyValSet(table string, row string, auxCol string, kv map[string]string) (*OvnCommand, error) {
+	return c.auxKeyValSet(table, row, auxCol, kv)
+}
+
+func (c *ovndb) AuxKeyValDel(table string, row string, auxCol string, kv map[string]*string) (*OvnCommand, error) {
+	return c.auxKeyValDel(table, row, auxCol, kv)
+}
+
+func (c *ovndb) AuxKeyDel(table string, row string, auxCol string, keys ...string) (*OvnCommand, error) {
+	return c.auxKeyDel(table, row, auxCol, keys...)
 }

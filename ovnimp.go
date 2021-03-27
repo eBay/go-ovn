@@ -384,3 +384,145 @@ func (odbi *ovndb) optionalStringFieldToPointer(fieldValue interface{}) *string 
 func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
+
+func (odbi *ovndb) auxKeyValSet(table string, row string, auxCol string, kv map[string]string) (*OvnCommand, error) {
+	if len(kv) == 0 {
+		return nil, fmt.Errorf("key-value map is nil or empty")
+	}
+
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = row
+
+	uuid := odbi.getRowUUID(table, ovnRow)
+	col := odbi.cache[table][uuid].Fields[auxCol]
+	if col == nil {
+		return nil, fmt.Errorf("table %s, row %s, column %s not present in cache", table, row, auxCol)
+	}
+
+	switch col.(type) {
+	case libovsdb.OvsMap:
+	default:
+		return nil, fmt.Errorf("table %s, row %s, column %s: value is not a map", table, row, auxCol)
+	}
+
+	cachedMap := col.(libovsdb.OvsMap).GoMap
+
+	// prepare new map for the update by copying keys/values from the kv map,
+	// followed by copying all other keys/values from the cache. NB: this is to implement functionality
+	// not explicitly provided by RFC7047 - change values for individual keys that already exist
+	mergedMap := make(map[interface{}]interface{}, len(kv)+len(cachedMap))
+	for k, v := range kv {
+		mergedMap[k] = v
+	}
+	for k, v := range cachedMap {
+		ck := k.(string)
+		if _, ok := kv[ck]; !ok {
+			mergedMap[ck] = v.(string)
+		}
+	}
+
+	auxMap, err := libovsdb.NewOvsMap(mergedMap)
+	if err != nil {
+		return nil, err
+	}
+	ovnRow[auxCol] = auxMap
+
+	condition := libovsdb.NewCondition("name", "==", row)
+	operation := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: table,
+		Where: []interface{}{condition},
+		Row:   ovnRow,
+	}
+
+	operations := []libovsdb.Operation{operation}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[string]*string) (*OvnCommand, error) {
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = row
+	if len(odbi.getRowUUID(TableLogicalSwitch, ovnRow)) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(kv) == 0 {
+		return nil, fmt.Errorf("KV map is empty")
+	}
+
+	delKeys := []string{}
+	delKeyVals := make(map[string]string, len(kv))
+
+	for k, v := range kv {
+		if v == nil {
+			delKeys = append(delKeys, k)
+		} else {
+			delKeyVals[k] = *v
+		}
+	}
+
+	var mutateSet *libovsdb.OvsSet
+	var mutateMap *libovsdb.OvsMap
+	var err error
+
+	if len(delKeys) != 0 {
+		mutateSet, err = libovsdb.NewOvsSet(delKeys)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(delKeyVals) != 0 {
+		mutateMap, err = libovsdb.NewOvsMap(delKeyVals)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	condition := libovsdb.NewCondition("name", "==", row)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     table,
+		Mutations: []interface{}{},
+		Where:     []interface{}{condition},
+	}
+
+	if mutateSet != nil {
+		m := libovsdb.NewMutation(auxCol, opDelete, mutateSet)
+		mutateOp.Mutations = append(mutateOp.Mutations, m)
+	}
+	if mutateMap != nil {
+		m := libovsdb.NewMutation(auxCol, opDelete, mutateMap)
+		mutateOp.Mutations = append(mutateOp.Mutations, m)
+	}
+
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) auxKeyDel(table string, row string, auxCol string, keys ...string) (*OvnCommand, error) {
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = row
+
+	if len(odbi.getRowUUID(TableLogicalSwitch, ovnRow)) == 0 {
+		return nil, ErrorNotFound
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("keys list is empty")
+	}
+
+	mutateSet, err := libovsdb.NewOvsSet(keys)
+	if err != nil {
+		return nil, err
+	}
+
+	mutation := libovsdb.NewMutation(auxCol, opDelete, mutateSet)
+	condition := libovsdb.NewCondition("name", "==", row)
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     table,
+		Mutations: []interface{}{mutation},
+		Where:     []interface{}{condition},
+	}
+
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
