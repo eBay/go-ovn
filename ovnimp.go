@@ -464,19 +464,6 @@ func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[
 	var mutateMap *libovsdb.OvsMap
 	var err error
 
-	if len(delKeys) != 0 {
-		mutateSet, err = libovsdb.NewOvsSet(delKeys)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if len(delKeyVals) != 0 {
-		mutateMap, err = libovsdb.NewOvsMap(delKeyVals)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	condition := libovsdb.NewCondition("name", "==", row)
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
@@ -485,11 +472,19 @@ func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[
 		Where:     []interface{}{condition},
 	}
 
-	if mutateSet != nil {
+	if len(delKeys) != 0 {
+		mutateSet, err = libovsdb.NewOvsSet(delKeys)
+		if err != nil {
+			return nil, err
+		}
 		m := libovsdb.NewMutation(auxCol, opDelete, mutateSet)
 		mutateOp.Mutations = append(mutateOp.Mutations, m)
 	}
-	if mutateMap != nil {
+	if len(delKeyVals) != 0 {
+		mutateMap, err = libovsdb.NewOvsMap(delKeyVals)
+		if err != nil {
+			return nil, err
+		}
 		m := libovsdb.NewMutation(auxCol, opDelete, mutateMap)
 		mutateOp.Mutations = append(mutateOp.Mutations, m)
 	}

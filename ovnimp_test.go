@@ -292,8 +292,8 @@ func TestAuxKeyValSetDel(t *testing.T) {
 	asrt.Nil(err)
 	ls, err = ovndbapi.LSGet(LSW)
 	asrt.Nil(err)
-	if asrt.Equal(expectedMap, ls[0].ExternalID, "non-existing key or key/value removal: failed") {
-		t.Log("non-existing key or key/value removal: no-op, as expected")
+	if asrt.Equal(expectedMap, ls[0].ExternalID, "non-existing key or non-existing value removal: failed") {
+		t.Log("non-existing key or non-existing value removal: no change, as expected")
 	}
 
 	// delete the remaining keys using a different method. also, provide a non-existing key to make sure no error is returned
