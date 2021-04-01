@@ -1,8 +1,9 @@
 package goovn
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const LB4 = "lb4"
@@ -92,7 +93,7 @@ func TestLogicalRouter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd, err = ovndbapi.LRSRAdd(LR, IPPREFIX, NEXTHOP, nil, nil, nil)
+	cmd, err = ovndbapi.LRSRAdd(LR, IPPREFIX, NEXTHOP, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

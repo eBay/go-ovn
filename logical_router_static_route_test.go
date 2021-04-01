@@ -12,7 +12,10 @@ const (
 	NEXTHOP  = "10.3.0.1"
 )
 
-var nextHop2 = "10.3.0.2"
+var (
+	nextHop2    = "10.3.0.2"
+	ecmpOptions = map[string]string{"ecmp_symmetric_reply": "true"}
+)
 
 func TestLogicalRouterStaticRoute(t *testing.T) {
 	ovndbapi := getOVNClient(DBNB)
@@ -35,8 +38,8 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("lr not created %v", lrs)
 	}
 
-	//lr string, ip_prefix string, nexthop string, output_port *string, policy *string, external_ids map[string]string
-	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, nil, nil, nil)
+	//lr string, ip_prefix string, nexthop string, output_port *string, policy *string, options, external_ids map[string]string
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,8 +57,8 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		t.Fatalf("Static Route %s not created in %s", IPPREFIX, LR2)
 	}
 	assert.Equal(t, true, lrsr[0].IPPrefix == IPPREFIX, "Added static route to lr2")
-	// add static route IPPREFIX via nextHop2
-	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, nextHop2, nil, nil, nil)
+	// add static route IPPREFIX via nextHop2 with ecmp options
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, nextHop2, nil, nil, ecmpOptions, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,6 +84,9 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 		}
 	}
 	assert.Equal(t, true, found, "Added second static route to lr2")
+	options := MapInterfaceToMapString(lrsr[0].Options)
+	assert.Equal(t, ecmpOptions, options)
+
 	// delete static route via nextHop2
 	cmd, err = ovndbapi.LRSRDelByUUID(LR2, secondSr.UUID)
 	if err != nil {
@@ -128,7 +134,7 @@ func TestLogicalRouterStaticRoute(t *testing.T) {
 	// Add static route with policy and output_port.
 	outputPort := "lsp1"
 	policy := "src-ip"
-	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, &outputPort, &policy, nil)
+	cmd, err = ovndbapi.LRSRAdd(LR2, IPPREFIX, NEXTHOP, &outputPort, &policy, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
