@@ -121,6 +121,17 @@ type Client interface {
 	// Get all LRSRs by lr
 	LRSRList(lr string) ([]*LogicalRouterStaticRoute, error)
 
+	// Add LRPolicy
+	LRPolicyAdd(lr string, priority int, match string, action string, nexthop *string, nexthops []string, options map[string]string, external_ids map[string]string) (*OvnCommand, error)
+	// Delete a LR policy by priority and optionally match
+	LRPolicyDel(lr string, priority int, match *string) (*OvnCommand, error)
+	// Delete a LR policy by UUID
+	LRPolicyDelByUUID(lr string, uuid string) (*OvnCommand, error)
+	// Delete all LRPolicies
+	LRPolicyDelAll(lr string) (*OvnCommand, error)
+	// Get all LRPolicies by LR
+	LRPolicyList(lr string) ([]*LogicalRouterPolicy, error)
+
 	// Add LB to LR
 	LRLBAdd(lr string, lb string) (*OvnCommand, error)
 	// Delete LB from LR
@@ -590,6 +601,26 @@ func (c *ovndb) LRSRList(lr string) ([]*LogicalRouterStaticRoute, error) {
 
 func (c *ovndb) LRLBAdd(lr string, lb string) (*OvnCommand, error) {
 	return c.lrlbAddImp(lr, lb)
+}
+
+func (c *ovndb) LRPolicyAdd(lr string, priority int, match string, action string, nexthop *string, nexthops []string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
+	return c.lrpolicyAddImp(lr, priority, match, action, nexthop, nexthops, options, external_ids)
+}
+
+func (c *ovndb) LRPolicyDel(lr string, priority int, match *string) (*OvnCommand, error) {
+	return c.lrpolicyDelImp(lr, priority, match)
+}
+
+func (c *ovndb) LRPolicyDelByUUID(lr string, uuid string) (*OvnCommand, error) {
+	return c.lrpolicyDelByUUIDImp(lr, uuid)
+}
+
+func (c *ovndb) LRPolicyDelAll(lr string) (*OvnCommand, error) {
+	return c.lrpolicyDelAllImp(lr)
+}
+
+func (c *ovndb) LRPolicyList(lr string) ([]*LogicalRouterPolicy, error) {
+	return c.lrPolicyListImp(lr)
 }
 
 func (c *ovndb) LRLBDel(lr string, lb string) (*OvnCommand, error) {
