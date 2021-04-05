@@ -295,17 +295,6 @@ func TestAuxKeyValSetDel(t *testing.T) {
 	if asrt.Equal(expectedMap, ls[0].ExternalID, "non-existing key or non-existing value removal: failed") {
 		t.Log("non-existing key or non-existing value removal: no change, as expected")
 	}
-
-	// delete the remaining keys using a different method. also, provide a non-existing key to make sure no error is returned
-	ocmd, err = ovndbapi.AuxKeyDel(TableLogicalSwitch, LSW, col, "k1", "k2", "k3", "key-DNE")
-	asrt.Nil(err)
-	err = ovndbapi.Execute(ocmd)
-	asrt.Nil(err)
-	ls, err = ovndbapi.LSGet(LSW)
-	asrt.Nil(err)
-	if asrt.Empty(ls[0].ExternalID, "all keys removal via AuxKeyDel(): failed") {
-		t.Log("all keys/values have been removed via AuxKeyDel()")
-	}
 }
 
 func strPtr(str string) *string {

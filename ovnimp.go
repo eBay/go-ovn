@@ -385,24 +385,24 @@ func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
 
-func (odbi *ovndb) auxKeyValSet(table string, row string, auxCol string, kv map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) auxKeyValSet(table string, rowName string, auxCol string, kv map[string]string) (*OvnCommand, error) {
 	if len(kv) == 0 {
 		return nil, fmt.Errorf("key-value map is nil or empty")
 	}
 
 	ovnRow := make(OVNRow)
-	ovnRow["name"] = row
+	ovnRow["name"] = rowName
 
 	uuid := odbi.getRowUUID(table, ovnRow)
 	col := odbi.cache[table][uuid].Fields[auxCol]
 	if col == nil {
-		return nil, fmt.Errorf("table %s, row %s, column %s not present in cache", table, row, auxCol)
+		return nil, fmt.Errorf("table %s, row %s, column %s not present in cache", table, rowName, auxCol)
 	}
 
 	switch col.(type) {
 	case libovsdb.OvsMap:
 	default:
-		return nil, fmt.Errorf("table %s, row %s, column %s: value is not a map", table, row, auxCol)
+		return nil, fmt.Errorf("table %s, row %s, column %s: value is not a map", table, rowName, auxCol)
 	}
 
 	cachedMap := col.(libovsdb.OvsMap).GoMap
@@ -427,7 +427,7 @@ func (odbi *ovndb) auxKeyValSet(table string, row string, auxCol string, kv map[
 	}
 	ovnRow[auxCol] = auxMap
 
-	condition := libovsdb.NewCondition("name", "==", row)
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 	operation := libovsdb.Operation{
 		Op:    opUpdate,
 		Table: table,
@@ -439,14 +439,16 @@ func (odbi *ovndb) auxKeyValSet(table string, row string, auxCol string, kv map[
 	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
 }
 
-func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[string]*string) (*OvnCommand, error) {
-	ovnRow := make(OVNRow)
-	ovnRow["name"] = row
-	if len(odbi.getRowUUID(TableLogicalSwitch, ovnRow)) == 0 {
-		return nil, ErrorNotFound
-	}
+func (odbi *ovndb) auxKeyValDel(table string, rowName string, auxCol string, kv map[string]*string) (*OvnCommand, error) {
 	if len(kv) == 0 {
 		return nil, fmt.Errorf("KV map is empty")
+	}
+
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = rowName
+	uuid := odbi.getRowUUID(TableLogicalSwitch, ovnRow)
+	if len(uuid) == 0 {
+		return nil, ErrorNotFound
 	}
 
 	delKeys := []string{}
@@ -464,7 +466,7 @@ func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[
 	var mutateMap *libovsdb.OvsMap
 	var err error
 
-	condition := libovsdb.NewCondition("name", "==", row)
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
 	mutateOp := libovsdb.Operation{
 		Op:        opMutate,
 		Table:     table,
@@ -487,35 +489,6 @@ func (odbi *ovndb) auxKeyValDel(table string, row string, auxCol string, kv map[
 		}
 		m := libovsdb.NewMutation(auxCol, opDelete, mutateMap)
 		mutateOp.Mutations = append(mutateOp.Mutations, m)
-	}
-
-	operations := []libovsdb.Operation{mutateOp}
-	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
-}
-
-func (odbi *ovndb) auxKeyDel(table string, row string, auxCol string, keys ...string) (*OvnCommand, error) {
-	ovnRow := make(OVNRow)
-	ovnRow["name"] = row
-
-	if len(odbi.getRowUUID(TableLogicalSwitch, ovnRow)) == 0 {
-		return nil, ErrorNotFound
-	}
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("keys list is empty")
-	}
-
-	mutateSet, err := libovsdb.NewOvsSet(keys)
-	if err != nil {
-		return nil, err
-	}
-
-	mutation := libovsdb.NewMutation(auxCol, opDelete, mutateSet)
-	condition := libovsdb.NewCondition("name", "==", row)
-	mutateOp := libovsdb.Operation{
-		Op:        opMutate,
-		Table:     table,
-		Mutations: []interface{}{mutation},
-		Where:     []interface{}{condition},
 	}
 
 	operations := []libovsdb.Operation{mutateOp}
