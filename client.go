@@ -18,6 +18,7 @@ package goovn
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"crypto/tls"
@@ -351,6 +352,26 @@ func (c *ovndb) reconnect() {
 			return
 		}
 	}()
+}
+
+// colToField uses reflection to convert a value from ovsdb to a provided struct field
+func (odbi *ovndb) colToField(column string, from interface{}, to reflect.Value) error {
+	schema := odbi.GetSchema()
+	tableSchema, ok := schema.Tables[TableACL]
+	if !ok {
+		return fmt.Errorf("column not found")
+	}
+	colSchema := tableSchema.Columns[column]
+	nativeElem, err := libovsdb.OvsToNative(colSchema, from)
+	if err != nil {
+		return err
+	}
+	nativeElemValue := reflect.ValueOf(nativeElem)
+	if !nativeElemValue.Type().AssignableTo(to.Type()) {
+		return fmt.Errorf("value not assignable")
+	}
+	to.Set(nativeElemValue)
+	return nil
 }
 
 // filterTablesFromSchema checks whether tables in
