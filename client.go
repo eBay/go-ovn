@@ -289,6 +289,9 @@ type ORMClient interface {
 	// select the row to be updated
 	UpdateFields(Model, []string, ...string) (*OvnCommand, error)
 
+	// Execute the list of commands in one transaction
+	Execute(cmds ...*OvnCommand) error
+
 	// Close connection to OVN
 	Close() error
 }
