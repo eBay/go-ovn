@@ -39,6 +39,7 @@ const (
 	PORT_TEST_OPT_1_VAL_2    = "baz1"
 	PORT_TEST_OPT_2_KEY      = "foo2"
 	PORT_TEST_OPT_2_VAL      = "bar2"
+	PORT_TEST_TYPE           = "localnet"
 )
 
 func TestLogicalSwitchPortAPI(t *testing.T) {
@@ -130,6 +131,19 @@ func TestLogicalSwitchPortAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, lsp2.DynamicAddresses, PORT_TEST_LSP2DYNADDR2)
+
+	// set LSP type, read back and confirm
+	t.Logf("Setting LSP type to %s", PORT_TEST_TYPE)
+	cmd, err = ovndbapi.LSPSetType(PORT_TEST_LSP2, PORT_TEST_TYPE)
+	assert.Nil(t, err)
+	err = ovndbapi.Execute(cmd)
+	assert.Nil(t, err)
+
+	lsp, err := ovndbapi.LSPGet(PORT_TEST_LSP2)
+	assert.Nil(t, err)
+	assert.NotNil(t, lsp)
+	assert.Equal(t, lsp.Type, PORT_TEST_TYPE)
+	t.Logf("Validated LSP type is %s", PORT_TEST_TYPE)
 
 	// test external id APIs
 	extIds, err := ovndbapi.LSPGetExternalIds(PORT_TEST_LSP1)
@@ -281,5 +295,4 @@ func TestLogicalSwitchPortAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 }
