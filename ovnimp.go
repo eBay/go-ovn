@@ -384,3 +384,113 @@ func (odbi *ovndb) optionalStringFieldToPointer(fieldValue interface{}) *string 
 func stringToGoUUID(uuid string) libovsdb.UUID {
 	return libovsdb.UUID{GoUUID: uuid}
 }
+
+func (odbi *ovndb) auxKeyValSet(table string, rowName string, auxCol string, kv map[string]string) (*OvnCommand, error) {
+	if len(kv) == 0 {
+		return nil, fmt.Errorf("key-value map is nil or empty")
+	}
+
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = rowName
+
+	uuid := odbi.getRowUUID(table, ovnRow)
+	col := odbi.cache[table][uuid].Fields[auxCol]
+	if col == nil {
+		return nil, fmt.Errorf("table %s, row %s, column %s not present in cache", table, rowName, auxCol)
+	}
+
+	switch col.(type) {
+	case libovsdb.OvsMap:
+	default:
+		return nil, fmt.Errorf("table %s, row %s, column %s: value is not a map", table, rowName, auxCol)
+	}
+
+	cachedMap := col.(libovsdb.OvsMap).GoMap
+
+	// prepare new map for the update by copying keys/values from the kv map,
+	// followed by copying all other keys/values from the cache. NB: this is to implement functionality
+	// not explicitly provided by RFC7047 - change values for individual keys that already exist
+	mergedMap := make(map[interface{}]interface{}, len(kv)+len(cachedMap))
+	for k, v := range kv {
+		mergedMap[k] = v
+	}
+	for k, v := range cachedMap {
+		ck := k.(string)
+		if _, ok := kv[ck]; !ok {
+			mergedMap[ck] = v.(string)
+		}
+	}
+
+	auxMap, err := libovsdb.NewOvsMap(mergedMap)
+	if err != nil {
+		return nil, err
+	}
+	ovnRow[auxCol] = auxMap
+
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
+	operation := libovsdb.Operation{
+		Op:    opUpdate,
+		Table: table,
+		Where: []interface{}{condition},
+		Row:   ovnRow,
+	}
+
+	operations := []libovsdb.Operation{operation}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
+
+func (odbi *ovndb) auxKeyValDel(table string, rowName string, auxCol string, kv map[string]*string) (*OvnCommand, error) {
+	if len(kv) == 0 {
+		return nil, fmt.Errorf("KV map is empty")
+	}
+
+	ovnRow := make(OVNRow)
+	ovnRow["name"] = rowName
+	uuid := odbi.getRowUUID(TableLogicalSwitch, ovnRow)
+	if len(uuid) == 0 {
+		return nil, ErrorNotFound
+	}
+
+	delKeys := []string{}
+	delKeyVals := make(map[string]string, len(kv))
+
+	for k, v := range kv {
+		if v == nil {
+			delKeys = append(delKeys, k)
+		} else {
+			delKeyVals[k] = *v
+		}
+	}
+
+	var mutateSet *libovsdb.OvsSet
+	var mutateMap *libovsdb.OvsMap
+	var err error
+
+	condition := libovsdb.NewCondition("_uuid", "==", stringToGoUUID(uuid))
+	mutateOp := libovsdb.Operation{
+		Op:        opMutate,
+		Table:     table,
+		Mutations: []interface{}{},
+		Where:     []interface{}{condition},
+	}
+
+	if len(delKeys) != 0 {
+		mutateSet, err = libovsdb.NewOvsSet(delKeys)
+		if err != nil {
+			return nil, err
+		}
+		m := libovsdb.NewMutation(auxCol, opDelete, mutateSet)
+		mutateOp.Mutations = append(mutateOp.Mutations, m)
+	}
+	if len(delKeyVals) != 0 {
+		mutateMap, err = libovsdb.NewOvsMap(delKeyVals)
+		if err != nil {
+			return nil, err
+		}
+		m := libovsdb.NewMutation(auxCol, opDelete, mutateMap)
+		mutateOp.Mutations = append(mutateOp.Mutations, m)
+	}
+
+	operations := []libovsdb.Operation{mutateOp}
+	return &OvnCommand{operations, odbi, make([][]map[string]interface{}, len(operations))}, nil
+}
