@@ -4,12 +4,6 @@ import (
 	"testing"
 )
 
-const (
-	METER1 = "testMeter1"
-	METER2 = "testMeter2"
-	METER3 = "testMeter3"
-)
-
 func TestMeter(t *testing.T) {
 	ovndbapi := getOVNClient(DBNB)
 	var cmds []*OvnCommand

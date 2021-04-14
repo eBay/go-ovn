@@ -75,15 +75,21 @@ type Client interface {
 	LSLBList(ls string) ([]*LoadBalancer, error)
 
 	// Add ACL to entity (PORT_GROUP or LOGICAL_SWITCH)
-	ACLAddEntity(entityType EntityType, entity, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error)
+	ACLAddEntity(entityType EntityType, entityName, aclName, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter, severity string) (*OvnCommand, error)
 	// Deprecated in favor of ACLAddEntity(). Add ACL to logical switch.
 	ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error)
+	// Set name for ACL
+	ACLSetName(aclUUID, aclName string) (*OvnCommand, error)
+	// Set match criteria for ACL
+	ACLSetMatch(aclUUID, newMatch string) (*OvnCommand, error)
+	// Set logging for ACL
+	ACLSetLogging(aclUUID string, newLogflag bool, newMeter, newSeverity string) (*OvnCommand, error)
 	// Delete acl from entity (PORT_GROUP or LOGICAL_SWITCH)
-	ACLDelEntity(entityType EntityType, entity, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
+	ACLDelEntity(entityType EntityType, entityName, aclUUID string) (*OvnCommand, error)
 	// Deprecated in favor of ACLDelEntity(). Delete acl from logical switch
 	ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error)
 	// Get all acl by entity
-	ACLListEntity(entityType EntityType, entity string) ([]*ACL, error)
+	ACLListEntity(entityType EntityType, entityName string) ([]*ACL, error)
 	// Deprecated in favor of ACLListEntity(). Get all acl by logical switch
 	ACLList(ls string) ([]*ACL, error)
 
@@ -663,16 +669,28 @@ func (c *ovndb) LBList() ([]*LoadBalancer, error) {
 	return c.lbListImp()
 }
 
-func (c *ovndb) ACLAddEntity(entityType EntityType, entity, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
-	return c.aclAddImp(entityType, entity, direct, match, action, priority, external_ids, logflag, meter, severity)
+func (c *ovndb) ACLAddEntity(entityType EntityType, entityName, aclName, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter, severity string) (*OvnCommand, error) {
+	return c.aclAddImp(entityType, entityName, aclName, direct, match, action, priority, external_ids, logflag, meter, severity)
 }
 
 func (c *ovndb) ACLAdd(ls, direct, match, action string, priority int, external_ids map[string]string, logflag bool, meter string, severity string) (*OvnCommand, error) {
-	return c.aclAddImp(LOGICAL_SWITCH, ls, direct, match, action, priority, external_ids, logflag, meter, severity)
+	return c.aclAddImp(LOGICAL_SWITCH, ls, "", direct, match, action, priority, external_ids, logflag, meter, severity)
 }
 
-func (c *ovndb) ACLDelEntity(entityType EntityType, entity, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
-	return c.aclDelImp(entityType, entity, direct, match, priority, external_ids)
+func (c *ovndb) ACLSetName(aclUUID, aclName string) (*OvnCommand, error) {
+	return c.aclSetNameImp(aclUUID, aclName)
+}
+
+func (c *ovndb) ACLSetMatch(aclUUID, newMatch string) (*OvnCommand, error) {
+	return c.aclSetMatchImp(aclUUID, newMatch)
+}
+
+func (c *ovndb) ACLSetLogging(aclUUID string, newLogflag bool, newMeter, newSeverity string) (*OvnCommand, error) {
+	return c.aCLSetLoggingImp(aclUUID, newLogflag, newMeter, newSeverity)
+}
+
+func (c *ovndb) ACLDelEntity(entityType EntityType, entityName, aclUUID string) (*OvnCommand, error) {
+	return c.aclDelUUIDImp(entityType, entityName, aclUUID)
 }
 
 func (c *ovndb) ACLDel(ls, direct, match string, priority int, external_ids map[string]string) (*OvnCommand, error) {
