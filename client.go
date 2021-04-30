@@ -314,6 +314,9 @@ func connect(c *ovndb) (err error) {
 	notifier := ovnNotifier{c}
 	ovsdb.Register(notifier)
 
+	// When we connect we initialize the cache, so any deletions
+	// happened while reconnecting are handled correctly.
+	c.cache = make(map[string]map[string]libovsdb.Row)
 	initial, err := c.MonitorTables("")
 	if err != nil {
 		return err
@@ -337,7 +340,6 @@ func NewClient(cfg *Config) (Client, error) {
 	}
 
 	ovndb := &ovndb{
-		cache:        make(map[string]map[string]libovsdb.Row),
 		signalCB:     cfg.SignalCB,
 		disconnectCB: cfg.DisconnectCB,
 		db:           db,
