@@ -303,13 +303,24 @@ func connect(c *ovndb) (err error) {
 			c.client = nil
 		}
 	}()
+
+	// Locking the cache mutex to ensure the cache is filled before
+	// events from the notifier are handled.
+	c.cachemutex.Lock()
+	defer c.cachemutex.Unlock()
+
+	// We register the notifier, events start coming in but the
+	// mutex is locked
+	notifier := ovnNotifier{c}
+	ovsdb.Register(notifier)
+
 	initial, err := c.MonitorTables("")
 	if err != nil {
 		return err
 	}
+
+	// We do the initial dump and populate the cache, we have the mutex
 	c.populateCache(*initial)
-	notifier := ovnNotifier{c}
-	ovsdb.Register(notifier)
 	return nil
 }
 

@@ -227,9 +227,6 @@ func (odbi *ovndb) float64_to_int(row libovsdb.Row) {
 func (odbi *ovndb) populateCache(updates libovsdb.TableUpdates) {
 	empty := libovsdb.Row{}
 
-	odbi.cachemutex.Lock()
-	defer odbi.cachemutex.Unlock()
-
 	for table := range odbi.tableCols {
 		tableUpdate, ok := updates.Updates[table]
 		if !ok {
