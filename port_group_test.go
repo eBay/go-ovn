@@ -17,11 +17,12 @@
 package goovn
 
 import (
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 type pgConfig struct {
@@ -31,10 +32,10 @@ type pgConfig struct {
 }
 
 type pgTest struct {
-name        string
-testFunc    func(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
-startConfig pgConfig
-testConfig  pgConfig
+	name        string
+	testFunc    func(group string, ports []string, external_ids map[string]string) (*OvnCommand, error)
+	startConfig pgConfig
+	testConfig  pgConfig
 }
 
 func compareExternalIds(want map[string]string, got map[interface{}]interface{}) bool {
@@ -102,144 +103,144 @@ func TestPortGroupAPI(t *testing.T) {
 	// Create a switch w/four ports to be used for logical port tests
 	createSwitch(t)
 
-	portGroupAddTests := []pgTest {
+	portGroupAddTests := []pgTest{
 		{
-			name: "add an empty port group",
+			name:     "add an empty port group",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports: nil,
+				pgName:      "",
+				ports:       nil,
 				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: nil,
+				pgName:      PG_TEST_PG1,
+				ports:       nil,
 				externalIds: nil,
 			},
 		},
 		{
-			name: "add a port group with two ports",
+			name:     "add a port group with two ports",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: nil,
 			},
 		},
 		{
-			name: "add a port group with four ports",
+			name:     "add a port group with four ports",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID, lsp3UUID, lsp4UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID, lsp3UUID, lsp4UUID},
 				externalIds: nil,
 			},
 		},
 		{
-			name: "add two port groups with the same ports",
+			name:     "add two port groups with the same ports",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG2,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG2,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: nil,
 			},
 		},
 		{
-			name: "add a port group with external ids",
+			name:     "add a port group with external ids",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: nil,
+				pgName:      PG_TEST_PG1,
+				ports:       nil,
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1, PG_TEST_KEY_2: PG_TEST_ID_2},
 			},
 		},
 		{
-			name: "add a port group with ports and external ids",
+			name:     "add a port group with ports and external ids",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1, PG_TEST_KEY_2: PG_TEST_ID_2},
 			},
 		},
 		{
-			name: "add a port group with empty name",
+			name:     "add a port group with empty name",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName:"",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: "",
-				ports:nil,
-				externalIds:nil,
+				pgName:      "",
+				ports:       nil,
+				externalIds: nil,
 			},
 		},
 		{
-			name: "add a port group when another exists",
+			name:     "add a port group when another exists",
 			testFunc: ovndbapi.PortGroupAdd,
 			startConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1, PG_TEST_KEY_2: PG_TEST_ID_2},
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG2,
-				ports: []string{lsp3UUID, lsp4UUID},
+				pgName:      PG_TEST_PG2,
+				ports:       []string{lsp3UUID, lsp4UUID},
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1, PG_TEST_KEY_2: PG_TEST_ID_2},
 			},
 		},
 		{
-			name: "set ports and external ids on existing empty port group",
+			name:     "set ports and external ids on existing empty port group",
 			testFunc: ovndbapi.PortGroupUpdate,
 			startConfig: pgConfig{
-				pgName:PG_TEST_PG1,
-				ports:nil,
-				externalIds:nil,
+				pgName:      PG_TEST_PG1,
+				ports:       nil,
+				externalIds: nil,
 			},
 			testConfig: pgConfig{
-				pgName: PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1, PG_TEST_KEY_2: PG_TEST_ID_2},
 			},
 		},
 		{
-			name: "set ports and external ids on existing port group with exiting config",
+			name:     "set ports and external ids on existing port group with exiting config",
 			testFunc: ovndbapi.PortGroupUpdate,
 			startConfig: pgConfig{
-				pgName:PG_TEST_PG1,
-				ports: []string{lsp1UUID, lsp2UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp1UUID, lsp2UUID},
 				externalIds: map[string]string{PG_TEST_KEY_1: PG_TEST_ID_1},
 			},
 			testConfig: pgConfig{
-				pgName:PG_TEST_PG1,
-				ports: []string{lsp3UUID, lsp4UUID},
+				pgName:      PG_TEST_PG1,
+				ports:       []string{lsp3UUID, lsp4UUID},
 				externalIds: map[string]string{PG_TEST_KEY_2: PG_TEST_ID_2, PG_TEST_KEY_3: PG_TEST_ID_3},
 			},
 		},
@@ -285,7 +286,7 @@ func TestPortGroupAPI(t *testing.T) {
 			_, err = ovndbapi.PortGroupGet(tc.testConfig.pgName)
 			assert.NotNil(err)
 
-			if (tc.startConfig.pgName != "") &&  (tc.startConfig.pgName != tc.testConfig.pgName) {
+			if (tc.startConfig.pgName != "") && (tc.startConfig.pgName != tc.testConfig.pgName) {
 				// Delete the start config port group.
 				cmd, err = ovndbapi.PortGroupDel(tc.startConfig.pgName)
 				assert.Nil(err)
@@ -367,9 +368,9 @@ func TestPortGroupAPI(t *testing.T) {
 		sort.Strings(pg.Ports)
 		assert.True(reflect.DeepEqual(ports, pg.Ports))
 
-		// Add duplicate port
+		// Add duplicate port - should succeed
 		cmd, err = ovndbapi.PortGroupAddPort(PG_TEST_PG1, lsp2UUID)
-		assert.Equal(ErrorExist, err)
+		assert.Nil(err)
 
 		// Add port to non-existent port group
 		cmd, err = ovndbapi.PortGroupAddPort(PG_TEST_PG2, lsp1UUID)
