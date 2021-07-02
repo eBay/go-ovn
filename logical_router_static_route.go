@@ -29,10 +29,11 @@ type LogicalRouterStaticRoute struct {
 	Nexthop    string
 	OutputPort *string
 	Policy     *string
+	Options    map[interface{}]interface{}
 	ExternalID map[interface{}]interface{}
 }
 
-func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, output_port *string, policy *string, external_ids map[string]string) (*OvnCommand, error) {
+func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, output_port *string, policy *string, options map[string]string, external_ids map[string]string) (*OvnCommand, error) {
 	namedUUID, err := newRowUUID()
 	if err != nil {
 		return nil, err
@@ -46,6 +47,13 @@ func (odbi *ovndb) lrsrAddImp(lr string, ip_prefix string, nexthop string, outpu
 	}
 	if policy != nil {
 		row["policy"] = *policy
+	}
+	if options != nil {
+		optMap, err := libovsdb.NewOvsMap(options)
+		if err != nil {
+			return nil, err
+		}
+		row["options"] = optMap
 	}
 	if external_ids != nil {
 		oMap, err := libovsdb.NewOvsMap(external_ids)
@@ -172,6 +180,7 @@ func (odbi *ovndb) rowToLogicalRouterStaticRoute(uuid string) *LogicalRouterStat
 		UUID:       uuid,
 		IPPrefix:   cacheLogicalRouterStaticRoute.Fields["ip_prefix"].(string),
 		Nexthop:    cacheLogicalRouterStaticRoute.Fields["nexthop"].(string),
+		Options:    cacheLogicalRouterStaticRoute.Fields["options"].(libovsdb.OvsMap).GoMap,
 		ExternalID: cacheLogicalRouterStaticRoute.Fields["external_ids"].(libovsdb.OvsMap).GoMap,
 	}
 
