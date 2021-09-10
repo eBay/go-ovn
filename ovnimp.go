@@ -166,7 +166,8 @@ func (odbi *ovndb) transact(db string, ops ...libovsdb.Operation) ([]libovsdb.Op
 			if i < len(ops) {
 				opsInfo = fmt.Sprintf("%v", ops[i])
 			}
-			return nil, fmt.Errorf("Transaction Failed due to an error: %v details: %v in %s",
+			odbi.close()
+			return nil, fmt.Errorf("Reconnecting...Transaction Failed due to an error: %v details: %v in %s",
 				o.Error, o.Details, opsInfo)
 		}
 	}
